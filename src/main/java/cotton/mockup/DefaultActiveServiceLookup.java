@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package mockup;
+package main.java.cotton.mockup;
 
 import java.util.Enumeration;
 import java.util.concurrent.ConcurrentHashMap;

@@ -1,4 +1,4 @@
-package mockup;
+package main.java.cotton.mockup;
 
 /**
  *@author Tony

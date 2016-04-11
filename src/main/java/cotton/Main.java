@@ -1,4 +1,4 @@
-package cotton;
+package main.java.cotton;
 
 /**
  * Hello world!

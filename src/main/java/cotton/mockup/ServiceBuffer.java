@@ -1,3 +1,5 @@
+package main.java.cotton.mockup;
+
 /**
  *
  *Created by Tony on 2016-04-11 

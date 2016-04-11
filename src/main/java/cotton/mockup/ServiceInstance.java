@@ -1,4 +1,4 @@
-package mockup;
+package main.java.cotton.mockup;
 
 import java.io.InputStream;
 import java.io.Serializable;

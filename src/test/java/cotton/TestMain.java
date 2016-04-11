@@ -1,4 +1,4 @@
-package cotton;
+package test.java.cotton;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
