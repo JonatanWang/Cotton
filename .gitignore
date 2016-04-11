@@ -3,6 +3,10 @@
 # Apple spotlight files
 .DS_Store
 
+# Emacs backup and save files
+*~
+*#
+
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
