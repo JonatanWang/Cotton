@@ -8,7 +8,7 @@ import java.io.InputStream;
  * @author Magnus
  *@author Tony
  */
-public class ServicePacket {
+public class ServicePacket{
     private InputStream dataStream;
     private ServiceConnection from;
     private ServiceChain to;
@@ -28,5 +28,7 @@ public class ServicePacket {
 
     public ServiceChain getTo() {
         return to;
-    }   
+    }
+
+    
 }
