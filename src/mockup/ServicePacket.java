@@ -1,0 +1,31 @@
+
+package mockup;
+
+import java.io.InputStream;
+
+/**
+ *
+ * @author o_0
+ */
+public class ServicePacket {
+    private InputStream dataStream;
+    private ServiceConnection from;
+    private ServiceChain to;
+    public ServicePacket(ServiceConnection from,ServiceChain to,InputStream data) {
+        this.dataStream = data;
+        this.from = from;
+        this.to = to;
+    }
+
+    public InputStream getDataStream() {
+        return dataStream;
+    }
+
+    public ServiceConnection getFrom() {
+        return from;
+    }
+
+    public ServiceChain getTo() {
+        return to;
+    }   
+}
