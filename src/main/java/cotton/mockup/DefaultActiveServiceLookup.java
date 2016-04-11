@@ -15,16 +15,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultActiveServiceLookup implements ActiveServiceLookup{
 
     private ConcurrentHashMap<String,ServiceMetaData> hashMap;
-    
-    
+
     public DefaultActiveServiceLookup() {
         this.hashMap = new ConcurrentHashMap<String,ServiceMetaData>();
     }
-    
+
     @Override
-    public boolean registrateService(String serviceName, ServiceFactory serviceFactory,int maxCapacity) {
+    public boolean registerService(String serviceName, ServiceFactory serviceFactory,int maxCapacity) {
         ServiceMetaData metaData = new ServiceMetaData(serviceFactory, maxCapacity);
-        hashMap.put(serviceName, metaData);
         if(hashMap.putIfAbsent(serviceName, metaData) == null) {
             return true;    // no mapping for this key
         }
@@ -45,5 +43,5 @@ public class DefaultActiveServiceLookup implements ActiveServiceLookup{
     public ServiceMetaData removeServiceEntry(String service) {
         return hashMap.remove(service);
     }
-    
+
 }

@@ -1,4 +1,3 @@
-
 package test.java.cotton.services;
 
 import java.io.InputStream;
@@ -18,5 +17,5 @@ public class MathServices implements ServiceInstance {
     public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
+
 }

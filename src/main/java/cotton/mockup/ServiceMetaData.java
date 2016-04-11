@@ -22,7 +22,7 @@ public class ServiceMetaData {
                 return currentThreadCount.incrementAndGet();
         }
 
-        public int serviceFinnished(){
+        public int serviceFinished(){
                 return currentThreadCount.decrementAndGet();
         }
 

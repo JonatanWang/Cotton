@@ -7,5 +7,5 @@ import java.io.Serializable;
  *@author Magnus
  **/
 public interface ServiceInstance {
-    public Serializable consumeServiceOrder(CloudContext ctx,ServiceConnection from, InputStream data,ServiceChain to);
+    public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to);
 }
