@@ -1,8 +1,7 @@
 package mockup;
 
-import java.util.Objects;
 import java.io.InputStream;
-import java.io;
+import java.io.Serializable;
 /**
  * Created by o_0 on 2016-04-07.
  */
