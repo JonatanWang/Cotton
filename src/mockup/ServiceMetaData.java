@@ -7,7 +7,7 @@ public class ServiceMetaData {
         private int maxCapacity;
         private AtomicInteger currentThreadCount;
 
-        public ServiceMetaData(int maxCapacity,ServiceFactory serviceFactory) {
+        public ServiceMetaData(ServiceFactory serviceFactory, int maxCapacity) {
                 this.maxCapacity = maxCapacity;
                 this.serviceFactory = serviceFactory;
                 currentThreadCount = new AtomicInteger();
