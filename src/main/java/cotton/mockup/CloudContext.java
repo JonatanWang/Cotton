@@ -7,7 +7,7 @@ package mockup;
 
 /**
  *
- * @author o_0
+ * @author Magnus
  */
 public interface CloudContext {
     

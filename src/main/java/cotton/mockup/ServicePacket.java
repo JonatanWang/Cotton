@@ -5,7 +5,8 @@ import java.io.InputStream;
 
 /**
  *
- * @author o_0
+ * @author Magnus
+ *@author Tony
  */
 public class ServicePacket {
     private InputStream dataStream;

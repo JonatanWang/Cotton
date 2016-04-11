@@ -3,8 +3,9 @@ package mockup;
 import java.io.InputStream;
 import java.io.Serializable;
 /**
- * Created by o_0 on 2016-04-07.
- */
+ *@author Tony
+ *@author Magnus
+ **/
 public interface ServiceInstance {
     public Serializable consumeServiceOrder(CloudContext ctx,ServiceConnection from, InputStream data,ServiceChain to);
 }

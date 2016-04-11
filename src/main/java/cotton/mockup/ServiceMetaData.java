@@ -1,10 +1,11 @@
 package mockup;
 
 import java.util.concurrent.atomic.AtomicInteger;
-/*
- *Created by Tony
- *
- */
+/**
+ *@author Tony
+ *@author Magnus
+ **/
+
 public class ServiceMetaData {
         private ServiceFactory serviceFactory;
         private int maxCapacity;
