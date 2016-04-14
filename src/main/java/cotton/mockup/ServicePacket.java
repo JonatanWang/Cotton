@@ -12,7 +12,7 @@ public class ServicePacket{
     private InputStream dataStream;
     private ServiceConnection from;
     private ServiceChain to;
-    public ServicePacket(ServiceConnection from,ServiceChain to,InputStream data) {
+    public ServicePacket(ServiceConnection from,InputStream data,ServiceChain to) {
         this.dataStream = data;
         this.from = from;
         this.to = to;

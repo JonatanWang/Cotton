@@ -17,7 +17,6 @@ public class DefaultServiceBuffer implements ServiceBuffer{
 
     public ServicePacket nextPacket(){
         return buffer.poll();
-        
     }
 
     public boolean add(ServicePacket servicePacket){
