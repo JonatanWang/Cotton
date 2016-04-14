@@ -1,8 +1,13 @@
 package test.java.cotton;
 
+import java.io.InputStream;
+import java.io.Serializable;
 import java.util.Enumeration;
 import main.java.cotton.mockup.ActiveServiceLookup;
+import main.java.cotton.mockup.CloudContext;
 import main.java.cotton.mockup.DefaultActiveServiceLookup;
+import main.java.cotton.mockup.ServiceChain;
+import main.java.cotton.mockup.ServiceConnection;
 import main.java.cotton.mockup.ServiceFactory;
 import main.java.cotton.mockup.ServiceInstance;
 import org.junit.After;
@@ -38,16 +43,19 @@ public class TestDASL {
     }
 
     public class TestServiceFactory implements ServiceFactory {
-
-        public TestServiceFactory() {
-            
-        }
         
         @Override
         public ServiceInstance newServiceInstance() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            return new TestServiceInstance();
         }
         
+        public class TestServiceInstance implements ServiceInstance {
+            
+            @Override
+            public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
+                return null;
+            }
+        }
     }
     
     @Test

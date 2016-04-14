@@ -1,16 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package test.java.cotton;
 
-import java.io.IOException;
-import java.io.InputStream;
 import main.java.cotton.mockup.DefaultServiceBuffer;
 import main.java.cotton.mockup.DummyServiceChain;
 import main.java.cotton.mockup.ServiceBuffer;
-import main.java.cotton.mockup.ServiceChain;
 import main.java.cotton.mockup.ServicePacket;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -65,6 +58,9 @@ public class TestDSB {
         for(int i = 0; i < sp.length; i++)
             sb.add(sp[i]);
         
-        assertEquals("Coloring0", sb.nextPacket().getTo().getNextServiceName());
+        sb.nextPacket();
+        sb.nextPacket();
+        
+        assertEquals("Coloring2", sb.nextPacket().getTo().getNextServiceName());
     }
 }
