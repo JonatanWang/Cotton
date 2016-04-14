@@ -2,12 +2,8 @@ package cotton.services;
 
 import cotton.network.NetworkHandler;
 import java.util.concurrent.Executors;
-import java.io.PipedOutputStream;
-import java.io.PipedInputStream;
 import java.util.concurrent.ExecutorService;
 import java.io.Serializable;
-import java.io.ObjectOutputStream;
-import java.io.IOException;
 
 public class ServiceHandler{
     private ActiveServiceLookup serviceLookup;
@@ -34,6 +30,7 @@ public class ServiceHandler{
                 threadPool.execute(th);
             }
         }
+        threadPool.shutdown();
     }
 
     public void stop(){

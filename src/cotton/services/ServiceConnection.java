@@ -7,5 +7,5 @@ package cotton.services;
  * @author Magnus
  */
 public interface ServiceConnection {
-
+    public Integer getUserConnectionId();
 }

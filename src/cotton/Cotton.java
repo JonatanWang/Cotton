@@ -1,5 +1,6 @@
 package cotton;
 
+import cotton.network.ClientNetwork;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
@@ -24,12 +25,15 @@ import cotton.services.ServiceHandler;
 public class Cotton {
     private ActiveServiceLookup lookup;
     private NetworkHandler network;
+    private ClientNetwork clientNetwork;
     private ServiceHandler services;
     private Thread th;
 
     public Cotton () {
         lookup = new DefaultActiveServiceLookup();
-        network = new DefaultNetworkHandler();
+        DefaultNetworkHandler net = new DefaultNetworkHandler();
+        network = net;
+        clientNetwork = net;
         services = new ServiceHandler(lookup, network);
     }
 
@@ -40,7 +44,7 @@ public class Cotton {
 
     public void shutdown() {
         services.stop();
-        th.stop();
+       // th.stop();
     }
 
     public ActiveServiceLookup getServiceRegistation() {
@@ -49,6 +53,10 @@ public class Cotton {
 
     public NetworkHandler getNetwork() {
         return network;
+    }
+    
+    public ClientNetwork getClientNetwork() {
+        return this.clientNetwork;
     }
 
     private class ServiceThread implements Runnable {

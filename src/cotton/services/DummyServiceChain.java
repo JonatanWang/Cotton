@@ -8,7 +8,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class DummyServiceChain implements ServiceChain {
     private ConcurrentLinkedQueue<String> chain;
-
+    
+    public DummyServiceChain() {
+        this.chain = new ConcurrentLinkedQueue<String>();
+    }
+    
     public DummyServiceChain(String serviceName) {
         this.chain = new ConcurrentLinkedQueue<String>();
         chain.add(serviceName);
@@ -28,6 +32,12 @@ public class DummyServiceChain implements ServiceChain {
     @Override
     public String getCurrentServiceName() {
         return chain.peek();
+    }
+
+    @Override
+    public ServiceChain into(String name) {
+        chain.add(name);
+        return this;
     }
 
 }
