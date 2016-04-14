@@ -5,31 +5,34 @@
  */
 package main.java.cotton.mockup;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 /**
  *
- * @author o_0
+ * @author Magnus
  */
 public class DummyServiceChain implements ServiceChain {
-    private String serviceName;
-
+    private ConcurrentLinkedQueue<String> chain;
+    
     public DummyServiceChain(String serviceName) {
-        this.serviceName = serviceName;
+        this.chain = new ConcurrentLinkedQueue<String>();
+        chain.add(serviceName);
     }
 
     @Override
     public boolean addService(String name) {
-        this.serviceName = name;
+        chain.add(name);
         return true;
     }
 
     @Override
     public String getNextServiceName() {
-        return this.serviceName;
+        return chain.poll();
     }
 
     @Override
     public String getCurrentServiceName() {
-        return null;
+        return chain.peek();
     }
     
 }
