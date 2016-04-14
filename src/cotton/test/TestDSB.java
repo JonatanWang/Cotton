@@ -1,9 +1,6 @@
 package cotton.test;
 
-import main.java.cotton.mockup.DefaultServiceBuffer;
-import main.java.cotton.mockup.DummyServiceChain;
-import main.java.cotton.mockup.ServiceBuffer;
-import main.java.cotton.mockup.ServicePacket;
+import cotton.services.*;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;

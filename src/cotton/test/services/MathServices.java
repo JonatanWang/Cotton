@@ -1,11 +1,9 @@
-package test.java.cotton.services;
+package cotton.test.services;
+
+import cotton.services.*;
 
 import java.io.InputStream;
 import java.io.Serializable;
-import main.java.cotton.mockup.CloudContext;
-import main.java.cotton.mockup.ServiceChain;
-import main.java.cotton.mockup.ServiceConnection;
-import main.java.cotton.mockup.ServiceInstance;
 
 /**
  *

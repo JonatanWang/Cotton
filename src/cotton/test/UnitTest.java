@@ -1,5 +1,18 @@
 package cotton.test;
 
+import cotton.services.ActiveServiceLookup;
+import cotton.services.CloudContext;
+import cotton.services.DefaultActiveServiceLookup;
+import cotton.services.DefaultServiceBuffer;
+import cotton.services.DummyServiceChain;
+import cotton.services.ServiceBuffer;
+import cotton.services.ServiceChain;
+import cotton.services.ServiceConnection;
+import cotton.services.ServiceFactory;
+import cotton.services.ServiceHandler;
+import cotton.services.ServiceInstance;
+import cotton.services.ServiceMetaData;
+import cotton.services.ServicePacket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -15,7 +28,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import main.java.cotton.mockup.*;
 
 public class UnitTest {
     public UnitTest() {
