@@ -1,9 +1,10 @@
 package cotton.test;
 
+import cotton.network.DefaultNetworkHandler;
+import cotton.network.NetworkHandler;
 import cotton.services.ActiveServiceLookup;
 import cotton.services.CloudContext;
 import cotton.services.DefaultActiveServiceLookup;
-import cotton.services.DefaultServiceBuffer;
 import cotton.services.DummyServiceChain;
 import cotton.services.ServiceBuffer;
 import cotton.services.ServiceChain;
@@ -145,18 +146,19 @@ public class UnitTest {
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
 
         lookup.registerService("test", new TestFactory(), 10);
-        ServiceBuffer buffer = new DefaultServiceBuffer();
+        NetworkHandler net = new DefaultNetworkHandler();
+        ServiceHandler handler = new ServiceHandler(lookup,net);
+        
         ServiceChain to1 = new DummyServiceChain("test");
         to1.addService("test");
         to1.addService("test");
         to1.addService("test");
-        DummyBufferStuffer stuffer = new DummyBufferStuffer(buffer,null,"hej",to1);
-        stuffer.fillBuffer();
-
+        net.sendServiceResult(null, "hej", to1);
+        
         ServiceChain to2 = new DummyServiceChain("test");
-        stuffer = new DummyBufferStuffer(buffer,null,"service2",to2);
-        stuffer.fillBuffer();
-        ServiceHandler handler = new ServiceHandler(lookup,buffer);
+        net.sendServiceResult(null, "service2", to2);
+        
+        
         Thread th = new Thread(new Threadrun(handler));
         th.start();
         try {
@@ -166,7 +168,7 @@ public class UnitTest {
         }
         handler.stop();
         System.out.println("text");
-        assertNull(buffer.nextPacket());
+        assertNull(net.nextPacket());
     }
 
 }

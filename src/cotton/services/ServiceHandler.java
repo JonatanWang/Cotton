@@ -1,5 +1,6 @@
 package cotton.services;
 
+import cotton.network.NetworkHandler;
 import java.util.concurrent.Executors;
 import java.io.PipedOutputStream;
 import java.io.PipedInputStream;
@@ -10,19 +11,19 @@ import java.io.IOException;
 
 public class ServiceHandler{
     private ActiveServiceLookup serviceLookup;
-    private ServiceBuffer serviceBuffer;
+    private NetworkHandler networkHandler;
     private ExecutorService threadPool;
     private boolean active = true;
 
-    public ServiceHandler(ActiveServiceLookup serviceLookup, ServiceBuffer serviceBuffer){
-        this.serviceBuffer = serviceBuffer;
+    public ServiceHandler(ActiveServiceLookup serviceLookup, NetworkHandler networkHandler){
+        this.networkHandler = networkHandler;
         this.serviceLookup = serviceLookup;
         threadPool = Executors.newCachedThreadPool();
     }
 
     public void start(){
         while(active){
-            ServicePacket packet = serviceBuffer.nextPacket();
+            ServicePacket packet = networkHandler.nextPacket();
             if(packet == null){
                 try{
                     Thread.sleep(5); //change to exponential fallback strategy.
@@ -75,12 +76,9 @@ public class ServiceHandler{
             ServiceInstance service = serviceFactory.newServiceInstance();
             try{
                 
-                Serializable res = service.consumeServiceOrder(null,servicePacket.getFrom(),servicePacket.getDataStream(),servicePacket.getTo());
-
-                if(this.servicePacket.getTo().getCurrentServiceName() != null){
-                    DummyBufferStuffer bufferStuffer = new DummyBufferStuffer(this.servicePacket.getFrom(),res,this.servicePacket.getTo());
-                    bufferStuffer.fillBuffer();
-                }
+                Serializable result = service.consumeServiceOrder(null,servicePacket.getFrom(),servicePacket.getDataStream(),servicePacket.getTo());
+                networkHandler.sendServiceResult(servicePacket.getFrom(), result, servicePacket.getTo());
+                
             }catch(Exception e){
                 e.printStackTrace();
             }
@@ -88,27 +86,6 @@ public class ServiceHandler{
         }
     }
 
-    private class DummyBufferStuffer{
-        private ServicePacket servicePacket;
-        public DummyBufferStuffer(ServiceConnection from, Serializable data, ServiceChain to){
-            try{
-                PipedInputStream in = new PipedInputStream();
-                PipedOutputStream outStream = new PipedOutputStream(in);
-                ObjectOutputStream objectOutStream = new ObjectOutputStream(outStream);
-                objectOutStream.writeObject(data);
-                objectOutStream.close();
-            
-                this.servicePacket = new ServicePacket(from,in,to);
-            }catch(IOException e){
-                e.printStackTrace();
-            }
-        }
-
-        public void fillBuffer(){
-            serviceBuffer.add(this.servicePacket);
-        }
-        
-
-    }
+    
 
 }
