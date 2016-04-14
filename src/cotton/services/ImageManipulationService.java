@@ -4,10 +4,14 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 
 /**
  * Service that manipulates an incoming image
@@ -17,29 +21,35 @@ import javax.imageio.ImageIO;
  */
 public class ImageManipulationService implements ServiceInstance{
 
+    private ImageManipulationService () {
+        
+    }
+
     @Override
     public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data,
                                             ServiceChain to) {
 
         BufferedImage image = null;
 
+        System.out.println("Manipulation");
+
+        ObjectInputStream inStream;
         try {
-            image = ImageIO.read(data);
-        }
-        catch (Throwable e) {
-            System.out.println("Error " + e.getMessage());
-            e.printStackTrace();
+            inStream = new ObjectInputStream(data);
+            image = ((ImageManipulationPacket)inStream.readObject()).getImage();
+        }catch (IOException ex) {
+            Logger.getLogger(ImageManipulationService.class.getName()).log(Level.SEVERE, null, ex);
+        }catch (ClassNotFoundException ex) {
+            Logger.getLogger(ImageManipulationService.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         image = invertColors(image);
         image = applyText(image, 100, 100, new Font("Arial", Font.PLAIN, 30), "Amazing");
 
-        SerializableImage serializableimage = SerializableImage.serializeImage(image);
-
-        return serializableimage;
+        return new ImageManipulationPacket(image);
     }
 
-    private static BufferedImage invertColors(BufferedImage image) {
+    private BufferedImage invertColors(BufferedImage image) {
         int width = image.getWidth();
         int height = image.getHeight();
         WritableRaster raster = image.getRaster();
@@ -59,17 +69,34 @@ public class ImageManipulationService implements ServiceInstance{
         return image;
     }
 
-    private static BufferedImage tintImage(BufferedImage image, int r, int g, int b) {
+    private BufferedImage tintImage(BufferedImage image, int r, int g, int b) {
         //TODO: fix tint
         return null;
     }
 
-    public static BufferedImage applyText(BufferedImage image, int x, int y, Font fnt, String text){
+    public BufferedImage applyText(BufferedImage image, int x, int y, Font fnt, String text){
         Graphics g = image.getGraphics();
         g.setFont(fnt);
         g.drawString(text, x, y);
         g.dispose();
 
         return image;
+    }
+
+    public static ServiceFactory getFactory(){
+        return new ImageFactory();
+    }
+
+    public static class ImageFactory implements ServiceFactory {
+
+        private ImageFactory () {
+
+        }
+
+        @Override
+        public ServiceInstance newServiceInstance() {
+            return new ImageManipulationService();
+        }
+
     }
 }

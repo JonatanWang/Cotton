@@ -1,4 +1,7 @@
 *.class
+*.png
+*.jpg
+*.gif
 
 # Apple spotlight files
 .DS_Store

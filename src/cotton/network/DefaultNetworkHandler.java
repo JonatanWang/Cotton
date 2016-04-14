@@ -1,20 +1,17 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package cotton.network;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 import cotton.services.DefaultServiceBuffer;
 import cotton.services.ServiceBuffer;
 import cotton.services.ServiceChain;
 import cotton.services.ServiceConnection;
 import cotton.services.ServicePacket;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.io.Serializable;
 
 /**
  *
@@ -46,12 +43,29 @@ public class DefaultNetworkHandler implements NetworkHandler {
         private ServicePacket servicePacket;
         public DummyBufferStuffer(ServiceConnection from, Serializable data, ServiceChain to){
             try{
-                PipedInputStream in = new PipedInputStream();
-                PipedOutputStream outStream = new PipedOutputStream(in);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
+
+
+                oos.writeObject(data);
+
+                oos.flush();
+                oos.close();
+
+                InputStream in = new ByteArrayInputStream(baos.toByteArray());
+                /*
+                System.out.println("1");
+                PipedOutputStream outStream = new PipedOutputStream();
+                System.out.println("2");
+                PipedInputStream in = new PipedInputStream(outStream);
+                System.out.println("3");
                 ObjectOutputStream objectOutStream = new ObjectOutputStream(outStream);
+                System.out.println("4");
                 objectOutStream.writeObject(data);
-                objectOutStream.close();
-            
+                System.out.println("5");
+                objectOutStream.flush();
+                objectOutStream.close();*/
+
                 this.servicePacket = new ServicePacket(from,in,to);
             }catch(IOException e){
                 e.printStackTrace();
@@ -61,8 +75,5 @@ public class DefaultNetworkHandler implements NetworkHandler {
         public void fillBuffer(){
             serviceBuffer.add(this.servicePacket);
         }
-        
-
     }
-    
 }

@@ -60,7 +60,7 @@ public class ServiceHandler{
                 return;
             }
             int currentServiceCount = serviceMetaData.serviceStarted();
-            if(currentServiceCount >= serviceMetaData.getMaxCapacity()){
+            if(currentServiceCount > serviceMetaData.getMaxCapacity()){
                 serviceMetaData.serviceFinished();
                 succesfulInit = false;
                 return;
