@@ -1,4 +1,4 @@
-package main.java.cotton.mockup;
+package cotton.services;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

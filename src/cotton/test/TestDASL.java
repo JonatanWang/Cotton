@@ -1,5 +1,12 @@
 package cotton.test;
 
+import cotton.services.ActiveServiceLookup;
+import cotton.services.CloudContext;
+import cotton.services.DefaultActiveServiceLookup;
+import cotton.services.ServiceChain;
+import cotton.services.ServiceConnection;
+import cotton.services.ServiceFactory;
+import cotton.services.ServiceInstance;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -7,13 +14,6 @@ import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import main.java.cotton.mockup.ActiveServiceLookup;
-import main.java.cotton.mockup.CloudContext;
-import main.java.cotton.mockup.DefaultActiveServiceLookup;
-import main.java.cotton.mockup.ServiceChain;
-import main.java.cotton.mockup.ServiceConnection;
-import main.java.cotton.mockup.ServiceFactory;
-import main.java.cotton.mockup.ServiceInstance;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
