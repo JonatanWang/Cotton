@@ -15,16 +15,21 @@ public class DummyServiceChain implements ServiceChain {
     public DummyServiceChain(String serviceName) {
         this.serviceName = serviceName;
     }
-    
-    @Override
-    public String getFirstServiceName() {
-        return this.serviceName;
-    }
 
     @Override
     public boolean addService(String name) {
         this.serviceName = name;
         return true;
+    }
+
+    @Override
+    public String getNextServiceName() {
+        return this.serviceName;
+    }
+
+    @Override
+    public String getCurrentServiceName() {
+        return null;
     }
     
 }
