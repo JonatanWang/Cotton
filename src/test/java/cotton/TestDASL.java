@@ -1,11 +1,10 @@
 package test.java.cotton;
 
 import java.util.Enumeration;
-import java.util.concurrent.ConcurrentHashMap;
+import main.java.cotton.mockup.ActiveServiceLookup;
 import main.java.cotton.mockup.DefaultActiveServiceLookup;
 import main.java.cotton.mockup.ServiceFactory;
 import main.java.cotton.mockup.ServiceInstance;
-import main.java.cotton.mockup.ServiceMetaData;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -15,7 +14,7 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author Mr.loser
+ * @author Gunnlaugur Juliusson
  */
 public class TestDASL {
     
@@ -53,7 +52,7 @@ public class TestDASL {
     
     @Test
     public void testCapacity() {
-        DefaultActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        ActiveServiceLookup dasl = new DefaultActiveServiceLookup();
         dasl.registerService("Coloring", new TestServiceFactory(), 10);
         
         assertEquals(10, dasl.getService("Coloring").getMaxCapacity());
@@ -61,7 +60,7 @@ public class TestDASL {
     
     @Test
     public void testWrongCapacity() {
-        DefaultActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        ActiveServiceLookup dasl = new DefaultActiveServiceLookup();
         dasl.registerService("Coloring", new TestServiceFactory(), 10);
         
         assertNotEquals(9, dasl.getService("Coloring").getMaxCapacity());
@@ -69,7 +68,7 @@ public class TestDASL {
     
     @Test
     public void testHashMapKeys() {
-        DefaultActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        ActiveServiceLookup dasl = new DefaultActiveServiceLookup();
         
         String[] services = new String[3];
         services[0] = "Coloring";
@@ -94,7 +93,7 @@ public class TestDASL {
     
     @Test
     public void testRemove() {
-        DefaultActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        ActiveServiceLookup dasl = new DefaultActiveServiceLookup();
         
         String[] services = new String[3];
         services[0] = "Coloring";
