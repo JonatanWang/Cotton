@@ -9,14 +9,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  *
- * @author o_0
+ * @author Magnus
  */
 public class DummyServiceChain implements ServiceChain {
     private ConcurrentLinkedQueue<String> chain;
+    
     public DummyServiceChain(String serviceName) {
         this.chain = new ConcurrentLinkedQueue<String>();
         chain.add(serviceName);
-        
     }
 
     @Override
