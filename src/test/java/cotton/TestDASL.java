@@ -1,8 +1,12 @@
 package test.java.cotton;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.Enumeration;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import main.java.cotton.mockup.ActiveServiceLookup;
 import main.java.cotton.mockup.CloudContext;
 import main.java.cotton.mockup.DefaultActiveServiceLookup;
@@ -49,11 +53,30 @@ public class TestDASL {
             return new TestServiceInstance();
         }
         
+        //TODO Test and change
         public class TestServiceInstance implements ServiceInstance {
             
             @Override
             public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
                 return null;
+            }
+            
+            //TODO Complete
+            private int convertInputStream(InputStream data) {
+                String in = "fail";
+                
+                ObjectInputStream inStream;
+                try {
+                    inStream = new ObjectInputStream(data);
+                    in = (String)inStream.readObject();
+
+                } catch (IOException ex) {
+                    Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+                }catch (ClassNotFoundException ex) {
+                        Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                
+                return 0;
             }
         }
     }
