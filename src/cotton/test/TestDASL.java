@@ -7,9 +7,13 @@ import cotton.services.ServiceChain;
 import cotton.services.ServiceConnection;
 import cotton.services.ServiceFactory;
 import cotton.services.ServiceInstance;
+import cotton.test.TestDASL.TestServiceFactory.TestServiceInstance;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.logging.Level;
@@ -58,17 +62,23 @@ public class TestDASL {
 
             @Override
             public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
-                return null;
+                int number = convertInputStream(data);
+                
+                number *= 2;
+                
+                return number;
             }
 
             //TODO Complete
             private int convertInputStream(InputStream data) {
-                String in = "fail";
+                Integer number = -1;
 
                 ObjectInputStream inStream;
                 try {
+                    System.out.println("asd");
                     inStream = new ObjectInputStream(data);
-                    in = (String)inStream.readObject();
+                    System.out.println("asd");
+                    number = (Integer)inStream.readObject();
 
                 } catch (IOException ex) {
                     Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
@@ -76,7 +86,7 @@ public class TestDASL {
                         Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
                 }
 
-                return 0;
+                return number;
             }
         }
     }
@@ -141,5 +151,24 @@ public class TestDASL {
             removeCheck = true;
 
         assertEquals(true, removeCheck);
+    }
+    
+    @Test
+    public void testFactory() throws IOException {
+        ServiceFactory sf = new TestServiceFactory();
+        TestServiceInstance si = (TestServiceInstance)sf.newServiceInstance();
+        
+        // Pipe connections
+        PipedInputStream in = new PipedInputStream();
+        PipedOutputStream outStream = new PipedOutputStream(in);
+        ObjectOutputStream objectOutStream = new ObjectOutputStream(outStream);
+        
+        // Number for the service to multiply
+        objectOutStream.writeObject(new Integer(2));
+        
+        objectOutStream.close();
+        
+        assertEquals(4,si.consumeServiceOrder(null, null, in, null));
+        in.close();
     }
 }
