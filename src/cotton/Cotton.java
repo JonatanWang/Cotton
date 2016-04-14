@@ -27,7 +27,6 @@ public class Cotton {
     private NetworkHandler network;
     private ClientNetwork clientNetwork;
     private ServiceHandler services;
-    private Thread th;
 
     public Cotton () {
         lookup = new DefaultActiveServiceLookup();
@@ -38,13 +37,11 @@ public class Cotton {
     }
 
     public void start(){
-        th = new Thread(new ServiceThread());
-        th.start();
+        new Thread(services).start();
     }
 
     public void shutdown() {
         services.stop();
-       // th.stop();
     }
 
     public ActiveServiceLookup getServiceRegistation() {
@@ -57,13 +54,6 @@ public class Cotton {
     
     public ClientNetwork getClientNetwork() {
         return this.clientNetwork;
-    }
-
-    private class ServiceThread implements Runnable {
-        @Override
-        public void run() {
-            services.start();
-        }
     }
 
     public static void main(String[] args) {

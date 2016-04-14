@@ -140,7 +140,8 @@ public class UnitTest {
         @Override
         public void run() {
             System.out.println("text2");
-            this.handler.start();
+            //this.handler.start();
+            this.handler.run();
         }
 
     }
