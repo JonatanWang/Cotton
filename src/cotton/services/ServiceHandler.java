@@ -9,11 +9,11 @@ import java.io.Serializable;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
 
-public class ServiceHandler{
+public class ServiceHandler implements Runnable{
     private ActiveServiceLookup serviceLookup;
     private NetworkHandler networkHandler;
     private ExecutorService threadPool;
-    private boolean active = true;
+    private volatile boolean active = true;
 
     public ServiceHandler(ActiveServiceLookup serviceLookup, NetworkHandler networkHandler){
         this.networkHandler = networkHandler;
@@ -21,7 +21,7 @@ public class ServiceHandler{
         threadPool = Executors.newCachedThreadPool();
     }
 
-    public void start(){
+    public void run(){
         while(active){
             ServicePacket packet = networkHandler.nextPacket();
             if(packet == null){
@@ -34,6 +34,7 @@ public class ServiceHandler{
                 threadPool.execute(th);
             }
         }
+        threadPool.shutdown();
     }
 
     public void stop(){
@@ -75,17 +76,14 @@ public class ServiceHandler{
                 return;
             ServiceInstance service = serviceFactory.newServiceInstance();
             try{
-                
+
                 Serializable result = service.consumeServiceOrder(null,servicePacket.getFrom(),servicePacket.getDataStream(),servicePacket.getTo());
                 networkHandler.sendServiceResult(servicePacket.getFrom(), result, servicePacket.getTo());
-                
+
             }catch(Exception e){
                 e.printStackTrace();
             }
             serviceLookup.getService(serviceName).serviceFinished();
         }
     }
-
-    
-
 }
