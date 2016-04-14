@@ -1,4 +1,5 @@
-package main.java.cotton.mockup;
+package cotton.services;
+
 import java.util.concurrent.Executors;
 import java.io.PipedOutputStream;
 import java.io.PipedInputStream;
@@ -17,7 +18,6 @@ public class ServiceHandler{
         this.serviceBuffer = serviceBuffer;
         this.serviceLookup = serviceLookup;
         threadPool = Executors.newCachedThreadPool();
-        
     }
 
     public void start(){
@@ -27,7 +27,6 @@ public class ServiceHandler{
                 try{
                     Thread.sleep(5); //change to exponential fallback strategy.
                 }catch(InterruptedException ex){
-                    
                 }
             }else{
                 ServiceDispatcher th = new ServiceDispatcher(packet);

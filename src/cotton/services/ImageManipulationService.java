@@ -1,30 +1,19 @@
-package main.java.cotton;
+package cotton.services;
 
-import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.awt.image.RGBImageFilter;
 import java.awt.image.WritableRaster;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.Serializable;
 
 import javax.imageio.ImageIO;
 
-import main.java.cotton.mockup.CloudContext;
-import main.java.cotton.mockup.ServiceChain;
-import main.java.cotton.mockup.ServiceConnection;
-import main.java.cotton.mockup.ServiceInstance;
-
 /**
  * Service that manipulates an incoming image
  *
- * @author Jonathan Kåhre
- * @author Mats Levin
- * @author
- * @author
- * @version
+ * @author Jonathan
+ * @author Mats
  */
 public class ImageManipulationService implements ServiceInstance{
 

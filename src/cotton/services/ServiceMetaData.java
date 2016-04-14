@@ -1,11 +1,14 @@
 package main.java.cotton.mockup;
 
 import java.util.concurrent.atomic.AtomicInteger;
-/**
- *@author Tony
- *@author Magnus
- **/
 
+
+/**
+ *
+ *
+ * @author Tony
+ * @author Magnus
+ */
 public class ServiceMetaData {
         private ServiceFactory serviceFactory;
         private int maxCapacity;

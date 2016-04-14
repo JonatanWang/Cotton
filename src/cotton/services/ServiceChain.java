@@ -1,10 +1,16 @@
-package main.java.cotton.mockup;
+package cotton.services;
 
 /**
- * Created by Magnus on 2016-04-07.
+ *
+ *
+ * @author Magnus
  */
 public interface ServiceChain {
+
     public String getNextServiceName();    // temporary dummy interface get service name
+
     public String getCurrentServiceName(); // temporary dummy interface get service name
-    public boolean addService(String name); // add temporary service name 
+
+    public boolean addService(String name); // add temporary service name
+
 }

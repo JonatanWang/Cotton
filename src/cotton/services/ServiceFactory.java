@@ -1,9 +1,13 @@
-package main.java.cotton.mockup;
+package cotton.services;
 
 /**
- *@author Tony
- *@author Magnus
- **/
+ *
+ *
+ * @author Tony
+ * @author Magnus
+ */
 public interface ServiceFactory {
+
     public ServiceInstance newServiceInstance();
+
 }

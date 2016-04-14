@@ -1,10 +1,14 @@
-package main.java.cotton.mockup;
+package cotton.services;
 
 /**
  *
- *Created by Tony on 2016-04-11 
+ *
+ * @author Tony Tran
  **/
 public interface ServiceBuffer{
+
     public ServicePacket nextPacket();
+
     public boolean add(ServicePacket servicePacket);
+
 }

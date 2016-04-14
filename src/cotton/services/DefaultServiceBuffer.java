@@ -1,12 +1,13 @@
-package main.java.cotton.mockup;
+package cotton.services;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
-/**
- *Created by Tony 2016-04-11
- *@author Magnus
- *@author Tony
- **/
 
+/**
+ *
+ *
+ * @author Magnus
+ * @author Tony
+ */
 public class DefaultServiceBuffer implements ServiceBuffer{
 
     private ConcurrentLinkedQueue<ServicePacket> buffer;

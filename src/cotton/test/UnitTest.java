@@ -1,9 +1,4 @@
-package test.java.cotton;
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+package cotton.test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,7 +50,7 @@ public class UnitTest {
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
 
         lookup.registerService("test", null, 10);
-        
+
         lookup.removeServiceEntry("test");
         assertNull(lookup.getService("test"));
     }
@@ -65,34 +60,34 @@ public class UnitTest {
         @Override
         public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
             String in = "fail";
-            
+
             ObjectInputStream inStream;
             try {
                 inStream = new ObjectInputStream(data);
                 in = (String)inStream.readObject();
-              
+
             } catch (IOException ex) {
                 Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
             }catch (ClassNotFoundException ex) {
                     Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
             }
-            
+
             System.out.println(in);
-            
+
             return in + "hej";
         }
-        
+
     }
-    
+
     private class TestFactory implements ServiceFactory {
 
         @Override
         public ServiceInstance newServiceInstance() {
             return new TestService();
         }
-        
+
     }
-    
+
     private class DummyBufferStuffer{
         private ServicePacket servicePacket;
         ServiceBuffer serviceBuffer;
@@ -104,7 +99,7 @@ public class UnitTest {
                 ObjectOutputStream objectOutStream = new ObjectOutputStream(outStream);
                 objectOutStream.writeObject(data);
                 objectOutStream.close();
-            
+
                 this.servicePacket = new ServicePacket(from,in,to);
             }catch(IOException e){
                 System.out.println("io exeption");
@@ -115,10 +110,10 @@ public class UnitTest {
         public void fillBuffer(){
             serviceBuffer.add(this.servicePacket);
         }
-        
+
 
     }
-    
+
     private class Threadrun implements Runnable {
 
         private ServiceHandler handler = null;
@@ -130,9 +125,9 @@ public class UnitTest {
             System.out.println("text2");
             this.handler.start();
         }
-        
+
     }
-    
+
     @Test
     public void ThreadPoolTest(){
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
@@ -145,7 +140,7 @@ public class UnitTest {
         to1.addService("test");
         DummyBufferStuffer stuffer = new DummyBufferStuffer(buffer,null,"hej",to1);
         stuffer.fillBuffer();
-        
+
         ServiceChain to2 = new DummyServiceChain("test");
         stuffer = new DummyBufferStuffer(buffer,null,"service2",to2);
         stuffer.fillBuffer();
@@ -161,7 +156,7 @@ public class UnitTest {
         System.out.println("text");
         assertNull(buffer.nextPacket());
     }
-    
+
     // TODO add test methods here.
     // The methods must be annotated with annotation @Test. For example:
     //

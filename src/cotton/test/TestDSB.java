@@ -1,5 +1,4 @@
-
-package test.java.cotton;
+package cotton.test;
 
 import main.java.cotton.mockup.DefaultServiceBuffer;
 import main.java.cotton.mockup.DummyServiceChain;
