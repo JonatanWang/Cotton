@@ -33,6 +33,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import cotton.network.*;
+import cotton.servicediscovery.*;
+
 
 public class UnitTest {
     public UnitTest() {
@@ -198,5 +201,22 @@ public class UnitTest {
         cotton.shutdown();
         assertTrue(65536 == result.intValue());        
      }
+
+    @Test
+    public void LocalServiceDiscoveryLookup() {
+
+        System.out.println("LocalServiceDiscoveryLookup");
+
+        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+
+        lookup.registerService("test", new TestFactory(), 10);
+
+        LocalServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+
+        ServiceConnection dest = new DefaultServiceConnection();
+        ServiceChain chain = new DummyServiceChain().into("test");
+
+        assertTrue(RouteSignal.LOCALDESTINATION == local.getDestination(dest, null, chain));
+    }
 
 }
