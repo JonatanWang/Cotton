@@ -12,5 +12,5 @@ public interface NetworkHandler extends Runnable {
     public ServicePacket nextPacket();
     public ServiceConnection sendToService(Serializable result,ServiceChain to,ServiceConnection from);
     public ServiceConnection sendToService(Serializable result, ServiceChain to);
-    public void send(Serializable result, ServiceConnection from);
+    public void send(Serializable result, ServiceConnection destination);
 }
