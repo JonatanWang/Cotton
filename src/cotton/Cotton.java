@@ -1,20 +1,22 @@
 package cotton;
 
-import cotton.network.ClientNetwork;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
 import javax.imageio.ImageIO;
 
-import cotton.network.DefaultNetworkHandler;
-import cotton.network.NetworkHandler;
-import cotton.services.ActiveServiceLookup;
-import cotton.services.DefaultActiveServiceLookup;
-import cotton.services.DummyServiceChain;
 import cotton.example.FileWriterService;
 import cotton.example.ImageManipulationPacket;
 import cotton.example.ImageManipulationService;
+import cotton.network.ClientNetwork;
+import cotton.network.DefaultNetworkHandler;
+import cotton.network.NetworkHandler;
 import cotton.network.ServiceChain;
+import cotton.servicediscovery.DefaultLocalServiceDiscovery;
+import cotton.servicediscovery.LocalServiceDiscovery;
+import cotton.services.ActiveServiceLookup;
+import cotton.services.DefaultActiveServiceLookup;
+import cotton.services.DummyServiceChain;
 import cotton.services.ServiceHandler;
 
 /**
@@ -27,10 +29,12 @@ public class Cotton {
     private NetworkHandler network;
     private ClientNetwork clientNetwork;
     private ServiceHandler services;
+    private LocalServiceDiscovery discovery;
 
     public Cotton () {
         lookup = new DefaultActiveServiceLookup();
-        DefaultNetworkHandler net = new DefaultNetworkHandler();
+        this.discovery = new DefaultLocalServiceDiscovery(lookup1);
+        DefaultNetworkHandler net = new DefaultNetworkHandler(discovery);
         network = net;
         clientNetwork = net;
         services = new ServiceHandler(lookup, network);

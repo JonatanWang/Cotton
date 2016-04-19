@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.services.DefaultServiceBuffer;
 import cotton.services.ServiceBuffer;
 import cotton.services.ServiceConnection;
@@ -24,13 +25,18 @@ import cotton.services.ServicePacket;
  * @author Jonathan
  * @author Gunnlaugur
  */
+// TODO: fix todos
 public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     private ServiceBuffer serviceBuffer;
     private ConcurrentHashMap<UUID,DefaultServiceRequest> connectionTable;
     private AtomicBoolean running;
-    public DefaultNetworkHandler() {
+    private LocalServiceDiscovery localServiceDiscovery;
+    public DefaultNetworkHandler(LocalServiceDiscovery localServiceDiscovery) {
         this.serviceBuffer = new DefaultServiceBuffer();
         this.connectionTable = new ConcurrentHashMap<>();
+        this.localServiceDiscovery = localServiceDiscovery;
+        localServiceDiscovery.setNetwork(this,null); // TODO: get socket address
+
     }
  
 	@Override
@@ -78,9 +84,11 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     public ServiceRequest sendToService(Serializable data, ServiceChain to) {
         ServiceRequest result = new DefaultServiceRequest();
         this.connectionTable.put(UUID.randomUUID(),(DefaultServiceRequest)result);
-        
-        return null;
+        ServiceConnection dest = new DefaultServiceConnection();
+        localServiceDiscovery.getDestination(dest, null, to); // TODO: FIX NULL
+        return send(data, dest);
     }
+
     /*
     @Override
     public Serializable getResults(ServiceConnection requestId, StreamDecoder decoder) {
