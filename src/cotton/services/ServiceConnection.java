@@ -1,5 +1,7 @@
 package cotton.services;
 
+import java.net.InetAddress;
+
 /**
  *
  *
@@ -7,5 +9,8 @@ package cotton.services;
  * @author Magnus
  */
 public interface ServiceConnection {
+    public String getServiceName();
     public Integer getUserConnectionId();
+    public InetAddress getAddress();
+    public void setAddress(InetAddress addr);
 }
