@@ -1,7 +1,7 @@
 package cotton.servicediscovery;
 
 import cotton.services.ServiceConnection;
-import cotton.services.ServiceChain;
+import cotton.network.ServiceChain;
 import java.io.InputStream;
 
 /**
