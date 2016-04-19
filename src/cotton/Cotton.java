@@ -13,6 +13,7 @@ import cotton.network.DefaultNetworkHandler;
 import cotton.network.NetworkHandler;
 import cotton.network.ServiceChain;
 import cotton.servicediscovery.DefaultLocalServiceDiscovery;
+import cotton.servicediscovery.GlobalDiscoveryDNS;
 import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.services.ActiveServiceLookup;
 import cotton.services.DefaultActiveServiceLookup;
@@ -33,7 +34,8 @@ public class Cotton {
 
     public Cotton () {
         lookup = new DefaultActiveServiceLookup();
-        this.discovery = new DefaultLocalServiceDiscovery(lookup);
+        GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
+        this.discovery = new DefaultLocalServiceDiscovery(lookup,globalDiscoveryDNS);
         DefaultNetworkHandler net = new DefaultNetworkHandler(discovery);
         network = net;
         clientNetwork = net;

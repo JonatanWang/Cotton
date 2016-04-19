@@ -4,6 +4,7 @@ package cotton.servicediscovery;
 import cotton.network.DefaultServiceConnection;
 import cotton.network.NetworkHandler;
 import cotton.network.ServiceChain;
+import cotton.network.ServiceRequest;
 import cotton.services.ActiveServiceLookup;
 import cotton.services.ServiceConnection;
 import java.io.InputStream;
@@ -11,10 +12,12 @@ import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
 import cotton.services.ServiceMetaData;
+import java.io.Serializable;
+import java.util.UUID;
 
 /**
  *
- * @author Magnus
+ * @author Magnus, Mats
  */
 public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
     private ActiveServiceLookup internalLockup;
@@ -23,19 +26,13 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
     private ConcurrentHashMap<String, AddressPool> serviceCache;
     private AddressPool globalDiscovery ;
 
-    @Override
-    public RouteSignal getDestination(ServiceConnection destination, ServiceChain to) {
-        destination.setAddress(localAddress);
-        return getDestination(destination,destination,to);
-    }
     
-    private class AddressPool{
-
+    
+    private class AddressPool {
         private int pos = 0;
         private ArrayList<SocketAddress> pool= new ArrayList<SocketAddress>();
 
         public boolean addAddress(SocketAddress address){
-
             synchronized(this){
                 pool.add(address);
             }
@@ -47,22 +44,33 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
             synchronized(this){
                 pos = pos % pool.size();
 
-                if(pool.isEmpty() == false){
-
+                if(pool.isEmpty() == false) {
                     addr = pool.get(pos);
                     pos++;
                 }
             }
-
             return addr;
         }
-
     }
 
+    private void initGlobalDiscoveryPool(GlobalDiscoveryDNS globalDNS) {
+        this.globalDiscovery = new AddressPool();
+        SocketAddress[] addrArr = globalDNS.getGlobalDiscoveryAddress();
+        if(addrArr == null) return;
+        for (int i = 0; i < addrArr.length; i++) {
+            globalDiscovery.addAddress(addrArr[i]);
+        }
+    }
     public DefaultLocalServiceDiscovery(ActiveServiceLookup internalLockup) {
         this.internalLockup = internalLockup;
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         this.globalDiscovery = new AddressPool();
+    }
+    
+    public DefaultLocalServiceDiscovery(ActiveServiceLookup internalLockup,GlobalDiscoveryDNS globalDNS) {
+        this.internalLockup = internalLockup;
+        this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
+        initGlobalDiscoveryPool(globalDNS);
     }
 
     public void setNetwork(NetworkHandler network, SocketAddress localAddress) {
@@ -79,9 +87,73 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
         
     }
     
+    public class DiscoveryProbe implements Serializable {
+        private String name;
+        private SocketAddress address;
+
+        public DiscoveryProbe(String name, SocketAddress address) {
+            this.name = name;
+            this.address = address;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public SocketAddress getAddress() {
+            return address;
+        }
+
+        public void setAddress(SocketAddress address) {
+            this.address = address;
+        }
+        
+    }
+    
+    private void cacheAddress(String serviceName,SocketAddress targetAddr) {
+        AddressPool poolCheck = serviceCache.get(serviceName);
+        if(poolCheck != null) {
+            poolCheck.addAddress(targetAddr);
+            return;
+        }
+        AddressPool newPool = new AddressPool();
+        newPool.addAddress(targetAddr);
+        poolCheck = serviceCache.putIfAbsent(serviceName, newPool);
+        if(poolCheck != null) { // the above is "atomic" so if a pool already exist now then use it
+            poolCheck.addAddress(targetAddr);
+        }
+    }
     
     private RouteSignal getGlobalAddress(ServiceConnection destination, String serviceName) {
-        return RouteSignal.NOTFOUND;
+        SocketAddress addr = this.globalDiscovery.getAddress();
+        if(addr == null){
+            return RouteSignal.NOTFOUND;
+        }
+        DefaultServiceConnection globalDest = new DefaultServiceConnection(UUID.randomUUID());
+        DiscoveryProbe discoveryProbe = new DiscoveryProbe(serviceName,null);
+
+        globalDest.setAddress(addr);
+        ServiceRequest req = network.send(discoveryProbe, globalDest);
+
+        DiscoveryProbe answers = (DiscoveryProbe)req.getData(); //TODO: io checks
+        SocketAddress targetAddr = answers.getAddress();
+        if(targetAddr == null) {
+            return RouteSignal.NOTFOUND;
+        }
+        
+        destination.setAddress(targetAddr);
+        cacheAddress(serviceName,targetAddr);
+        return RouteSignal.NETWORKDESTINATION;
+    }
+    
+    @Override
+    public RouteSignal getDestination(ServiceConnection destination, ServiceChain to) {
+        destination.setAddress(localAddress);
+        return getDestination(destination,destination,to);
     }
     
     @Override
