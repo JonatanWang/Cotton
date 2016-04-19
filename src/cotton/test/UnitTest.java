@@ -155,7 +155,8 @@ public class UnitTest {
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
 
         lookup.registerService("test", new TestFactory(), 10);
-        NetworkHandler net = new DefaultNetworkHandler();
+        LocalServiceDiscovery discovery = new DefaultLocalServiceDiscovery(lookup);
+        NetworkHandler net = new DefaultNetworkHandler(discovery);
         ServiceHandler handler = new ServiceHandler(lookup,net);
 
         ServiceChain to1 = new DummyServiceChain("test");

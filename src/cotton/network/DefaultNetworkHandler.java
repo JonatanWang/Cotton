@@ -42,10 +42,12 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
 	@Override
 	public ServiceRequest send(Serializable result, ServiceConnection destination) {
 		// TODO Auto-generated method stub
-      Socket socket = new Socket();
+      Socket socket = new Socket(); // TODO: Encryption
+      ServiceRequest returnValue = new DefaultServiceRequest();
+      this.connectionTable.put(UUID.randomUUID(), (DefaultServiceRequest)returnValue);
       try {
           socket.connect(destination.getAddress());
-          new ObjectOutputStream(socket.getOutputStream()).writeObject(result); // TODO: Make less ugly
+          new ObjectOutputStream(socket.getOutputStream()).writeObject(returnValue);
       }catch (Throwable e) {// TODO: FIX exception
           System.out.println("Error " + e.getMessage());
           e.printStackTrace();
@@ -58,7 +60,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
               e.printStackTrace();
           }
       }
-      return null; // TODO: FIX RETURN VALUE
+      return returnValue;
   }
 
 	@Override
@@ -85,7 +87,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         ServiceRequest result = new DefaultServiceRequest();
         this.connectionTable.put(UUID.randomUUID(),(DefaultServiceRequest)result);
         ServiceConnection dest = new DefaultServiceConnection();
-        localServiceDiscovery.getDestination(dest, null, to); // TODO: FIX NULL
+        localServiceDiscovery.getDestination(dest, to);
         return send(data, dest);
     }
 
