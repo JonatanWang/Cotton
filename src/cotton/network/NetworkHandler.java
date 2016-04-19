@@ -8,8 +8,9 @@ import java.io.Serializable;
  *
  * @author Magnus
  */
-public interface NetworkHandler {
+public interface NetworkHandler extends Runnable {
     public ServicePacket nextPacket();
-    public void sendToService(ServiceConnection from,Serializable result,ServiceChain to);
-    public void sendToTarget(Serializable result, ServiceChain to);
+    public ServiceConnection sendToService(Serializable result,ServiceChain to,ServiceConnection from);
+    public ServiceConnection sendToService(Serializable result, ServiceChain to);
+    public void send(Serializable result, ServiceConnection from);
 }

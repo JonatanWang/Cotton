@@ -6,7 +6,7 @@ import cotton.network.ServiceChain;
 import cotton.services.ActiveServiceLookup;
 import cotton.services.ServiceConnection;
 import java.io.InputStream;
-import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
 import cotton.services.ServiceMetaData;
@@ -18,15 +18,15 @@ import cotton.services.ServiceMetaData;
 public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
     private ActiveServiceLookup internalLockup;
     private NetworkHandler network = null;
-    private InetAddress localAddress;
+    private SocketAddress localAddress;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
 
     private class AddressPool{
 
         private int pos = 0;
-        private ArrayList<InetAddress> pool= new ArrayList<InetAddress>();
+        private ArrayList<SocketAddress> pool= new ArrayList<SocketAddress>();
 
-        public boolean addAddress(InetAddress address){
+        public boolean addAddress(SocketAddress address){
 
             synchronized(this){
                 pool.add(address);
@@ -34,8 +34,8 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
             return true;
         }
 
-        public InetAddress getAddress(){
-            InetAddress addr = null;
+        public SocketAddress getAddress(){
+            SocketAddress addr = null;
             synchronized(this){
                 pos = pos % pool.size();
 
@@ -56,7 +56,7 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
     }
 
-    public void setNetwork(NetworkHandler network, InetAddress localAddress) {
+    public void setNetwork(NetworkHandler network, SocketAddress localAddress) {
         this.network = network;
         this.localAddress = localAddress;
     }

@@ -1,9 +1,11 @@
 
 package cotton.network;
 
-import cotton.services.ServiceConnection;
 import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.util.Random;
+
+import cotton.services.ServiceConnection;
 
 /**
  *
@@ -33,12 +35,12 @@ public class DefaultServiceConnection implements ServiceConnection {
     }
 
     @Override
-    public InetAddress getAddress() {
+    public SocketAddress getAddress() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public void setAddress(InetAddress addr) {
+    public void setAddress(SocketAddress addr) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     

@@ -77,7 +77,7 @@ public class Cotton {
 
         c.start();
 
-        c.getNetwork().sendToService(null, new ImageManipulationPacket(i), s);
+        c.getNetwork().sendToService(new ImageManipulationPacket(i), s,null);
 
         try {
             Thread.sleep(3000);

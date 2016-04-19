@@ -2,11 +2,12 @@
 package cotton.network;
 
 import java.io.InputStream;
+import java.io.Serializable;
 
 /**
  *
  * @author Magnus
  */
-public interface StreamDecoder <T> {
-    public T decode(InputStream input);
+public interface StreamDecoder{
+    public Serializable decode(InputStream input);
 }

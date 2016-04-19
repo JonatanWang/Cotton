@@ -1,6 +1,7 @@
 package cotton.services;
 
 import java.net.InetAddress;
+import java.net.SocketAddress;
 
 /**
  *
@@ -11,6 +12,6 @@ import java.net.InetAddress;
 public interface ServiceConnection {
     public String getServiceName();
     public Integer getUserConnectionId();
-    public InetAddress getAddress();
-    public void setAddress(InetAddress addr);
+    public SocketAddress getAddress();
+    public void setAddress(SocketAddress addr);
 }

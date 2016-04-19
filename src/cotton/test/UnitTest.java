@@ -158,10 +158,10 @@ public class UnitTest {
         to1.addService("test");
         to1.addService("test");
         to1.addService("test");
-        net.sendToService(null, "hej", to1);
+        net.sendToService("hej", to1, null);
 
         ServiceChain to2 = new DummyServiceChain("test");
-        net.sendToService(null, "service2", to2);
+        net.sendToService("service2", to2, null);
 
         Thread th = new Thread(new Threadrun(handler));
         th.start();
@@ -183,16 +183,16 @@ public class UnitTest {
         reg.registerService("MathPow2", MathPow2.getFactory(), 8);
         cotton.start();
         
-        ClientNetwork<Integer> net = cotton.getClientNetwork();
+        ClientNetwork net = cotton.getClientNetwork();
         
         Integer data = new Integer(2);
         ServiceChain chain = new DummyServiceChain()
                 .into("MathPow2").into("MathPow2")
                 .into("MathPow2").into("MathPow2");
         
-        ServiceConnection jobId = net.sendServiceRequest(data, chain);
+        ServiceConnection jobId = net.sendToService(data, chain);
         
-        Integer result = net.getResults(jobId, null);
+        Integer result = (Integer)net.getResults(jobId, null);
         
         System.out.println(result);        
         cotton.shutdown();
