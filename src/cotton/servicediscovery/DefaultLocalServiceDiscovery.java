@@ -20,7 +20,8 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
     private NetworkHandler network = null;
     private SocketAddress localAddress;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
-
+    private AddressPool globalDiscovery ;
+    
     private class AddressPool{
 
         private int pos = 0;
@@ -54,6 +55,7 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
     public DefaultLocalServiceDiscovery(ActiveServiceLookup internalLockup) {
         this.internalLockup = internalLockup;
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
+        this.globalDiscovery = new AddressPool();
     }
 
     public void setNetwork(NetworkHandler network, SocketAddress localAddress) {
@@ -61,33 +63,42 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
         this.localAddress = localAddress;
     }
 
+    private RouteSignal getReturnAddress(ServiceConnection destination, ServiceConnection from) {
+        if(from == null){
+            return RouteSignal.NOTFOUND;
+        }
+        destination.setAddress(from.getAddress());
+        return (from.getAddress().equals(localAddress)) ? RouteSignal.LOCALDESTINATION : RouteSignal.NETWORKDESTINATION;
+        
+    }
+    
+    
+    private RouteSignal getGlobalAddress(ServiceConnection destination, String serviceName) {
+        return RouteSignal.NOTFOUND;
+    }
+    
     @Override
     public RouteSignal getDestination(ServiceConnection destination, ServiceConnection from, ServiceChain to) {
-
         String serviceName;
 
         serviceName = to.getCurrentServiceName();
 
         if(serviceName == null){
-            if(from == null){
-                return RouteSignal.NOTFOUND;
-            }
-            destination.setAddress(from.getAddress());
-
-            return (from.getAddress().equals(localAddress)) ? RouteSignal.LOCALDESTINATION : RouteSignal.NETWORKDESTINATION;
+            return getReturnAddress(destination, from);
         }
 
         ServiceMetaData serviceInfo = internalLockup.getService(serviceName);
         if(serviceInfo != null){
             return RouteSignal.LOCALDESTINATION;
         }
+        
         AddressPool pool  = serviceCache.get(serviceName);
         if(pool == null) {
             // get global sd
-            return RouteSignal.NOTFOUND;
+            return getGlobalAddress(destination,serviceName);
         }
+        
         destination.setAddress(pool.getAddress());
-
         return RouteSignal.NETWORKDESTINATION;
 
     }
