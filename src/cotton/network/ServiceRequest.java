@@ -1,3 +1,5 @@
+package cotton.network;
+
 import java.io.Serializable;
 
 
