@@ -33,7 +33,7 @@ public class Cotton {
 
     public Cotton () {
         lookup = new DefaultActiveServiceLookup();
-        this.discovery = new DefaultLocalServiceDiscovery(lookup1);
+        this.discovery = new DefaultLocalServiceDiscovery(lookup);
         DefaultNetworkHandler net = new DefaultNetworkHandler(discovery);
         network = net;
         clientNetwork = net;
