@@ -1,6 +1,8 @@
 package cotton.services;
 
+import cotton.network.ServiceChain;
 import java.io.InputStream;
+import java.io.Serializable;
 
 /**
  *
@@ -8,7 +10,7 @@ import java.io.InputStream;
  * @author Magnus
  * @author Tony
  */
-public class ServicePacket{
+public class ServicePacket implements Serializable{
     private InputStream dataStream;
     private ServiceConnection from;
     private ServiceChain to;

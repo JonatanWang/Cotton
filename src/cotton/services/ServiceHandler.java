@@ -74,7 +74,7 @@ public class ServiceHandler implements Runnable{
             try{
 
                 Serializable result = service.consumeServiceOrder(null,servicePacket.getFrom(),servicePacket.getDataStream(),servicePacket.getTo());
-                networkHandler.sendServiceResult(servicePacket.getFrom(), result, servicePacket.getTo());
+                networkHandler.sendToService(servicePacket.getFrom(), result, servicePacket.getTo());
 
             }catch(Exception e){
                 e.printStackTrace();

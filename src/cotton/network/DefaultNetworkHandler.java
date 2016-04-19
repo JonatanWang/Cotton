@@ -9,7 +9,6 @@ import java.io.Serializable;
 
 import cotton.services.DefaultServiceBuffer;
 import cotton.services.ServiceBuffer;
-import cotton.services.ServiceChain;
 import cotton.services.ServiceConnection;
 import cotton.services.ServicePacket;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,6 +25,11 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     public DefaultNetworkHandler() {
         this.serviceBuffer = new DefaultServiceBuffer();
         this.connectionTable = new ConcurrentHashMap<Integer,ServiceRequest>();
+    }
+
+    @Override
+    public void sendToTarget(Serializable result, ServiceChain to) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
     private class ServiceRequest {
@@ -56,7 +60,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     }
 
     @Override
-    public void sendServiceResult(ServiceConnection from, Serializable result, ServiceChain to) {
+    public void sendToService(ServiceConnection from, Serializable result, ServiceChain to) {
         
         if(to.getCurrentServiceName() != null){
             DummyBufferStuffer bufferStuffer = new DummyBufferStuffer(from,result,to);

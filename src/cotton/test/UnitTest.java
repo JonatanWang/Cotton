@@ -19,7 +19,7 @@ import cotton.services.CloudContext;
 import cotton.services.DefaultActiveServiceLookup;
 import cotton.services.DummyServiceChain;
 import cotton.services.ServiceBuffer;
-import cotton.services.ServiceChain;
+import cotton.network.ServiceChain;
 import cotton.services.ServiceConnection;
 import cotton.services.ServiceFactory;
 import cotton.services.ServiceHandler;
@@ -158,10 +158,10 @@ public class UnitTest {
         to1.addService("test");
         to1.addService("test");
         to1.addService("test");
-        net.sendServiceResult(null, "hej", to1);
+        net.sendToService(null, "hej", to1);
 
         ServiceChain to2 = new DummyServiceChain("test");
-        net.sendServiceResult(null, "service2", to2);
+        net.sendToService(null, "service2", to2);
 
         Thread th = new Thread(new Threadrun(handler));
         th.start();
