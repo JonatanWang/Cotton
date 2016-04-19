@@ -6,26 +6,34 @@ import java.net.SocketAddress;
 import java.util.Random;
 
 import cotton.services.ServiceConnection;
+import java.util.UUID;
 
 /**
  *
  * @author Magnus
  */
 public class DefaultServiceConnection implements ServiceConnection {
-    private Integer conId;
+    private UUID conId;
     private String name;
+    SocketAddress address = null;
 
     public DefaultServiceConnection() {
-        conId = new Integer(new Random().nextInt());
+        conId = UUID.randomUUID();
         this.name = "none";
     }
+    
+    public DefaultServiceConnection(UUID uuid) {
+        conId = uuid;
+        this.name = "none";
+    }
+    
     public DefaultServiceConnection(String name) {
-        conId = new Integer(new Random().nextInt());
+        conId = UUID.randomUUID();
         this.name = name;
     }
     
     @Override
-    public Integer getUserConnectionId() {
+    public UUID getUserConnectionId() {
         return this.conId;
     }
 
@@ -36,12 +44,12 @@ public class DefaultServiceConnection implements ServiceConnection {
 
     @Override
     public SocketAddress getAddress() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return this.address;
     }
 
     @Override
     public void setAddress(SocketAddress addr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        this.address = addr;
     }
     
 }

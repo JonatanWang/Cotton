@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import cotton.servicediscovery.LocalServiceDiscovery;
+import cotton.servicediscovery.RouteSignal;
 import cotton.services.DefaultServiceBuffer;
 import cotton.services.ServiceBuffer;
 import cotton.services.ServiceConnection;
@@ -43,11 +44,11 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
 	public ServiceRequest send(Serializable result, ServiceConnection destination) {
 		// TODO Auto-generated method stub
       Socket socket = new Socket(); // TODO: Encryption
-      ServiceRequest returnValue = new DefaultServiceRequest();
-      this.connectionTable.put(UUID.randomUUID(), (DefaultServiceRequest)returnValue);
+      DefaultServiceRequest returnValue = new DefaultServiceRequest();
+      this.connectionTable.put(destination.getUserConnectionId(), returnValue);
       try {
           socket.connect(destination.getAddress());
-          new ObjectOutputStream(socket.getOutputStream()).writeObject(returnValue);
+          new ObjectOutputStream(socket.getOutputStream()).writeObject(result);
       }catch (Throwable e) {// TODO: FIX exception
           System.out.println("Error " + e.getMessage());
           e.printStackTrace();
@@ -70,7 +71,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
 
     @Override
     public void sendToService(Serializable result, ServiceChain to,ServiceConnection from) {
-        
+        // TODO: user service discovery and switch on RouteSignal
         if(to.getCurrentServiceName() != null){
             DummyBufferStuffer bufferStuffer = new DummyBufferStuffer(from,result,to);
             bufferStuffer.fillBuffer();
@@ -84,10 +85,18 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
 
     @Override
     public ServiceRequest sendToService(Serializable data, ServiceChain to) {
-        ServiceRequest result = new DefaultServiceRequest();
-        this.connectionTable.put(UUID.randomUUID(),(DefaultServiceRequest)result);
-        ServiceConnection dest = new DefaultServiceConnection();
-        localServiceDiscovery.getDestination(dest, to);
+        //DefaultServiceRequest result = new DefaultServiceRequest();
+        UUID uuid = UUID.randomUUID();
+        //this.connectionTable.put(uuid,result);
+        ServiceConnection dest = new DefaultServiceConnection(uuid);
+        RouteSignal route = localServiceDiscovery.getDestination(dest, to);
+        if(route == RouteSignal.LOCALDESTINATION) {
+            DefaultServiceRequest result = new DefaultServiceRequest();
+            this.connectionTable.put(uuid,result);
+            DummyBufferStuffer bufferStuffer = new DummyBufferStuffer(dest,data,to);
+            bufferStuffer.fillBuffer();
+            return result;
+        }
         return send(data, dest);
     }
 
