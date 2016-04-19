@@ -1,5 +1,10 @@
-package cotton.services;
+package cotton.example;
 
+import cotton.services.CloudContext;
+import cotton.services.ServiceChain;
+import cotton.services.ServiceConnection;
+import cotton.services.ServiceFactory;
+import cotton.services.ServiceInstance;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;

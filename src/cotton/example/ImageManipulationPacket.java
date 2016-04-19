@@ -1,4 +1,4 @@
-package cotton.services;
+package cotton.example;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;

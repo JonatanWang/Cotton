@@ -11,9 +11,9 @@ import cotton.network.NetworkHandler;
 import cotton.services.ActiveServiceLookup;
 import cotton.services.DefaultActiveServiceLookup;
 import cotton.services.DummyServiceChain;
-import cotton.services.FileWriterService;
-import cotton.services.ImageManipulationPacket;
-import cotton.services.ImageManipulationService;
+import cotton.example.FileWriterService;
+import cotton.example.ImageManipulationPacket;
+import cotton.example.ImageManipulationService;
 import cotton.services.ServiceChain;
 import cotton.services.ServiceHandler;
 

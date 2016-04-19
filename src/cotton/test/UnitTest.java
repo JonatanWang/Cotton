@@ -183,7 +183,7 @@ public class UnitTest {
         reg.registerService("MathPow2", MathPow2.getFactory(), 8);
         cotton.start();
         
-        ClientNetwork net = cotton.getClientNetwork();
+        ClientNetwork<Integer> net = cotton.getClientNetwork();
         
         Integer data = new Integer(2);
         ServiceChain chain = new DummyServiceChain()
@@ -192,7 +192,7 @@ public class UnitTest {
         
         ServiceConnection jobId = net.sendServiceRequest(data, chain);
         
-        Integer result = (Integer)net.getResults(jobId, null);
+        Integer result = net.getResults(jobId, null);
         
         System.out.println(result);        
         cotton.shutdown();
