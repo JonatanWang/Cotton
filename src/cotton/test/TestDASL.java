@@ -3,7 +3,7 @@ package cotton.test;
 import cotton.services.ActiveServiceLookup;
 import cotton.services.CloudContext;
 import cotton.services.DefaultActiveServiceLookup;
-import cotton.services.ServiceChain;
+import cotton.network.ServiceChain;
 import cotton.services.ServiceConnection;
 import cotton.services.ServiceFactory;
 import cotton.services.ServiceInstance;

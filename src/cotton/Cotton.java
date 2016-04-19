@@ -14,7 +14,7 @@ import cotton.services.DummyServiceChain;
 import cotton.example.FileWriterService;
 import cotton.example.ImageManipulationPacket;
 import cotton.example.ImageManipulationService;
-import cotton.services.ServiceChain;
+import cotton.network.ServiceChain;
 import cotton.services.ServiceHandler;
 
 /**
@@ -77,7 +77,7 @@ public class Cotton {
 
         c.start();
 
-        c.getNetwork().sendServiceResult(null, new ImageManipulationPacket(i), s);
+        c.getNetwork().sendToService(null, new ImageManipulationPacket(i), s);
 
         try {
             Thread.sleep(3000);

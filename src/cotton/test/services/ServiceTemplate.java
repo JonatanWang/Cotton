@@ -2,7 +2,7 @@
 package cotton.test.services;
 
 import cotton.services.CloudContext;
-import cotton.services.ServiceChain;
+import cotton.network.ServiceChain;
 import cotton.services.ServiceConnection;
 import cotton.services.ServiceFactory;
 import cotton.services.ServiceInstance;
