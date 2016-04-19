@@ -1,6 +1,7 @@
 
 package cotton.servicediscovery;
 
+import cotton.network.DefaultServiceConnection;
 import cotton.network.NetworkHandler;
 import cotton.network.ServiceChain;
 import cotton.services.ActiveServiceLookup;
@@ -21,6 +22,12 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
     private SocketAddress localAddress;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
     private AddressPool globalDiscovery ;
+
+    @Override
+    public RouteSignal getDestination(ServiceConnection destination, ServiceChain to) {
+        destination.setAddress(localAddress);
+        return getDestination(destination,destination,to);
+    }
     
     private class AddressPool{
 

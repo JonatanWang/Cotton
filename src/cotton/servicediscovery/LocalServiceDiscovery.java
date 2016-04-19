@@ -12,6 +12,7 @@ import java.net.SocketAddress;
 
 public interface LocalServiceDiscovery{
     public void setNetwork(NetworkHandler network, SocketAddress localAddress);
+    public RouteSignal getDestination(ServiceConnection destination, ServiceChain to); // outgoinging package
     public RouteSignal getDestination(ServiceConnection destination, ServiceConnection from, ServiceChain to); // outgoinging package
     public RouteSignal getLocalInterface(ServiceConnection from,ServiceChain to); // incoming packaged 
     public void sendUpdate(ServiceConnection from, InputStream data);
