@@ -1,7 +1,5 @@
 package cotton.test;
 
-import cotton.Cotton;
-import cotton.network.ClientNetwork;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -12,14 +10,17 @@ import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import cotton.Cotton;
+import cotton.network.ClientNetwork;
 import cotton.network.DefaultNetworkHandler;
 import cotton.network.NetworkHandler;
+import cotton.network.ServiceChain;
+import cotton.network.ServiceRequest;
 import cotton.services.ActiveServiceLookup;
 import cotton.services.CloudContext;
 import cotton.services.DefaultActiveServiceLookup;
 import cotton.services.DummyServiceChain;
 import cotton.services.ServiceBuffer;
-import cotton.network.ServiceChain;
 import cotton.services.ServiceConnection;
 import cotton.services.ServiceFactory;
 import cotton.services.ServiceHandler;
@@ -190,9 +191,9 @@ public class UnitTest {
                 .into("MathPow2").into("MathPow2")
                 .into("MathPow2").into("MathPow2");
         
-        ServiceConnection jobId = net.sendToService(data, chain);
+        ServiceRequest jobId = net.sendToService(data, chain);
         
-        Integer result = (Integer)net.getResults(jobId, null);
+        Integer result = (Integer)jobId.getData();
         
         System.out.println(result);        
         cotton.shutdown();

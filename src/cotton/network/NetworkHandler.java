@@ -7,10 +7,13 @@ import java.io.Serializable;
 /**
  *
  * @author Magnus
+ * @author Tony
+ * @author Jonathan
+ * @author Gunnlaugur
  */
 public interface NetworkHandler extends Runnable {
     public ServicePacket nextPacket();
-    public ServiceConnection sendToService(Serializable result,ServiceChain to,ServiceConnection from);
-    public ServiceConnection sendToService(Serializable result, ServiceChain to);
-    public void send(Serializable result, ServiceConnection destination);
+    public void sendToService(Serializable result,ServiceChain to,ServiceConnection from);
+    public ServiceRequest sendToService(Serializable result, ServiceChain to);
+    public ServiceRequest send(Serializable result, ServiceConnection destination);
 }

@@ -6,11 +6,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import cotton.services.DefaultServiceBuffer;
@@ -21,45 +20,25 @@ import cotton.services.ServicePacket;
 /**
  *
  * @author Magnus
+ * @author Tony
+ * @author Jonathan
+ * @author Gunnlaugur
  */
 public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     private ServiceBuffer serviceBuffer;
-    private ConcurrentHashMap<Integer,ServiceRequest> connectionTable;
+    private ConcurrentHashMap<UUID,DefaultServiceRequest> connectionTable;
     private AtomicBoolean running;
     public DefaultNetworkHandler() {
         this.serviceBuffer = new DefaultServiceBuffer();
-        this.connectionTable = new ConcurrentHashMap<Integer,ServiceRequest>();
+        this.connectionTable = new ConcurrentHashMap<>();
     }
  
-    private class ServiceRequest {
-        private Serializable data = null;
-        private CountDownLatch latch = new CountDownLatch(1);
-        
-        public Serializable getData() {
-            boolean loop = false;
-            do {
-                try {
-                    latch.await();
-                    loop = false;
-                } catch (InterruptedException ex) {loop = true;}
-            }while(loop);
-            return data;
-        }
-
-        public void setData(Serializable data) {
-            this.data = data;
-            latch.countDown();
-        }
-        
-    }
-    
-
 	@Override
-	public void send(Serializable result, ServiceConnection from) {
+	public ServiceRequest send(Serializable result, ServiceConnection destination) {
 		// TODO Auto-generated method stub
       Socket socket = new Socket();
       try {
-          socket.connect(from.getAddress());
+          socket.connect(destination.getAddress());
           new ObjectOutputStream(socket.getOutputStream()).writeObject(result); // TODO: Make less ugly
       }catch (Throwable e) {// TODO: FIX exception
           System.out.println("Error " + e.getMessage());
@@ -73,7 +52,8 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
               e.printStackTrace();
           }
       }
-	}
+      return null; // TODO: FIX RETURN VALUE
+  }
 
 	@Override
     public ServicePacket nextPacket() {
@@ -81,35 +61,33 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     }
 
     @Override
-    public ServiceConnection sendToService(Serializable result, ServiceChain to,ServiceConnection from) {
+    public void sendToService(Serializable result, ServiceChain to,ServiceConnection from) {
         
         if(to.getCurrentServiceName() != null){
             DummyBufferStuffer bufferStuffer = new DummyBufferStuffer(from,result,to);
             bufferStuffer.fillBuffer();
         }else if(from != null) {
-            ServiceRequest req = connectionTable.get(from.getUserConnectionId());
-            if(req == null) return null; // TODO: dont drop results, and send data to service discovary
+            DefaultServiceRequest req = connectionTable.get(from.getUserConnectionId());
+            if(req == null) return; // TODO: dont drop results, and send data to service discovary
             req.setData(result);
         }        
-        return null; //TODO: FIX RETURN
     }
 
 
     @Override
-    public ServiceConnection sendToService(Serializable data, ServiceChain to) {
-        ServiceConnection from = new DefaultServiceConnection();
-        this.connectionTable.put(from.getUserConnectionId(), new ServiceRequest());
-        DummyBufferStuffer bufferStuffer = new DummyBufferStuffer(from,data,to);
-        bufferStuffer.fillBuffer();
-        return from;
+    public ServiceRequest sendToService(Serializable data, ServiceChain to) {
+        ServiceRequest result = new DefaultServiceRequest();
+        this.connectionTable.put(UUID.randomUUID(),(DefaultServiceRequest)result);
+        
+        return null;
     }
-    
+    /*
     @Override
     public Serializable getResults(ServiceConnection requestId, StreamDecoder decoder) {
         //TODO: implement decoder call
         ServiceRequest req = this.connectionTable.get(requestId.getUserConnectionId());
         return req.getData();
-    }
+    }*/
 
     @Override
     public void run(){
