@@ -17,7 +17,7 @@ import cotton.servicediscovery.GlobalDiscoveryDNS;
 import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.services.ActiveServiceLookup;
 import cotton.services.DefaultActiveServiceLookup;
-import cotton.services.DummyServiceChain;
+import cotton.network.DummyServiceChain;
 import cotton.services.ServiceHandler;
 
 /**

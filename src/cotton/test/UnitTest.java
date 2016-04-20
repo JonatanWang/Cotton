@@ -19,7 +19,7 @@ import cotton.network.ServiceRequest;
 import cotton.services.ActiveServiceLookup;
 import cotton.services.CloudContext;
 import cotton.services.DefaultActiveServiceLookup;
-import cotton.services.DummyServiceChain;
+import cotton.network.DummyServiceChain;
 import cotton.services.ServiceBuffer;
 import cotton.services.ServiceConnection;
 import cotton.services.ServiceFactory;
@@ -194,30 +194,28 @@ public class UnitTest {
         ServiceChain chain = new DummyServiceChain()
                 .into("MathPow2").into("MathPow2")
                 .into("MathPow2").into("MathPow2");
-        
+
         ServiceRequest jobId = net.sendToService(data, chain);
-        
+
         Integer result = (Integer)jobId.getData();
-        
-        System.out.println(result);        
+
+        System.out.println(result);
         cotton.shutdown();
-        assertTrue(65536 == result.intValue());        
+        assertTrue(65536 == result.intValue());
      }
 
     @Test
     public void LocalServiceDiscoveryLookup() {
-
         System.out.println("LocalServiceDiscoveryLookup");
 
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
-
         lookup.registerService("test", new TestFactory(), 10);
-
         LocalServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
-
         ServiceConnection dest = new DefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain().into("test");
-
+        try{    
+            Thread.sleep(2000);
+        }catch(Throwable e){}
         assertTrue(RouteSignal.LOCALDESTINATION == local.getDestination(dest, null, chain));
     }
 

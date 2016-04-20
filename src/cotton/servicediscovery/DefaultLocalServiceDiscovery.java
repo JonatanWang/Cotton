@@ -26,8 +26,6 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
     private ConcurrentHashMap<String, AddressPool> serviceCache;
     private AddressPool globalDiscovery ;
 
-    
-    
     private class AddressPool {
         private int pos = 0;
         private ArrayList<SocketAddress> pool= new ArrayList<SocketAddress>();
@@ -160,7 +158,7 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
     public RouteSignal getDestination(ServiceConnection destination, ServiceConnection from, ServiceChain to) {
         String serviceName;
 
-        serviceName = to.getCurrentServiceName();
+        serviceName = to.peekNextServiceName();
 
         if(serviceName == null){
             return getReturnAddress(destination, from);

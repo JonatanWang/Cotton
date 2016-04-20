@@ -4,13 +4,18 @@ package cotton.network;
  *
  *
  * @author Magnus
+ * @author Jonathan
+ * @author Tony
+ * @author Gunnlaugur
  */
 public interface ServiceChain {
 
-    public String getNextServiceName();    // temporary dummy interface get service name
+    public String getNextServiceName();
 
-    public String getCurrentServiceName(); // temporary dummy interface get service name
+    public String peekNextServiceName();
 
-    public boolean addService(String name); // add temporary service name
+    public boolean addService(String name);
+
     public ServiceChain into(String name);
+
 }
