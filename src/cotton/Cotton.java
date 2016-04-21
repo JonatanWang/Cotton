@@ -32,7 +32,7 @@ public class Cotton {
     private ServiceHandler services;
     private LocalServiceDiscovery discovery;
 
-    public Cotton () {
+    public Cotton () throws java.net.UnknownHostException{
         lookup = new DefaultActiveServiceLookup();
         GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
         this.discovery = new DefaultLocalServiceDiscovery(lookup,globalDiscoveryDNS);
@@ -63,7 +63,13 @@ public class Cotton {
     }
 
     public static void main(String[] args) {
-        Cotton c = new Cotton();
+        Cotton c;
+        try{
+            c = new Cotton();
+        }catch(java.net.UnknownHostException e){// TODO: Rethink this
+            System.out.println("Init network error, exiting");
+            return;
+        }
 
         c.getServiceRegistation().registerService("ImageService", ImageManipulationService.getFactory(), 8);
         c.getServiceRegistation().registerService("FileWriter", FileWriterService.getFactory(), 1);

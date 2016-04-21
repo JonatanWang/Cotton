@@ -20,7 +20,7 @@ import java.util.UUID;
  * @author Magnus, Mats
  */
 public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
-    private ActiveServiceLookup internalLockup;
+    private ActiveServiceLookup internalLookup;
     private NetworkHandler network = null;
     private SocketAddress localAddress;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
@@ -59,14 +59,14 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
             globalDiscovery.addAddress(addrArr[i]);
         }
     }
-    public DefaultLocalServiceDiscovery(ActiveServiceLookup internalLockup) {
-        this.internalLockup = internalLockup;
+    public DefaultLocalServiceDiscovery(ActiveServiceLookup internalLookup) {
+        this.internalLookup = internalLookup;
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         this.globalDiscovery = new AddressPool();
     }
     
-    public DefaultLocalServiceDiscovery(ActiveServiceLookup internalLockup,GlobalDiscoveryDNS globalDNS) {
-        this.internalLockup = internalLockup;
+    public DefaultLocalServiceDiscovery(ActiveServiceLookup internalLookup,GlobalDiscoveryDNS globalDNS) {
+        this.internalLookup = internalLookup;
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         initGlobalDiscoveryPool(globalDNS);
     }
@@ -135,7 +135,13 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
         DiscoveryProbe discoveryProbe = new DiscoveryProbe(serviceName,null);
 
         globalDest.setAddress(addr);
-        ServiceRequest req = network.send(discoveryProbe, globalDest);
+        ServiceRequest req = null;
+        try {
+            req = network.sendWithResponse(discoveryProbe, globalDest);
+        } catch (Throwable e) {
+            System.out.println("Error " + e.getMessage());
+            e.printStackTrace();
+        }
 
         DiscoveryProbe answers = (DiscoveryProbe)req.getData(); //TODO: io checks
         SocketAddress targetAddr = answers.getAddress();
@@ -164,7 +170,7 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
             return getReturnAddress(destination, from);
         }
 
-        ServiceMetaData serviceInfo = internalLockup.getService(serviceName);
+        ServiceMetaData serviceInfo = internalLookup.getService(serviceName);
         if(serviceInfo != null){
             return RouteSignal.LOCALDESTINATION;
         }

@@ -3,6 +3,7 @@ package cotton.network;
 import cotton.services.ServiceConnection;
 import cotton.services.ServicePacket;
 import java.io.Serializable;
+import java.io.IOException;
 
 /**
  *
@@ -13,7 +14,8 @@ import java.io.Serializable;
  */
 public interface NetworkHandler extends Runnable {
     public ServicePacket nextPacket();
-    public void sendToService(Serializable result,ServiceChain to,ServiceConnection from);
-    public ServiceRequest sendToService(Serializable result, ServiceChain to);
-    public ServiceRequest send(Serializable result, ServiceConnection destination);
+    public void sendToService(Serializable data, ServiceChain path, ServiceConnection from);
+    public ServiceRequest sendToService(Serializable data, ServiceChain path);
+    public boolean send(Serializable data, ServiceConnection destination);
+    public ServiceRequest sendWithResponse(Serializable data, ServiceConnection destination) throws IOException;
 }

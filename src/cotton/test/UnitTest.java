@@ -156,7 +156,17 @@ public class UnitTest {
 
         lookup.registerService("test", new TestFactory(), 10);
         LocalServiceDiscovery discovery = new DefaultLocalServiceDiscovery(lookup);
-        NetworkHandler net = new DefaultNetworkHandler(discovery);
+
+        NetworkHandler net = null;
+
+        try {
+            net = new DefaultNetworkHandler(discovery);
+        }
+        catch (Throwable e) {
+            System.out.println("Error " + e.getMessage());
+            e.printStackTrace();
+        }
+
         ServiceHandler handler = new ServiceHandler(lookup,net);
 
         ServiceChain to1 = new DummyServiceChain("test");
@@ -182,7 +192,14 @@ public class UnitTest {
 
     @Test
     public void CottonClientTest(){
-        Cotton cotton = new Cotton();
+        Cotton cotton = null;
+        try {
+            cotton = new Cotton();
+        }
+        catch (Throwable e) {
+            System.out.println("Error " + e.getMessage());
+            e.printStackTrace();
+        }
         
         ActiveServiceLookup reg = cotton.getServiceRegistation();        
         reg.registerService("MathPow2", MathPow2.getFactory(), 8);
@@ -213,9 +230,6 @@ public class UnitTest {
         LocalServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         ServiceConnection dest = new DefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain().into("test");
-        try{    
-            Thread.sleep(2000);
-        }catch(Throwable e){}
         assertTrue(RouteSignal.LOCALDESTINATION == local.getDestination(dest, null, chain));
     }
 
