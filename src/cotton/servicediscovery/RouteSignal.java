@@ -5,5 +5,5 @@ package cotton.servicediscovery;
  */
 
 public enum RouteSignal{
-    LOCALDESTINATION, NETWORKDESTINATION, NOTFOUND
+    LOCALDESTINATION, NETWORKDESTINATION, ENDPOINT, NOTFOUND
 }
