@@ -12,11 +12,11 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.servicediscovery.RouteSignal;
 import cotton.services.DefaultServiceBuffer;
 import cotton.services.ServiceBuffer;
 import cotton.services.ServicePacket;
+import cotton.servicediscovery.ServiceDiscovery;
 
 /**
  *
@@ -29,9 +29,9 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     private ServiceBuffer serviceBuffer;
     private ConcurrentHashMap<UUID,DefaultServiceRequest> connectionTable;
     private AtomicBoolean running;
-    private LocalServiceDiscovery localServiceDiscovery;
+    private ServiceDiscovery localServiceDiscovery;
 
-    public DefaultNetworkHandler(LocalServiceDiscovery localServiceDiscovery) {
+    public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery) {
         this.serviceBuffer = new DefaultServiceBuffer();
         this.connectionTable = new ConcurrentHashMap<>();
         this.localServiceDiscovery = localServiceDiscovery;
