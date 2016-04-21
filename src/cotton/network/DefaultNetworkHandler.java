@@ -65,9 +65,9 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     /**
      * Send a serializable piece of data to the specified destination
      *
-     * @param data The data to send.
+     * @param data The object to send.
      * @param destination The information about where the packet is headed.
-     * @return Whether the connection succeeded or not
+     * @return Whether the connection succeeded or not.
      */
     @Override
     public boolean send(Serializable data, ServiceConnection destination) {
@@ -89,6 +89,13 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         }
     }
 
+    /**
+     * Sends a serializable object to the specified destination, returning a response.
+     *
+     * @param data The object to send.
+     * @param destination The information about where the packet is headed.
+     * @return The result with which the response will be returned.
+     */
     @Override
     public ServiceRequest sendWithResponse(Serializable data, ServiceConnection destination) throws IOException{
         Socket socket = new Socket(); // TODO: Encryption
@@ -112,6 +119,13 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         }
     }
 
+    /**
+     * Sends a request to a service, destination is decided by the servicediscovery
+     *
+     * @param data The object to send.
+     * @param path The predefined services to pass through.
+     * @param from The origin of this request.
+     */
     @Override
     public void sendToService(Serializable data, ServiceChain path, ServiceConnection from) {
         ServiceConnection dest = new DefaultServiceConnection();
@@ -135,7 +149,12 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         send(data, dest);
     }
 
-
+    /**
+     * Sends a request to a service, destination is decided by the servicediscovery with this node as origin.
+     *
+     * @param data The object to send.
+     * @param path The predefined services to pass through.
+     */
     @Override
     public ServiceRequest sendToService(Serializable data, ServiceChain path) { // TODO: Make sure that this doesn't drop packages with this as last destination
         UUID uuid = UUID.randomUUID();
@@ -193,11 +212,19 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
 
     }
 
+    /**
+     * Returns the next package in the serviceQueue.
+     *
+     * @return The next package.
+     */
     @Override
     public ServicePacket nextPacket() {
         return serviceBuffer.nextPacket();
     }
 
+    /**
+     * Stops the network-thread.
+     */
     public void stop(){
         running.set(false);
     }
