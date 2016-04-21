@@ -5,9 +5,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.InetAddress;
@@ -15,6 +18,8 @@ import java.net.Inet4Address;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import cotton.servicediscovery.RouteSignal;
 import cotton.services.DefaultServiceBuffer;
@@ -38,10 +43,12 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     private ServiceDiscovery localServiceDiscovery;
     private int localPort;
     private InetAddress localIP;
+    private ExecutorService threadPool;
 
     public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery) throws java.net.UnknownHostException{
         this.localPort = 3333; // TODO: Remove hardcode on port
         try{
+            //this.localIP = InetAddress.getByName(null);
             this.localIP = Inet4Address.getLocalHost();
         }catch(java.net.UnknownHostException e){// TODO: Get address from outside
             logError("initialization process local address "+e.getMessage());
@@ -49,8 +56,10 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         }
         this.serviceBuffer = new DefaultServiceBuffer();
         this.connectionTable = new ConcurrentHashMap<>();
+        threadPool = Executors.newCachedThreadPool();
         this.localServiceDiscovery = localServiceDiscovery;
         localServiceDiscovery.setNetwork(this, getLocalSocketAddress()); // TODO: get socket address
+        running = new AtomicBoolean(true);
     }
 
     /**
@@ -108,15 +117,13 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         ServiceConnection dest = new DefaultServiceConnection();
         RouteSignal route = localServiceDiscovery.getDestination(dest, from, path);
 
-        if(path.peekNextServiceName() == null && from != null) {
-            DefaultServiceRequest req = connectionTable.get(from.getUserConnectionId());
-            if(req == null) return; // TODO: dont drop results, and send data to service discovary
-            req.setData(data);
-        }
-
         if(route == RouteSignal.LOCALDESTINATION) {
             sendToServiceBuffer(from, data, path);
             return;
+        }else if(route == RouteSignal.ENDPOINT) {
+            DefaultServiceRequest req = connectionTable.get(from.getUserConnectionId());
+            if(req == null) return; // TODO: dont drop results, and send data to service discovary
+            req.setData(data);
         }else if (route == RouteSignal.NOTFOUND){
             return;
         }
@@ -150,20 +157,47 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
 
     @Override
     public void run(){
-        ServerSocket encryptedServerSocket = null;
+        ServerSocket serverSocket = null;
         try{
-            encryptedServerSocket = new ServerSocket();
-        }catch(IOException e){
+            serverSocket = new ServerSocket();
+            serverSocket.bind(getLocalSocketAddress());
+            serverSocket.setSoTimeout(80);
+        }catch(IOException e){// TODO: Logging
             e.printStackTrace();
         }
-        while(running.get()==true){
-            //TODO: Fix networking
+
+        Socket clientSocket = null;
+
+        while(running.get() == true){
+            try {
+                if( (clientSocket = serverSocket.accept()) != null ){
+                    NetworkUnpacker pck = new NetworkUnpacker(clientSocket);
+                    threadPool.execute(pck);
+                }
+            }catch(SocketTimeoutException ignore){
+            }catch (Throwable e) {
+                System.out.println("Error " + e.getMessage());
+                e.printStackTrace();
+            }
         }
+
+        try {
+            threadPool.shutdown();
+            serverSocket.close();
+        }catch (Throwable e) { //TODO EXCEPTION HANDLING
+            System.out.println("Error " + e.getMessage());
+            e.printStackTrace();
+        }
+
     }
 
     @Override
     public ServicePacket nextPacket() {
         return serviceBuffer.nextPacket();
+    }
+
+    public void stop(){
+        running.set(false);
     }
 
     private void sendToServiceBuffer(ServiceConnection from, Serializable data, ServiceChain path) {
@@ -202,6 +236,37 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
 
     private void logError(String error){
         System.out.println("Network exception, " + error); // TODO: MAKE THIS ACTUALLY LOG
+    }
+
+    private class NetworkUnpacker implements Runnable {
+        Socket clientSocket = null;
+
+        public NetworkUnpacker(Socket clientSocket){
+            this.clientSocket = clientSocket;
+        }
+
+        @Override
+        public void run(){
+            System.out.println("Incoming connection from: " + clientSocket.getLocalSocketAddress());
+            try {
+                ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
+
+                NetworkPacket input = (NetworkPacket)in.readObject();
+                in.close();
+                clientSocket.close();
+
+                if(input.getType() == NetworkPacket.PacketType.SERVICE){
+                    DefaultServiceRequest req = connectionTable.get(input.getOrigin().getUserConnectionId());
+                    System.out.println("ServicePacket with ID: " + input.getOrigin().getUserConnectionId());
+                    if(req == null) return; // TODO: dont drop results, and send data to service discovary
+                    req.setData(input.getData());
+                }
+            }catch (Throwable e) {
+                System.out.println("Error " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
     }
 
 }

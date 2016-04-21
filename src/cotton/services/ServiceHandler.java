@@ -41,7 +41,7 @@ public class ServiceHandler implements Runnable{
         private ServiceFactory serviceFactory;
         private boolean succesfulInit = true;
         private ServicePacket servicePacket;
-        String serviceName;
+        private String serviceName;
         public ServiceDispatcher(ServicePacket servicePacket){
             this.servicePacket = servicePacket;
             this.serviceName = this.servicePacket.getTo().getNextServiceName();

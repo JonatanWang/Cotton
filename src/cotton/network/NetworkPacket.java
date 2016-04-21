@@ -1,4 +1,3 @@
-
 package cotton.network;
 
 import java.io.Serializable;
@@ -12,14 +11,26 @@ import java.io.Serializable;
 public class NetworkPacket implements Serializable{
     private Serializable data;
     private ServiceConnection from;
-    private ServiceChain to;
+    private ServiceChain path;
     private PacketType pt;
 
-    public NetworkPacket(Serializable data, ServiceChain to, ServiceConnection from, PacketType pt) {
+    public NetworkPacket(Serializable data, ServiceChain path, ServiceConnection from, PacketType pt) {
         this.data = data;
         this.from = from;
-        this.to = to;
+        this.path = path;
         this.pt = pt;
+    }
+
+    public ServiceChain getPath(){
+        return path;
+    }
+
+    public ServiceConnection getOrigin(){
+        return from;
+    }
+
+    public PacketType getType(){
+        return pt;
     }
 
     public Serializable getData() {
