@@ -200,7 +200,7 @@ public class UnitTest {
             e.printStackTrace();
         }
 
-        ActiveServiceLookup reg = cotton.getServiceRegistation();        
+        ActiveServiceLookup reg = cotton.getServiceRegistation();
         reg.registerService("MathPow2", MathPow2.getFactory(), 8);
         cotton.start();
 
