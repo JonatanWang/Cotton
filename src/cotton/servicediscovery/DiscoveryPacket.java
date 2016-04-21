@@ -13,8 +13,6 @@ public class DiscoveryPacket implements Serializable {
     }
     private DiscoveryPacketType type;
 
-    
-
     public DiscoveryPacket(DiscoveryPacketType type) {
         this.type = type;
     }

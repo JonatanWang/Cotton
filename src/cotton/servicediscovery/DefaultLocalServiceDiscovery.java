@@ -13,6 +13,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import cotton.services.ServiceMetaData;
 import java.util.UUID;
 import cotton.network.PathType;
+import java.io.ObjectInputStream;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -154,9 +158,64 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    private DiscoveryPacket PacketUnpack(InputStream data) {
+
+        DiscoveryPacket probe = null;
+
+        try{
+            ObjectInputStream input = new ObjectInputStream(data);
+            probe =  (DiscoveryPacket)input.readObject();
+
+        }catch (IOException ex) {
+            Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return probe;
+
+    }
+
+    private void updateAdressTable(DiscoveryProbe probe) {
+
+        AddressPool pool = serviceCache.get(probe.getName());
+
+        if(pool != null){
+            if(!pool.addAddress(probe.getAddress())){}
+                //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
+
+            return;
+        }
+
+        AddressPool servicePool = new AddressPool();
+        servicePool.addAddress(probe.getAddress());
+        servicePool = serviceCache.putIfAbsent(probe.getName(), servicePool);
+
+        if(servicePool != null){
+            if(!servicePool.addAddress(probe.getAddress())){}
+                //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
+
+            return;
+        }
+    }
+
     @Override
     public void discoveryUpdate(ServiceConnection from, InputStream data) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
+        DiscoveryPacket packet = PacketUnpack(data);
+
+        DiscoveryPacketType type = packet.getPacketType();
+
+        //to do: switch not functioning properly with enums
+        switch(type){
+        case DISCOVERYPROBE:
+            updateAdressTable(packet.getProbe());
+            break;
+        case ANNOUNCE:
+            //intern handeling method
+            break;
+        default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
+            break;
+        }
 
     }
 
