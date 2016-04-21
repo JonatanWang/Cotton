@@ -12,6 +12,7 @@ import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import cotton.services.ServiceMetaData;
 import java.util.UUID;
+import cotton.network.PathType;
 
 /**
  *
@@ -80,6 +81,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
             return RouteSignal.NOTFOUND;
         }
         DefaultServiceConnection globalDest = new DefaultServiceConnection(UUID.randomUUID());
+        globalDest.setPathType(PathType.DISCOVERY);
         DiscoveryProbe discoveryProbe = new DiscoveryProbe(serviceName,null);
 
         globalDest.setAddress(addr);
