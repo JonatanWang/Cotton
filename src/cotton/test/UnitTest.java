@@ -213,10 +213,42 @@ public class UnitTest {
         LocalServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         ServiceConnection dest = new DefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain().into("test");
-        try{    
+        try{
             Thread.sleep(2000);
         }catch(Throwable e){}
         assertTrue(RouteSignal.LOCALDESTINATION == local.getDestination(dest, null, chain));
     }
+
+    @Test
+    public void LocalServiceDiscoveryLookupTwoInputs() {
+        System.out.println("LocalServiceDiscoveryLookupTwoInputs, only two imputs");
+
+        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        lookup.registerService("test", new TestFactory(), 10);
+        LocalServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        ServiceConnection dest = new DefaultServiceConnection();
+        ServiceChain chain = new DummyServiceChain().into("test");
+        try{
+            Thread.sleep(2000);
+        }catch(Throwable e){}
+        assertTrue(RouteSignal.LOCALDESTINATION == local.getDestination(dest, chain));
+    }
+
+    @Test
+    public void LocalServiceDiscoveryLookupNullCheck() {
+        System.out.println("LocalServiceDiscoveryLookupNullCheck, checks serviceChain null");
+
+        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        lookup.registerService("test", new TestFactory(), 10);
+        LocalServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        ServiceConnection dest = new DefaultServiceConnection();
+        ServiceChain chain = new DummyServiceChain();
+        try{
+            Thread.sleep(2000);
+        }catch(Throwable e){}
+        assertTrue(RouteSignal.NOTFOUND == local.getDestination(dest, null, chain));
+    }
+
+
 
 }

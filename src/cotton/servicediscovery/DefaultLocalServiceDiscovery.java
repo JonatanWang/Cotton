@@ -132,6 +132,7 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
             return RouteSignal.NOTFOUND;
         }
         DefaultServiceConnection globalDest = new DefaultServiceConnection(UUID.randomUUID());
+        globalDest.setPathType(PathType.DISCOVERY);
         DiscoveryProbe discoveryProbe = new DiscoveryProbe(serviceName,null);
 
         globalDest.setAddress(addr);
