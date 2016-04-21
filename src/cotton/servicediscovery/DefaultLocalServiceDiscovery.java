@@ -6,50 +6,26 @@ import cotton.network.NetworkHandler;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceRequest;
 import cotton.services.ActiveServiceLookup;
-import cotton.services.ServiceConnection;
+import cotton.network.ServiceConnection;
 import java.io.InputStream;
 import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.ArrayList;
 import cotton.services.ServiceMetaData;
-import java.io.Serializable;
 import java.util.UUID;
+import cotton.network.PathType;
 
 /**
  *
  * @author Magnus, Mats
  */
-public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
+public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
     private ActiveServiceLookup internalLookup;
     private NetworkHandler network = null;
     private SocketAddress localAddress;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
     private AddressPool globalDiscovery ;
 
-    private class AddressPool {
-        private int pos = 0;
-        private ArrayList<SocketAddress> pool= new ArrayList<SocketAddress>();
-
-        public boolean addAddress(SocketAddress address){
-            synchronized(this){
-                pool.add(address);
-            }
-            return true;
-        }
-
-        public SocketAddress getAddress(){
-            SocketAddress addr = null;
-            synchronized(this){
-                pos = pos % pool.size();
-
-                if(pool.isEmpty() == false) {
-                    addr = pool.get(pos);
-                    pos++;
-                }
-            }
-            return addr;
-        }
-    }
+    
 
     private void initGlobalDiscoveryPool(GlobalDiscoveryDNS globalDNS) {
         this.globalDiscovery = new AddressPool();
@@ -85,33 +61,6 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
         
     }
     
-    public class DiscoveryProbe implements Serializable {
-        private String name;
-        private SocketAddress address;
-
-        public DiscoveryProbe(String name, SocketAddress address) {
-            this.name = name;
-            this.address = address;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public SocketAddress getAddress() {
-            return address;
-        }
-
-        public void setAddress(SocketAddress address) {
-            this.address = address;
-        }
-        
-    }
-    
     private void cacheAddress(String serviceName,SocketAddress targetAddr) {
         AddressPool poolCheck = serviceCache.get(serviceName);
         if(poolCheck != null) {
@@ -132,6 +81,7 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
             return RouteSignal.NOTFOUND;
         }
         DefaultServiceConnection globalDest = new DefaultServiceConnection(UUID.randomUUID());
+        globalDest.setPathType(PathType.DISCOVERY);
         DiscoveryProbe discoveryProbe = new DiscoveryProbe(serviceName,null);
 
         globalDest.setAddress(addr);
@@ -156,12 +106,18 @@ public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
     
     @Override
     public RouteSignal getDestination(ServiceConnection destination, ServiceChain to) {
+        if(destination == null) {
+            return RouteSignal.NOTFOUND;
+        }
         destination.setAddress(localAddress);
         return getDestination(destination,destination,to);
     }
     
     @Override
     public RouteSignal getDestination(ServiceConnection destination, ServiceConnection from, ServiceChain to) {
+        if(destination == null) {
+            return RouteSignal.NOTFOUND;
+        }
         String serviceName;
 
         serviceName = to.peekNextServiceName();

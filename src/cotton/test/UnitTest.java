@@ -21,7 +21,7 @@ import cotton.services.CloudContext;
 import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.DummyServiceChain;
 import cotton.services.ServiceBuffer;
-import cotton.services.ServiceConnection;
+import cotton.network.ServiceConnection;
 import cotton.services.ServiceFactory;
 import cotton.services.ServiceHandler;
 import cotton.services.ServiceInstance;
@@ -155,7 +155,7 @@ public class UnitTest {
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
 
         lookup.registerService("test", new TestFactory(), 10);
-        LocalServiceDiscovery discovery = new DefaultLocalServiceDiscovery(lookup);
+        ServiceDiscovery discovery = new DefaultLocalServiceDiscovery(lookup);
 
         NetworkHandler net = null;
 
@@ -166,7 +166,6 @@ public class UnitTest {
             System.out.println("Error " + e.getMessage());
             e.printStackTrace();
         }
-
         ServiceHandler handler = new ServiceHandler(lookup,net);
 
         ServiceChain to1 = new DummyServiceChain("test");
@@ -200,13 +199,13 @@ public class UnitTest {
             System.out.println("Error " + e.getMessage());
             e.printStackTrace();
         }
-        
+
         ActiveServiceLookup reg = cotton.getServiceRegistation();        
         reg.registerService("MathPow2", MathPow2.getFactory(), 8);
         cotton.start();
-        
+
         ClientNetwork net = cotton.getClientNetwork();
-        
+
         Integer data = new Integer(2);
         ServiceChain chain = new DummyServiceChain()
                 .into("MathPow2").into("MathPow2")
@@ -227,10 +226,47 @@ public class UnitTest {
 
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
-        LocalServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        ServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         ServiceConnection dest = new DefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain().into("test");
         assertTrue(RouteSignal.LOCALDESTINATION == local.getDestination(dest, null, chain));
     }
+
+    @Test
+    public void LocalServiceDiscoveryLookupTwoInputs() {
+        System.out.println("LocalServiceDiscoveryLookupTwoInputs, only two imputs");
+
+        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        lookup.registerService("test", new TestFactory(), 10);
+        ServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        ServiceConnection dest = new DefaultServiceConnection();
+        ServiceChain chain = new DummyServiceChain().into("test");
+        assertTrue(RouteSignal.LOCALDESTINATION == local.getDestination(dest, chain));
+    }
+
+    @Test
+    public void LocalServiceDiscoveryLookupNullCheck() {
+        System.out.println("LocalServiceDiscoveryLookupNullCheck, checks serviceChain null");
+
+        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        lookup.registerService("test", new TestFactory(), 10);
+        ServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        ServiceConnection dest = new DefaultServiceConnection();
+        ServiceChain chain = new DummyServiceChain();
+        assertTrue(RouteSignal.NOTFOUND == local.getDestination(dest, null, chain));
+    }
+
+    @Test
+    public void LocalServiceDiscoveryLookupNullInput() {
+        System.out.println("LocalServiceDiscoveryLookupNullInput, checks destinatin null");
+
+        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        lookup.registerService("test", new TestFactory(), 10);
+        ServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        ServiceConnection dest = new DefaultServiceConnection();
+        ServiceChain chain = new DummyServiceChain().into("test");
+        assertTrue(RouteSignal.NOTFOUND == local.getDestination(null, chain));
+    }
+
 
 }

@@ -4,7 +4,7 @@ import cotton.services.ActiveServiceLookup;
 import cotton.services.CloudContext;
 import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.ServiceChain;
-import cotton.services.ServiceConnection;
+import cotton.network.ServiceConnection;
 import cotton.services.ServiceFactory;
 import cotton.services.ServiceInstance;
 import cotton.test.TestDASL.TestServiceFactory.TestServiceInstance;
@@ -103,8 +103,8 @@ public class TestDASL {
     public void testWrongCapacity() {
         ActiveServiceLookup dasl = new DefaultActiveServiceLookup();
         dasl.registerService("Coloring", new TestServiceFactory(), 10);
-
-        assertNotEquals(9, dasl.getService("Coloring").getMaxCapacity());
+        int maxCapacity = dasl.getService("Coloring").getMaxCapacity();
+        assertTrue(9 != maxCapacity);
     }
 
     @Test

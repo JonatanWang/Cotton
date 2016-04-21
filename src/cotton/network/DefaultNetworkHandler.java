@@ -16,13 +16,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.servicediscovery.RouteSignal;
 import cotton.services.DefaultServiceBuffer;
 import cotton.services.ServiceBuffer;
-import cotton.services.ServiceConnection;
 import cotton.services.ServicePacket;
 import cotton.network.NetworkPacket;
+import cotton.servicediscovery.ServiceDiscovery;
 
 /**
  * Handles all of the packet buffering and relaying.
@@ -36,11 +35,11 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     private ServiceBuffer serviceBuffer;
     private ConcurrentHashMap<UUID,DefaultServiceRequest> connectionTable;
     private AtomicBoolean running;
-    private LocalServiceDiscovery localServiceDiscovery;
+    private ServiceDiscovery localServiceDiscovery;
     private int localPort;
     private InetAddress localIP;
 
-    public DefaultNetworkHandler(LocalServiceDiscovery localServiceDiscovery) throws java.net.UnknownHostException{
+    public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery) throws java.net.UnknownHostException{
         this.localPort = 3333; // TODO: Remove hardcode on port
         try{
             this.localIP = Inet4Address.getLocalHost();
@@ -109,6 +108,12 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         ServiceConnection dest = new DefaultServiceConnection();
         RouteSignal route = localServiceDiscovery.getDestination(dest, from, path);
 
+        if(path.peekNextServiceName() == null && from != null) {
+            DefaultServiceRequest req = connectionTable.get(from.getUserConnectionId());
+            if(req == null) return; // TODO: dont drop results, and send data to service discovary
+            req.setData(data);
+        }
+
         if(route == RouteSignal.LOCALDESTINATION) {
             sendToServiceBuffer(from, data, path);
             return;
@@ -130,6 +135,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         DefaultServiceRequest result = new DefaultServiceRequest();
         if(route == RouteSignal.LOCALDESTINATION) {
             sendToServiceBuffer(dest, data, path);
+            this.connectionTable.put(dest.getUserConnectionId(), result);
             return result;
         }
 

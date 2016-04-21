@@ -14,11 +14,11 @@ import cotton.network.NetworkHandler;
 import cotton.network.ServiceChain;
 import cotton.servicediscovery.DefaultLocalServiceDiscovery;
 import cotton.servicediscovery.GlobalDiscoveryDNS;
-import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.services.ActiveServiceLookup;
 import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.DummyServiceChain;
 import cotton.services.ServiceHandler;
+import cotton.servicediscovery.ServiceDiscovery;
 
 /**
  *
@@ -30,7 +30,7 @@ public class Cotton {
     private NetworkHandler network;
     private ClientNetwork clientNetwork;
     private ServiceHandler services;
-    private LocalServiceDiscovery discovery;
+    private ServiceDiscovery discovery;
 
     public Cotton () throws java.net.UnknownHostException{
         lookup = new DefaultActiveServiceLookup();

@@ -2,7 +2,7 @@ package cotton.example;
 
 import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
-import cotton.services.ServiceConnection;
+import cotton.network.ServiceConnection;
 import cotton.services.ServiceFactory;
 import cotton.services.ServiceInstance;
 import java.awt.image.BufferedImage;

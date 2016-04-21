@@ -1,7 +1,6 @@
 
 package cotton.network;
 
-import cotton.services.ServiceConnection;
 import java.io.Serializable;
 
 /**
