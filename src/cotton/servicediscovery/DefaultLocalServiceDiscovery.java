@@ -177,6 +177,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         packet.setAnnonce(annonce);
         
         DefaultServiceConnection globalDest = new DefaultServiceConnection(UUID.randomUUID());
+        globalDest.setPathType(PathType.DISCOVERY);
         globalDest.setAddress(addr);
         this.network.send(packet, globalDest);
         return true;
