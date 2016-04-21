@@ -18,7 +18,7 @@ import cotton.network.PathType;
  *
  * @author Magnus, Mats
  */
-public class DefaultLocalServiceDiscovery implements LocalServiceDiscovery {
+public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
     private ActiveServiceLookup internalLockup;
     private NetworkHandler network = null;
     private SocketAddress localAddress;
