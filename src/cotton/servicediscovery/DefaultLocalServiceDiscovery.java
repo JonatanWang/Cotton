@@ -94,18 +94,20 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         DefaultServiceConnection globalDest = new DefaultServiceConnection(UUID.randomUUID());
         globalDest.setPathType(PathType.DISCOVERY);
         DiscoveryProbe discoveryProbe = new DiscoveryProbe(serviceName,null);
-
+        DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
+        packet.setProbe(discoveryProbe);
         globalDest.setAddress(addr);
         ServiceRequest req = null;
         try {
-            req = network.sendWithResponse(discoveryProbe, globalDest);
+            req = network.sendWithResponse(packet, globalDest);
         } catch (Throwable e) {
             System.out.println("Error " + e.getMessage());
             e.printStackTrace();
         }
 
-        DiscoveryProbe answers = (DiscoveryProbe)req.getData(); //TODO: io checks
-        SocketAddress targetAddr = answers.getAddress();
+        DiscoveryPacket answers = (DiscoveryPacket)req.getData(); //TODO: io checks
+        
+        SocketAddress targetAddr = answers.getProbe().getAddress();
         if(targetAddr == null) {
             return RouteSignal.NOTFOUND;
         }
@@ -158,7 +160,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private DiscoveryPacket PacketUnpack(InputStream data) {
+    private DiscoveryPacket packetUnpack(InputStream data) {
 
         DiscoveryPacket probe = null;
 
@@ -198,16 +200,15 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         }
     }
 
-    @Override
-    public void discoveryUpdate(ServiceConnection from, InputStream data) {
-
-        DiscoveryPacket packet = PacketUnpack(data);
-
+    protected void updateHandling(ServiceConnection from, DiscoveryPacket packet) {
         DiscoveryPacketType type = packet.getPacketType();
-
         //to do: switch not functioning properly with enums
         switch(type){
-        case DISCOVERYPROBE:
+        case DISCOVERYREQUEST:
+            //updateAdressTable(packet.getProbe());
+            //only on global
+            break;
+        case DISCOVERYRESPONSE:
             updateAdressTable(packet.getProbe());
             break;
         case ANNOUNCE:
@@ -216,7 +217,11 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
             break;
         }
-
+    }
+    @Override
+    public void discoveryUpdate(ServiceConnection from, InputStream data) {
+        DiscoveryPacket packet = packetUnpack(data);
+        updateHandling(from, packet);
     }
 
     @Override

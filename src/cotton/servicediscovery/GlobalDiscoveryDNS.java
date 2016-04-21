@@ -8,12 +8,18 @@ import java.net.SocketAddress;
  */
 public class GlobalDiscoveryDNS {
 
+    public SocketAddress[] addressArray = null;
+    
     public GlobalDiscoveryDNS() {
         //TODO: read from config and get the global ServiceDiscovery SocketAddress
     }
     
+    public void setGlobalDiscoveryAddress(SocketAddress[] addresses) {
+        this.addressArray = addresses;
+    }
+    
     public SocketAddress[] getGlobalDiscoveryAddress() {
-        return null;
+        return this.addressArray;
     }
     
 }

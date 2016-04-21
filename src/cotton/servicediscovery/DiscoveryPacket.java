@@ -9,7 +9,7 @@ import java.io.Serializable;
  */
 public class DiscoveryPacket implements Serializable {
     public enum DiscoveryPacketType {
-        DISCOVERYPROBE,ANNOUNCE
+        DISCOVERYREQUEST, DISCOVERYRESPONSE, ANNOUNCE
     }
     private DiscoveryPacketType type;
 
