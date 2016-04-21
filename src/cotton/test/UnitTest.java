@@ -225,7 +225,7 @@ public class UnitTest {
 
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
-        LocalServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        ServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         ServiceConnection dest = new DefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain().into("test");
         try{
@@ -240,7 +240,7 @@ public class UnitTest {
 
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
-        LocalServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        ServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         ServiceConnection dest = new DefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain();
         try{
