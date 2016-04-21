@@ -156,4 +156,14 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    @Override
+    public boolean announce() {
+        SocketAddress addr = this.globalDiscovery.getAddress();
+        if(addr == null){
+            return false;
+        }
+        
+        return true;
+    }
+
 }
