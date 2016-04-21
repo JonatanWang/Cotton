@@ -204,13 +204,15 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         DiscoveryPacket packet = PacketUnpack(data);
 
         DiscoveryPacketType type = packet.getPacketType();
+
+        //to do: switch not functioning properly with enums
         switch(type){
         case DISCOVERYPROBE:
             updateAdressTable(packet.getProbe());
             break;
-            /*case DiscoveryPacketType.ANNOUNCE:
+        case ANNOUNCE:
             //intern handeling method
-            break;*/
+            break;
         default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
             break;
         }
