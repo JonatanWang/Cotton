@@ -5,7 +5,6 @@ import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.util.Random;
 
-import cotton.services.ServiceConnection;
 import java.util.UUID;
 
 /**
@@ -15,6 +14,7 @@ import java.util.UUID;
 public class DefaultServiceConnection implements ServiceConnection {
     private UUID conId;
     private String name;
+    private PathType pathType = PathType.SERVICE;
     SocketAddress address = null;
 
     public DefaultServiceConnection() {
@@ -50,6 +50,16 @@ public class DefaultServiceConnection implements ServiceConnection {
     @Override
     public void setAddress(SocketAddress addr) {
         this.address = addr;
+    }
+
+    @Override
+    public PathType getPathType() {
+        return this.pathType;
+    }
+
+    @Override
+    public void setPathType(PathType pathType) {
+        this.pathType = pathType;
     }
     
 }

@@ -1,7 +1,7 @@
 package cotton.servicediscovery;
 
 import cotton.network.NetworkHandler;
-import cotton.services.ServiceConnection;
+import cotton.network.ServiceConnection;
 import cotton.network.ServiceChain;
 import java.io.InputStream;
 import java.net.SocketAddress;

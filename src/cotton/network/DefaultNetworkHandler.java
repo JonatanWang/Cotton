@@ -16,7 +16,6 @@ import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.servicediscovery.RouteSignal;
 import cotton.services.DefaultServiceBuffer;
 import cotton.services.ServiceBuffer;
-import cotton.services.ServiceConnection;
 import cotton.services.ServicePacket;
 
 /**

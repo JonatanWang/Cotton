@@ -6,7 +6,7 @@ import cotton.network.NetworkHandler;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceRequest;
 import cotton.services.ActiveServiceLookup;
-import cotton.services.ServiceConnection;
+import cotton.network.ServiceConnection;
 import java.io.InputStream;
 import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;

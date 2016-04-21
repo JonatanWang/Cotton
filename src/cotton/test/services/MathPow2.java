@@ -3,7 +3,7 @@ package cotton.test.services;
 
 import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
-import cotton.services.ServiceConnection;
+import cotton.network.ServiceConnection;
 import cotton.services.ServiceFactory;
 import cotton.services.ServiceInstance;
 import java.io.IOException;

@@ -1,5 +1,6 @@
 package cotton.test.services;
 
+import cotton.network.ServiceConnection;
 import cotton.network.ServiceChain;
 import cotton.services.*;
 

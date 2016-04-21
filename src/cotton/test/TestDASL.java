@@ -4,7 +4,7 @@ import cotton.services.ActiveServiceLookup;
 import cotton.services.CloudContext;
 import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.ServiceChain;
-import cotton.services.ServiceConnection;
+import cotton.network.ServiceConnection;
 import cotton.services.ServiceFactory;
 import cotton.services.ServiceInstance;
 import cotton.test.TestDASL.TestServiceFactory.TestServiceInstance;

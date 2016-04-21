@@ -21,7 +21,7 @@ import cotton.services.CloudContext;
 import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.DummyServiceChain;
 import cotton.services.ServiceBuffer;
-import cotton.services.ServiceConnection;
+import cotton.network.ServiceConnection;
 import cotton.services.ServiceFactory;
 import cotton.services.ServiceHandler;
 import cotton.services.ServiceInstance;
