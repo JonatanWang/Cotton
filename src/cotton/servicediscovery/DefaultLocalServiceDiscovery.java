@@ -13,6 +13,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import cotton.services.ServiceMetaData;
 import java.util.UUID;
 import cotton.network.PathType;
+import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
+import java.util.ArrayList;
+import java.util.Enumeration;
 
 /**
  *
@@ -164,6 +167,18 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
             return false;
         }
         
+        DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.ANNOUNCE);
+        ArrayList<String> serviceList = new ArrayList<String>();
+        for(String nameKey : serviceCache.keySet()) {
+            serviceList.add(nameKey);
+        }
+        
+        AnnoncePacket annonce = new AnnoncePacket(localAddress, (String[]) serviceList.toArray());
+        packet.setAnnonce(annonce);
+        
+        DefaultServiceConnection globalDest = new DefaultServiceConnection(UUID.randomUUID());
+        globalDest.setAddress(addr);
+        this.network.send(packet, globalDest);
         return true;
     }
 

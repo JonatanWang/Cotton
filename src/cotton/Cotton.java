@@ -40,6 +40,7 @@ public class Cotton {
         network = net;
         clientNetwork = net;
         services = new ServiceHandler(lookup, network);
+        discovery.announce();
     }
 
     public void start(){
