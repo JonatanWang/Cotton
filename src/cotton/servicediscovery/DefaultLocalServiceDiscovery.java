@@ -23,7 +23,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
     private NetworkHandler network = null;
     private SocketAddress localAddress;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
-    private AddressPool globalDiscovery ;
+    private AddressPool globalDiscovery;
 
     
 
@@ -148,8 +148,9 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
     }
 
     @Override
-    public void sendUpdate(ServiceConnection from, InputStream data) {
+    public void discoveryUpdate(ServiceConnection from, InputStream data) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
     }
 
 }
