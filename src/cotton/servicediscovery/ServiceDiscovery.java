@@ -15,6 +15,6 @@ public interface ServiceDiscovery{
     public RouteSignal getDestination(ServiceConnection destination, ServiceChain to); // outgoinging package
     public RouteSignal getDestination(ServiceConnection destination, ServiceConnection from, ServiceChain to); // outgoinging package
     public RouteSignal getLocalInterface(ServiceConnection from,ServiceChain to); // incoming packaged 
-    public void sendUpdate(ServiceConnection from, InputStream data);
     public boolean announce();
+    public void discoveryUpdate(ServiceConnection from, InputStream data);
 }

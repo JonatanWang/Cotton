@@ -34,7 +34,7 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
     }
 
     @Override
-    public void sendUpdate(ServiceConnection from, InputStream data) {
+    public void discoveryUpdate(ServiceConnection from, InputStream data) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
