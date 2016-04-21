@@ -13,20 +13,29 @@ public class DiscoveryPacket implements Serializable {
     }
     private DiscoveryPacketType type;
 
-    public DiscoveryPacketType  getPacketType() {
-        return type;
-    }
-
-    public void setPackettype(DiscoveryPacketType type){
-        this.type = type;
-    }
-
     public DiscoveryPacket(DiscoveryPacketType type) {
         this.type = type;
     }
     
-    private DiscoveryProbe probe = null;
+    public DiscoveryPacketType getPacketType() {
+        return type;
+    }
 
+    public void setPacketType(DiscoveryPacketType type) {
+        this.type = type;
+    }
+    
+    private DiscoveryProbe probe = null;
+    private AnnoncePacket annonce = null;
+
+    public AnnoncePacket getAnnonce() {
+        return annonce;
+    }
+
+    public void setAnnonce(AnnoncePacket annonce) {
+        this.annonce = annonce;
+    }
+    
     public DiscoveryProbe getProbe() {
         return probe;
     }

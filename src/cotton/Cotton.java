@@ -40,14 +40,17 @@ public class Cotton {
         network = net;
         clientNetwork = net;
         services = new ServiceHandler(lookup, network);
+        discovery.announce();
     }
 
     public void start(){
         new Thread(services).start();
+        new Thread(network).start();
     }
 
     public void shutdown() {
         services.stop();
+        network.stop();
     }
 
     public ActiveServiceLookup getServiceRegistation() {
@@ -89,12 +92,12 @@ public class Cotton {
 
         c.start();
 
-        c.getNetwork().sendToService(new ImageManipulationPacket(i), s,null);
+        c.getNetwork().sendToService(new ImageManipulationPacket(i), s, null);
 
         try {
-            Thread.sleep(3000);
+            Thread.sleep(20000);
         } catch (InterruptedException ignore) { }
-
+   
         c.shutdown();
     }
 }
