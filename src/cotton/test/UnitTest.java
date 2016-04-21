@@ -249,6 +249,20 @@ public class UnitTest {
         assertTrue(RouteSignal.NOTFOUND == local.getDestination(dest, null, chain));
     }
 
+    @Test
+    public void LocalServiceDiscoveryLookupNullInput() {
+        System.out.println("LocalServiceDiscoveryLookupNullInput, checks destinatin null");
+
+        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        lookup.registerService("test", new TestFactory(), 10);
+        LocalServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        ServiceConnection dest = new DefaultServiceConnection();
+        ServiceChain chain = new DummyServiceChain().into("test");
+        try{
+            Thread.sleep(2000);
+        }catch(Throwable e){}
+        assertTrue(RouteSignal.NOTFOUND == local.getDestination(null, chain));
+    }
 
 
 }
