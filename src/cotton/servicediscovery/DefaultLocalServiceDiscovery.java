@@ -57,7 +57,11 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
             return RouteSignal.NOTFOUND;
         }
         destination.setAddress(from.getAddress());
-        return (from.getAddress().equals(localAddress)) ? RouteSignal.LOCALDESTINATION : RouteSignal.NETWORKDESTINATION;
+        if(from.getAddress().equals(localAddress)) {
+            return RouteSignal.ENDPOINT;
+        }
+        
+        return RouteSignal.NETWORKDESTINATION;
         
     }
     
