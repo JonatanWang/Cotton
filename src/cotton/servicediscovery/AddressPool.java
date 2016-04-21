@@ -21,10 +21,10 @@ class AddressPool {
 
     public SocketAddress getAddress() {
         SocketAddress addr = null;
+        
         synchronized (this) {
-            pos = pos % pool.size();
-
             if (pool.isEmpty() == false) {
+                pos = pos % pool.size();
                 addr = pool.get(pos);
                 pos++;
             }
