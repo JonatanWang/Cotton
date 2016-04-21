@@ -12,6 +12,7 @@ import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import cotton.services.ServiceMetaData;
 import java.util.UUID;
+import cotton.network.PathType;
 
 /**
  *
