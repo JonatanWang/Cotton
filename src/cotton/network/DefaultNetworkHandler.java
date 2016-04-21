@@ -256,10 +256,13 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
                 clientSocket.close();
 
                 if(input.getType() == NetworkPacket.PacketType.SERVICE){
-                    DefaultServiceRequest req = connectionTable.get(input.getOrigin().getUserConnectionId());
+                    sendToService(input.getData(), input.getPath(), input.getOrigin());
                     System.out.println("ServicePacket with ID: " + input.getOrigin().getUserConnectionId());
+                    /* DefaultServiceRequest req = connectionTable.get(input.getOrigin().getUserConnectionId());
                     if(req == null) return; // TODO: dont drop results, and send data to service discovary
-                    req.setData(input.getData());
+                    req.setData(input.getData());*/
+                }else{
+                    System.out.println("Non-servicepacket recieved, not yet implemented");
                 }
             }catch (Throwable e) {
                 System.out.println("Error " + e.getMessage());

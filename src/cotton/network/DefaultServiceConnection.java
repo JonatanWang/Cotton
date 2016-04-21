@@ -4,6 +4,7 @@ package cotton.network;
 import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.util.Random;
+import java.io.Serializable;
 
 import java.util.UUID;
 
@@ -11,7 +12,7 @@ import java.util.UUID;
  *
  * @author Magnus
  */
-public class DefaultServiceConnection implements ServiceConnection {
+public class DefaultServiceConnection implements ServiceConnection, Serializable {
     private UUID conId;
     private String name;
     private PathType pathType = PathType.SERVICE;
@@ -21,17 +22,17 @@ public class DefaultServiceConnection implements ServiceConnection {
         conId = UUID.randomUUID();
         this.name = "none";
     }
-    
+
     public DefaultServiceConnection(UUID uuid) {
         conId = uuid;
         this.name = "none";
     }
-    
+
     public DefaultServiceConnection(String name) {
         conId = UUID.randomUUID();
         this.name = name;
     }
-    
+
     @Override
     public UUID getUserConnectionId() {
         return this.conId;
