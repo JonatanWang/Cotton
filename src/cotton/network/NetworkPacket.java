@@ -12,9 +12,9 @@ public class NetworkPacket implements Serializable{
     private Serializable data;
     private ServiceConnection from;
     private ServiceChain path;
-    private PacketType pt;
+    private PathType pt;
 
-    public NetworkPacket(Serializable data, ServiceChain path, ServiceConnection from, PacketType pt) {
+    public NetworkPacket(Serializable data, ServiceChain path, ServiceConnection from, PathType pt) {
         this.data = data;
         this.from = from;
         this.path = path;
@@ -29,7 +29,7 @@ public class NetworkPacket implements Serializable{
         return from;
     }
 
-    public PacketType getType(){
+    public PathType getType(){
         return pt;
     }
 
@@ -37,7 +37,4 @@ public class NetworkPacket implements Serializable{
         return data;
     }
 
-    public enum PacketType {
-        SERVICE, SERVICE_UPDATE, UNKNOWN
-    }
 }

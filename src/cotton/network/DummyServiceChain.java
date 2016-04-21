@@ -1,13 +1,14 @@
 package cotton.network;
 
 import cotton.network.ServiceChain;
+import java.io.Serializable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  *
  * @author Magnus
  */
-public class DummyServiceChain implements ServiceChain {
+public class DummyServiceChain implements ServiceChain, Serializable {
     private ConcurrentLinkedQueue<String> chain;
     
     public DummyServiceChain() {

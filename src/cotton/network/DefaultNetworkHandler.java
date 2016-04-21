@@ -117,18 +117,20 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         ServiceConnection dest = new DefaultServiceConnection();
         RouteSignal route = localServiceDiscovery.getDestination(dest, from, path);
 
-        if(route == RouteSignal.LOCALDESTINATION) {
+        switch(route){
+        case LOCALDESTINATION:
             sendToServiceBuffer(from, data, path);
             return;
-        }else if(route == RouteSignal.ENDPOINT) {
+        case ENDPOINT:
             DefaultServiceRequest req = connectionTable.get(from.getUserConnectionId());
             if(req == null) return; // TODO: dont drop results, and send data to service discovary
             req.setData(data);
-        }else if (route == RouteSignal.NOTFOUND){
+            return;
+        case NOTFOUND:
             return;
         }
 
-        data = buildServicePacket(data, path, from);
+        data = buildServicePacket(data, path, from, dest.getPathType());
 
         send(data, dest);
     }
@@ -146,7 +148,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
             return result;
         }
 
-        data = buildServicePacket(data, path, getLocalServiceConnection());
+        data = buildServicePacket(data, path, getLocalServiceConnection(), dest.getPathType());
 
         if(send(data,dest)){
             this.connectionTable.put(uuid, result);
@@ -200,8 +202,9 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         running.set(false);
     }
 
-    private void sendToServiceBuffer(ServiceConnection from, Serializable data, ServiceChain path) {
+    private InputStream serializableToInputStream(Serializable data){
         ServicePacket servicePacket = null;
+        InputStream in = null;
         try{
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
             ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
@@ -210,17 +213,20 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
             objectStream.flush();
             objectStream.close();
 
-            InputStream in = new ByteArrayInputStream(byteStream.toByteArray());
-
-            servicePacket = new ServicePacket(from, in, path);
+            in = new ByteArrayInputStream(byteStream.toByteArray());
         }catch(IOException e){
             e.printStackTrace();
         }
+        return in;
+    }
+
+    private void sendToServiceBuffer(ServiceConnection from, Serializable data, ServiceChain path) {
+        ServicePacket servicePacket = new ServicePacket(from, serializableToInputStream(data), path);
         serviceBuffer.add(servicePacket);
     }
 
-    private NetworkPacket buildServicePacket(Serializable data, ServiceChain path, ServiceConnection from){
-        return new NetworkPacket(data, path, from, NetworkPacket.PacketType.SERVICE);
+    private NetworkPacket buildServicePacket(Serializable data, ServiceChain path, ServiceConnection from, PathType type){
+        return new NetworkPacket(data, path, from, type);
     }
 
     private ServiceConnection getLocalServiceConnection(){
@@ -255,13 +261,14 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
                 in.close();
                 clientSocket.close();
 
-                if(input.getType() == NetworkPacket.PacketType.SERVICE){
+                switch(input.getType()){
+                case SERVICE:
                     sendToService(input.getData(), input.getPath(), input.getOrigin());
                     System.out.println("ServicePacket with ID: " + input.getOrigin().getUserConnectionId());
-                    /* DefaultServiceRequest req = connectionTable.get(input.getOrigin().getUserConnectionId());
-                    if(req == null) return; // TODO: dont drop results, and send data to service discovary
-                    req.setData(input.getData());*/
-                }else{
+                    break;
+                case DISCOVERY:
+                    localServiceDiscovery.discoveryUpdate(input.getOrigin(), serializableToInputStream(input.getData()));
+                default:
                     System.out.println("Non-servicepacket recieved, not yet implemented");
                 }
             }catch (Throwable e) {
