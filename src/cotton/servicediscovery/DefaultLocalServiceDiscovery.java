@@ -216,8 +216,8 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
 
         DiscoveryPacketType type = packet.getPacketType();
         //to do: switch not functioning properly with enums
-        System.out.println("DefaultLocalServiceDiscovery: " + type 
-                            + " from: " + ((InetSocketAddress)localAddress).toString());
+       /* System.out.println("DefaultLocalServiceDiscovery: " + type 
+                            + " from: " + ((InetSocketAddress)localAddress).toString());*/
         switch(type){
         case DISCOVERYREQUEST:
             //updateAdressTable(packet.getProbe());
