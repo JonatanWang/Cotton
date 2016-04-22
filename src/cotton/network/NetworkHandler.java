@@ -17,5 +17,6 @@ public interface NetworkHandler extends Runnable {
     public ServiceRequest sendToService(Serializable data, ServiceChain path);
     public boolean send(Serializable data, ServiceConnection destination);
     public ServiceRequest sendWithResponse(Serializable data, ServiceConnection destination) throws IOException;
+    public boolean sendEnd(Serializable data, ServiceConnection destination);
     public void stop();
 }

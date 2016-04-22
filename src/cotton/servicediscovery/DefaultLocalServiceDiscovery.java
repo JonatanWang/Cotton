@@ -67,10 +67,15 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
             return RouteSignal.NOTFOUND;
         }
         destination.setAddress(from.getAddress());
-        if(from.getAddress().equals(localAddress)) {
+        /*if(from.getAddress().equals(localAddress)) {
+            return RouteSignal.ENDPOINT;
+        }*/
+        if(isLocalAddress(from)) {
+           // ((DefaultServiceConnection)destination).setUserConnectionId(from.getUserConnectionId());
             return RouteSignal.ENDPOINT;
         }
         
+        //isLocalAddress()
         return RouteSignal.NETWORKDESTINATION;
         
     }
@@ -135,6 +140,22 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         return getDestination(destination,destination,to);
     }
     
+    private boolean isLocalAddress(ServiceConnection addr) {
+        boolean flag = false;
+        try {
+            flag = ((InetSocketAddress)addr.getAddress()).equals((InetSocketAddress)localAddress);
+        }catch(NullPointerException ex) {}        
+        return flag;
+    }
+    
+    private boolean isAddressEqual(ServiceConnection a, ServiceConnection b) {
+        boolean flag = false;
+        try {
+            flag = ((InetSocketAddress)a.getAddress()).equals((InetSocketAddress)a.getAddress());
+        }catch(NullPointerException ex) {}        
+        return flag;
+    }
+    
     @Override
     public RouteSignal getDestination(ServiceConnection destination, ServiceConnection from, ServiceChain to) {
 
@@ -145,6 +166,8 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
 
         if(to != null) {
             serviceName = to.peekNextServiceName();
+        }else if(isLocalAddress(from)) {
+            //return RouteSignal.ENDPOINT;
         }
 
         if(serviceName == null){
@@ -196,7 +219,12 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
 
         if(check == null || name == null)
             return;
-
+        try {
+            System.out.println("updateAdressTable on: " 
+                    + ((InetSocketAddress)localAddress).toString()
+                    + "\n\tfor service: " + name
+                    + "\n\tat: " + ((InetSocketAddress)check).toString());
+        }catch(NullPointerException e) {}
         AddressPool pool = serviceCache.get(probe.getName());
 
         if(pool != null){
@@ -232,13 +260,18 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         case DISCOVERYREQUEST:
             //updateAdressTable(packet.getProbe());
             //only on global
+            System.out.println("DefaultLocalServiceDiscovery updateHandling , bad " + type);
             break;
         case DISCOVERYRESPONSE:
             updateAdressTable(packet.getProbe());
-            if(from != null && network != null){
+            if(from != null && network != null) {
+                System.out.println("debug updateHandling: from uuid " + from.getUserConnectionId());
+                network.sendEnd(packet, from);
+            }
+            /*if(from != null && network != null){
                 dest = new DefaultServiceConnection(from.getUserConnectionId());
                 network.sendToService(packet, new DummyServiceChain(),dest );
-            }
+            }*/
             break;
         case ANNOUNCE:
             //intern handeling method
@@ -269,6 +302,10 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         String[] serviceNameList = serviceList.toArray(new String[serviceList.size()]);
         AnnoncePacket annonce = new AnnoncePacket(localAddress, serviceNameList);
         packet.setAnnonce(annonce);
+        System.out.println("Announcing Service on: " + (InetSocketAddress)this.localAddress);
+        for (int i = 0; i < serviceNameList.length; i++) {
+            System.out.println("\tService: " + serviceNameList[i]);
+        }
         
         DefaultServiceConnection globalDest = new DefaultServiceConnection(UUID.randomUUID());
         globalDest.setPathType(PathType.DISCOVERY);

@@ -1,5 +1,6 @@
 package cotton.servicediscovery;
 
+import cotton.network.DefaultServiceConnection;
 import cotton.network.NetworkHandler;
 import cotton.network.PathType;
 import cotton.network.ServiceChain;
@@ -71,22 +72,64 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
     public void setNetwork(NetworkHandler network, SocketAddress localAddress) {
         this.network = network;
         this.localAddress = localAddress;
-        startLocalDiscovery(network, localAddress);
+        //startLocalDiscovery(network, localAddress);
     }
 
     @Override
     public RouteSignal getDestination(ServiceConnection destination, ServiceChain to) {
-        return this.localDiscovery.getDestination(destination, to);
+        RouteSignal signal = RouteSignal.NOTFOUND;
+        String key = to.peekNextServiceName();
+        if(key == null){return signal;}
+        AddressPool pool = serviceCache.get(key);
+        
+        if(pool == null) {return signal;}
+        
+        InetSocketAddress addr = null;
+        try {
+            addr = (InetSocketAddress) pool.getAddress();
+            if(addr != null) {
+                destination.setAddress(addr);
+                destination.setPathType(PathType.SERVICE);
+                signal = RouteSignal.NETWORKDESTINATION;
+            }
+        }catch(NullPointerException ex) {
+            signal = RouteSignal.NOTFOUND;
+        }
+        return signal;
     }
 
     @Override
     public RouteSignal getDestination(ServiceConnection destination, ServiceConnection from, ServiceChain to) {
-        return this.localDiscovery.getDestination(destination, from, to);
+        RouteSignal signal = RouteSignal.NOTFOUND;
+        String key = to.peekNextServiceName();
+        if(key == null){
+            if(from == null) {return signal;}
+            destination.setAddress(from.getAddress());
+            destination.setPathType(from.getPathType());
+            ((DefaultServiceConnection)destination).setUserConnectionId(from.getUserConnectionId());
+            return RouteSignal.NETWORKDESTINATION;
+        }
+        AddressPool pool = serviceCache.get(key);
+        
+        if(pool == null) {return signal;}
+        
+        InetSocketAddress addr = null;
+        try {
+            addr = (InetSocketAddress) pool.getAddress();
+            if(addr != null) {
+                destination.setAddress(addr);
+                destination.setPathType(PathType.SERVICE);
+                signal = RouteSignal.NETWORKDESTINATION;
+            }
+        }catch(NullPointerException ex) {
+            signal = RouteSignal.NOTFOUND;
+        }
+        return signal;
     }
 
     @Override
     public RouteSignal getLocalInterface(ServiceConnection from, ServiceChain to) {
-        return this.localDiscovery.getLocalInterface(from, to);
+        return RouteSignal.NOTFOUND;
     }
 
     private DiscoveryPacket packetUnpack(InputStream data) {
@@ -135,11 +178,13 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
         DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacket.DiscoveryPacketType.DISCOVERYRESPONSE);
         packet.setProbe(probe);
         from.setPathType(PathType.DISCOVERY);
-        
+        ServiceConnection dest = new DefaultServiceConnection(from.getUserConnectionId());
+        dest.setAddress(from.getAddress());
+        dest.setPathType(PathType.SERVICE);
         ServiceRequest req = null;
         try {
-            //from.setPathType(PathType.SERVICE); // bug
             network.send(packet, from);
+            //network.send(packet, dest);
         } catch (Throwable e) {
             System.out.println("Error " + e.getMessage());
             e.printStackTrace();
@@ -168,7 +213,7 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
                     processProbeRequest(from, packet.getProbe());
                     break;
                 case DISCOVERYRESPONSE:
-                    localDiscovery.updateHandling(from, packet);
+                    //localDiscovery.updateHandling(from, packet);
                     break;
                 case ANNOUNCE:
                     processAnnouncePacket(from, packet.getAnnonce());

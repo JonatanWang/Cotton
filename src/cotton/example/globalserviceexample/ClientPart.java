@@ -28,8 +28,13 @@ public class ClientPart {
         ServiceChain chain = new DummyServiceChain()
                 .into("TransmissionService").into("StringModifier");
         ServiceRequest serviceRequest = clientNetwork.sendToService("Hej", chain);
-        String result = (String) serviceRequest.getData();
-        System.out.println("this is the result: " + result);
+        if(serviceRequest != null) {
+            String result = (String) serviceRequest.getData();
+            System.out.println("this is the result: " + result);
+        }else {
+            System.out.println("Failed to send");
+        }
+        
         cotton.shutdown();
 
     }

@@ -30,7 +30,7 @@ public class TransmissionService implements ServiceInstance {
             Logger.getLogger(TransmissionService.class.getName()).log(Level.SEVERE, null, ex);
         }finally {
 
-            text.concat(". Cotton clouds in the sky!");
+            text = text + ". Cotton clouds in the sky!";
             System.out.println("In finally: " +text);
         }
 

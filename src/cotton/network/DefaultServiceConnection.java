@@ -38,7 +38,14 @@ public class DefaultServiceConnection implements ServiceConnection, Serializable
     public UUID getUserConnectionId() {
         return this.conId;
     }
-
+/**
+ *  Will be deprecated soon.. security vector
+ * @param uuid set the uiid for this connection,
+ */
+    public void setUserConnectionId(UUID uuid) {
+        this.conId = uuid;
+    }
+    
     @Override
     public String getServiceName() {
         return this.name;

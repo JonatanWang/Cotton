@@ -20,6 +20,9 @@ public class DefaultNetworkPacket implements NetworkPacket{
         this.data = data;
         this.from = from;
         this.path = path;
+        if(this.path == null) {
+            this.path = new DummyServiceChain();
+        }
         this.pt = pt;
         this.keepAlive = false;
     }

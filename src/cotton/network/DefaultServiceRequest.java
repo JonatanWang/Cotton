@@ -31,4 +31,8 @@ public class DefaultServiceRequest implements ServiceRequest{
         this.data = data;
         latch.countDown();
     }
+    public void setFailed() {
+        this.data = null;
+        latch.countDown();
+    }
 }

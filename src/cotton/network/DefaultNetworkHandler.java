@@ -149,7 +149,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
      */
     @Override
     public boolean send(Serializable data, ServiceConnection destination) {
-        data = buildServicePacket(data, null, getLocalServiceConnection(), destination.getPathType());
+        data = buildServicePacket(data, null, getLocalServiceConnection(destination.getUserConnectionId()), destination.getPathType());
         return sendObject(data, destination);
     }
 
@@ -163,9 +163,10 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     @Override
     public ServiceRequest sendWithResponse(Serializable data, ServiceConnection destination) throws IOException{
         DefaultServiceRequest result = new DefaultServiceRequest();
-
-        if(send(data, destination)){
-            this.connectionTable.put(destination.getUserConnectionId(), result);
+        ServiceConnection local = getLocalServiceConnection();
+        NetworkPacket packet = buildServicePacket(data, null, local, destination.getPathType());
+        if(sendObject(packet, destination)){
+            this.connectionTable.put(local.getUserConnectionId(), result);
             return result;
         }
         return null;
@@ -189,10 +190,17 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
             return;
         case ENDPOINT:
             DefaultServiceRequest req = connectionTable.get(from.getUserConnectionId());
-            if(req == null) return; // TODO: dont drop results, and send data to service discovary
+            if(req == null) {
+/*                System.out.println("Network route table error, ENDPOINT " 
+                        +"\n\tfrom: " + from.getUserConnectionId()
+                        +"\n\tdest: " + dest.getUserConnectionId());
+      */          
+                return;
+            } // TODO: dont drop results, and send data to service discovary
             req.setData(data);
             return;
         case NOTFOUND:
+            
             return;
         }
 
@@ -213,16 +221,16 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         ServiceConnection dest = new DefaultServiceConnection(uuid);
         RouteSignal route = localServiceDiscovery.getDestination(dest, path);
         DefaultServiceRequest result = new DefaultServiceRequest();
+        this.connectionTable.put(dest.getUserConnectionId(), result);
         if(route == RouteSignal.LOCALDESTINATION) {
             sendToServiceBuffer(dest, data, path);
-            this.connectionTable.put(dest.getUserConnectionId(), result);
             return result;
         }
 
-        data = buildServicePacket(data, path, getLocalServiceConnection(), dest.getPathType());
+        data = buildServicePacket(data, path, getLocalServiceConnection(dest.getUserConnectionId()), dest.getPathType());
 
         if(sendObject(data,dest)){
-            this.connectionTable.put(dest.getUserConnectionId(), result);
+            //this.connectionTable.put(dest.getUserConnectionId(), result);
             return result;
         }
         return null;
@@ -298,7 +306,19 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         }
         return in;
     }
-
+/**
+ * Sends the data to a local service waiting on the data , puts it in the right ServiceRequest, 
+ * @param data the result of a client ServiceRequest
+ * @param destination
+ * @return 
+ */
+    public boolean sendEnd(Serializable data, ServiceConnection destination) {
+        DefaultServiceRequest req = this.connectionTable.get(destination.getUserConnectionId());
+        if(req == null) return false;
+        req.setData(data);
+        return true;
+    }
+    
     private void sendToServiceBuffer(ServiceConnection from, Serializable data, ServiceChain path) {
         ServicePacket servicePacket = new ServicePacket(from, serializableToInputStream(data), path);
         serviceBuffer.add(servicePacket);
@@ -307,7 +327,24 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     private NetworkPacket buildServicePacket(Serializable data, ServiceChain path, ServiceConnection from, PathType type){
         return new DefaultNetworkPacket(data, path, from, type);
     }
-
+/**
+ * Give back a new ServiceConnection but keeps the uuid between jumps
+ * This is needed to prevent a huge bug when the uuid gets lost between machines
+ * @param uuid the uuid the new ServiceConnection should contain
+ * @return 
+ */
+    private ServiceConnection getLocalServiceConnection(UUID uuid){
+        SocketAddress address = getLocalSocketAddress();
+        ServiceConnection local = new DefaultServiceConnection(uuid);
+        local.setAddress(address);
+        return local;
+    }
+    /**
+     * getLocalServiceConnection
+     * Warning: improper use of this method can lead to huge network routing bugs,
+     *      related to losing the uuid between jumps, use the above method instead
+     * @return ServiceConnection with the local socket
+     */
     private ServiceConnection getLocalServiceConnection(){
         SocketAddress address = getLocalSocketAddress();
         ServiceConnection local = new DefaultServiceConnection();
@@ -333,7 +370,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
 
         @Override
         public void run(){
-            System.out.println("Incoming connection from: " + clientSocket.getLocalSocketAddress());
+            System.out.println("Incoming connection to: " + clientSocket.getLocalSocketAddress() +" from" + clientSocket.getRemoteSocketAddress());
             try {
                 ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
 
