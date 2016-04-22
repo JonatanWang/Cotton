@@ -1,13 +1,20 @@
 
 package cotton.test.services;
 
-import cotton.services.CloudContext;
-import cotton.network.ServiceChain;
-import cotton.network.ServiceConnection;
-import cotton.services.ServiceFactory;
 import cotton.services.ServiceInstance;
-import java.io.InputStream;
+import cotton.services.ServiceFactory;
+import cotton.services.CloudContext;
+import cotton.network.ServiceConnection;
+import cotton.network.ServiceChain;
 import java.io.Serializable;
+import cotton.Cotton;
+import java.net.UnknownHostException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import cotton.services.ActiveServiceLookup;
+import java.io.IOException;
 
 /**
  *
