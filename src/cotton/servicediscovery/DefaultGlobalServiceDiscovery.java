@@ -1,8 +1,10 @@
 package cotton.servicediscovery;
 
 import cotton.network.NetworkHandler;
+import cotton.network.PathType;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceConnection;
+import cotton.network.ServiceRequest;
 import cotton.services.ActiveServiceLookup;
 import java.io.IOException;
 import java.io.InputStream;
@@ -99,6 +101,41 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
         return probe;
     }
 
+    private void addService(SocketAddress addr, String name) {
+        AddressPool pool = new AddressPool();
+        AddressPool oldPool = this.serviceCache.putIfAbsent(name, pool);
+        if (oldPool != null) {
+            oldPool.addAddress(addr);
+        } else {
+            pool.addAddress(addr);
+        }
+    }
+
+    private void processAnnouncePacket(ServiceConnection from, AnnoncePacket packet) {
+        String[] serviceList = packet.getServiceList();
+        for (int i = 0; i < serviceList.length; i++) {
+            addService(from.getAddress(), serviceList[i]);
+        }
+    }
+
+    private void processProbeRequest(ServiceConnection from, DiscoveryProbe probe) {
+        AddressPool pool = this.serviceCache.get(probe.getName());
+        if (pool == null) {
+            probe.setAddress(null);
+        }
+
+        DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacket.DiscoveryPacketType.DISCOVERYRESPONSE);
+        packet.setProbe(probe);
+        from.setPathType(PathType.DISCOVERY);
+        ServiceRequest req = null;
+        try {
+            req = network.sendWithResponse(packet, from);
+        } catch (Throwable e) {
+            System.out.println("Error " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     private class DiscoveryLookup implements Runnable {
 
         private ServiceConnection from;
@@ -116,13 +153,12 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
             //to do: switch not functioning properly with enums
             switch (type) {
                 case DISCOVERYREQUEST:
-                    //updateAdressTable(packet.getProbe());
-                    //only on global
                     break;
                 case DISCOVERYRESPONSE:
                     localDiscovery.updateHandling(from, packet);
                     break;
                 case ANNOUNCE:
+                    processAnnouncePacket(from, packet.getAnnonce());
                     //intern handeling method
                     break;
                 default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);

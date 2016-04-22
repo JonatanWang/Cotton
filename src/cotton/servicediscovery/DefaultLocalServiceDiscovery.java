@@ -246,8 +246,8 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         for(String nameKey : serviceCache.keySet()) {
             serviceList.add(nameKey);
         }
-        
-        AnnoncePacket annonce = new AnnoncePacket(localAddress, (String[]) serviceList.toArray());
+        String[] serviceNameList = serviceList.toArray(new String[serviceList.size()]);
+        AnnoncePacket annonce = new AnnoncePacket(localAddress, serviceNameList);
         packet.setAnnonce(annonce);
         
         DefaultServiceConnection globalDest = new DefaultServiceConnection(UUID.randomUUID());
