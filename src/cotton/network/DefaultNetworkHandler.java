@@ -69,8 +69,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
      * @param destination The information about where the packet is headed.
      * @return Whether the connection succeeded or not.
      */
-    @Override
-    public boolean sendObject(Serializable data, ServiceConnection destination) {
+    private boolean sendObject(Serializable data, ServiceConnection destination) {
         Socket socket = new Socket(); // TODO: Encryption
         try {
             socket.connect(destination.getAddress());
@@ -98,7 +97,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
      */
     @Override
     public boolean send(Serializable data, ServiceConnection destination) {
-        data = buildServicePacket(data, null, destination, destination.getPathType());
+        data = buildServicePacket(data, null, getLocalServiceConnection(), destination.getPathType());
         return sendObject(data, destination);
     }
 
@@ -111,26 +110,14 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
      */
     @Override
     public ServiceRequest sendWithResponse(Serializable data, ServiceConnection destination) throws IOException{
-        Socket socket = new Socket(); // TODO: Encryption
-        //UUID uuid = UUID.randomUUID();
-        DefaultServiceRequest request = new DefaultServiceRequest();
-        data = buildServicePacket(data, null, destination, destination.getPathType());
-        try {
-            socket.connect(destination.getAddress());
-            new ObjectOutputStream(socket.getOutputStream()).writeObject(data);
-            this.connectionTable.put(destination.getUserConnectionId(), request);
-            return request;
-        }catch (IOException e) {
-            logError("send: " + e.getMessage());
-            throw e;
-        }finally{
-            try {
-                socket.close();
-            } catch (Throwable e) {
-                logError("send socket close: " + e.getMessage());
-                throw e;
-            }
+        UUID uuid = UUID.randomUUID();
+        DefaultServiceRequest result = new DefaultServiceRequest();
+
+        if(send(data, destination)){
+            this.connectionTable.put(uuid, result);
+            return result;
         }
+        return null;
     }
 
     /**
