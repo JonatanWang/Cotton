@@ -44,6 +44,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     private int localPort;
     private InetAddress localIP;
     private ExecutorService threadPool;
+    private SocketAddress localSocketAddress;
 
     public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery) throws java.net.UnknownHostException{
         if(localServiceDiscovery == null)
@@ -64,6 +65,50 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         this.localServiceDiscovery = localServiceDiscovery;
         localServiceDiscovery.setNetwork(this, getLocalSocketAddress()); // TODO: get socket address
         running = new AtomicBoolean(true);
+    }
+
+    public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery,SocketAddress localSocketAddress) throws java.net.UnknownHostException{
+        if(localServiceDiscovery == null)
+            throw new NullPointerException("Recieved null servicediscovery");
+
+        this.localPort = 3333; // TODO: Remove hardcoded port
+        try{
+            //this.localIP = InetAddress.getByName(null);
+            this.localIP = Inet4Address.getLocalHost();
+        }catch(java.net.UnknownHostException e){// TODO: Get address from outside
+            logError("initialization process local address "+e.getMessage());
+            throw e;
+        }
+
+        this.serviceBuffer = new DefaultServiceBuffer();
+        this.connectionTable = new ConcurrentHashMap<>();
+        threadPool = Executors.newCachedThreadPool();
+        this.localServiceDiscovery = localServiceDiscovery;
+        localServiceDiscovery.setNetwork(this, getLocalSocketAddress()); // TODO: get socket address
+        running = new AtomicBoolean(true);
+        this.localSocketAddress = localSocketAddress;
+    }
+
+    public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery,int port) throws java.net.UnknownHostException{
+        if(localServiceDiscovery == null)
+            throw new NullPointerException("Recieved null servicediscovery");
+
+        this.localPort = port; // TODO: Remove hardcoded port
+        try{
+            //this.localIP = InetAddress.getByName(null);
+            this.localIP = Inet4Address.getLocalHost();
+        }catch(java.net.UnknownHostException e){// TODO: Get address from outside
+            logError("initialization process local address "+e.getMessage());
+            throw e;
+        }
+
+        this.serviceBuffer = new DefaultServiceBuffer();
+        this.connectionTable = new ConcurrentHashMap<>();
+        threadPool = Executors.newCachedThreadPool();
+        this.localServiceDiscovery = localServiceDiscovery;
+        localServiceDiscovery.setNetwork(this, getLocalSocketAddress()); // TODO: get socket address
+        running = new AtomicBoolean(true);
+        
     }
 
     /**
@@ -298,7 +343,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
                 NetworkPacket input = (NetworkPacket)in.readObject();
                 in.close();
                 clientSocket.close();
-                System.out.println("Socket closed, parsing packet!, from: " + ((InetSocketAddress)input.getOrigin().getAddress()).toString());
+                System.out.println("Socket closed, parsing packet!");
 
                 switch(input.getType()){
                 case SERVICE:
@@ -307,11 +352,8 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
                     break;
                 case DISCOVERY:
                     localServiceDiscovery.discoveryUpdate(input.getOrigin(), serializableToInputStream(input.getData()));
-                    break;
                 default:
-                    
-                    System.out.println("Non-servicepacket recieved, not yet implemented: " + input.getType());
-                    break;
+                    System.out.println("Non-servicepacket recieved, not yet implemented");
                 }
             }catch (Throwable e) {
                 System.out.println("Error " + e.getMessage());
