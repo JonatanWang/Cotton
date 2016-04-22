@@ -104,8 +104,6 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
      */
     @Override
     public boolean send(Serializable data, ServiceConnection destination) {
-        
-
         data = buildServicePacket(data, null, getLocalServiceConnection(), destination.getPathType());
         return sendObject(data, destination);
     }
@@ -296,20 +294,29 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
                 ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
 
                 NetworkPacket input = (NetworkPacket)in.readObject();
-                in.close();
-                clientSocket.close();
-                System.out.println("Socket closed, parsing packet!");
+
+                System.out.println("Packet recieved, parsing");
 
                 switch(input.getType()){
                 case SERVICE:
-                    sendToService(input.getData(), input.getPath(), input.getOrigin());
                     System.out.println("ServicePacket with ID: " + input.getOrigin().getUserConnectionId() + "\nSpecifying services: " + ((DummyServiceChain)input.getPath()).toString());
+                    if(input.keepAlive()){
+                        ServiceRequest s = sendToService(input.getData(), input.getPath());
+                        Serializable returnPacket = buildServicePacket(s.getData(), null, getLocalServiceConnection(), PathType.SERVICE);
+                        new ObjectOutputStream(clientSocket.getOutputStream()).writeObject(returnPacket);
+                    }else{
+                        sendToService(input.getData(), input.getPath(), input.getOrigin());
+                    }
                     break;
                 case DISCOVERY:
                     localServiceDiscovery.discoveryUpdate(input.getOrigin(), serializableToInputStream(input.getData()));
+                    break;
                 default:
                     System.out.println("Non-servicepacket recieved, not yet implemented");
+                    break;
                 }
+                in.close();
+                clientSocket.close();
             }catch (Throwable e) {
                 System.out.println("Error " + e.getMessage());
                 e.printStackTrace();

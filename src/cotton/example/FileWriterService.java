@@ -37,7 +37,7 @@ public class FileWriterService implements ServiceInstance{
             System.out.println(e.getMessage());
         }
 
-        return "null";
+        return input;
     }
 
     public static ServiceFactory getFactory(){
