@@ -45,7 +45,6 @@ public class Cotton {
         network = net;
         clientNetwork = net;
         services = new ServiceHandler(lookup, network);
-        discovery.announce();
     }
     
     public Cotton () throws java.net.UnknownHostException {
@@ -56,12 +55,12 @@ public class Cotton {
         network = net;
         clientNetwork = net;
         services = new ServiceHandler(lookup, network);
-        discovery.announce();
     }
 
     public void start(){
         new Thread(services).start();
         new Thread(network).start();
+        discovery.announce();
     }
 
     public void shutdown() {

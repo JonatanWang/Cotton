@@ -157,6 +157,8 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
             DiscoveryPacket packet = packetUnpack(data);
             DiscoveryPacket.DiscoveryPacketType type = packet.getPacketType();
             //to do: switch not functioning properly with enums
+            System.out.println("DefaultGlobalServiceDiscovery: " + type 
+                            + " from: " + ((InetSocketAddress)from.getAddress()).toString());
             switch (type) {
                 case DISCOVERYREQUEST:
                     processProbeRequest(from, packet.getProbe());
@@ -169,6 +171,7 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
                     //intern handeling method
                     break;
                 default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
+                    System.out.println("DefaultGlobalServiceDiscovery updateHandling recieved, not yet implemented: " + type);
                     break;
             }
         }

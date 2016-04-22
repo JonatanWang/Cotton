@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Enumeration;
 
@@ -57,6 +58,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
     public void setNetwork(NetworkHandler network, SocketAddress localAddress) {
         this.network = network;
         this.localAddress = localAddress;
+        System.out.println("local ip: " + ((InetSocketAddress)localAddress).toString());
     }
 
     private RouteSignal getReturnAddress(ServiceConnection destination, ServiceConnection from) {
@@ -214,6 +216,8 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
 
         DiscoveryPacketType type = packet.getPacketType();
         //to do: switch not functioning properly with enums
+        System.out.println("DefaultLocalServiceDiscovery: " + type 
+                            + " from: " + ((InetSocketAddress)localAddress).toString());
         switch(type){
         case DISCOVERYREQUEST:
             //updateAdressTable(packet.getProbe());
@@ -226,6 +230,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
             //intern handeling method
             break;
         default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
+            System.out.println("DefaultLocalServiceDiscovery updateHandling recieved, not yet implemented: " + type);
             break;
         }
     }
@@ -244,7 +249,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         
         DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.ANNOUNCE);
         ArrayList<String> serviceList = new ArrayList<String>();
-        for(String nameKey : serviceCache.keySet()) {
+        for(String nameKey : internalLookup.getKeySet()) {
             serviceList.add(nameKey);
         }
         String[] serviceNameList = serviceList.toArray(new String[serviceList.size()]);
