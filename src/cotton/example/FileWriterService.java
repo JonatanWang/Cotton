@@ -26,8 +26,9 @@ public class FileWriterService implements ServiceInstance{
         System.out.println("Write");
         BufferedImage image = null;
 
+        ImageManipulationPacket input = null;
         try{
-            ImageManipulationPacket input = (ImageManipulationPacket)new ObjectInputStream(data).readObject();
+            input = (ImageManipulationPacket)new ObjectInputStream(data).readObject();
             image = bytesToBufferedImage(input.getImage());
 
             ImageIO.write(image, "png", new File("test.png"));
