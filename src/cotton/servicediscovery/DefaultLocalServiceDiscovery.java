@@ -71,6 +71,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         return RouteSignal.NETWORKDESTINATION;
         
     }
+    public void stop() {}
     
     private void cacheAddress(String serviceName,SocketAddress targetAddr) {
         AddressPool poolCheck = serviceCache.get(serviceName);
