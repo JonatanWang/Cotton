@@ -71,6 +71,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         return RouteSignal.NETWORKDESTINATION;
         
     }
+    public void stop() {}
     
     private void cacheAddress(String serviceName,SocketAddress targetAddr) {
         AddressPool poolCheck = serviceCache.get(serviceName);
@@ -87,6 +88,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
     }
     
     private RouteSignal getGlobalAddress(ServiceConnection destination, String serviceName) {
+
         SocketAddress addr = this.globalDiscovery.getAddress();
         if(addr == null){
             return RouteSignal.NOTFOUND;
@@ -119,6 +121,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
     
     @Override
     public RouteSignal getDestination(ServiceConnection destination, ServiceChain to) {
+
         if(destination == null) {
             return RouteSignal.NOTFOUND;
         }
@@ -128,6 +131,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
     
     @Override
     public RouteSignal getDestination(ServiceConnection destination, ServiceConnection from, ServiceChain to) {
+
         if(destination == null) {
             return RouteSignal.NOTFOUND;
         }
@@ -143,7 +147,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         if(serviceInfo != null){
             return RouteSignal.LOCALDESTINATION;
         }
-        
+
         AddressPool pool  = serviceCache.get(serviceName);
         if(pool == null) {
             // get global sd
@@ -179,6 +183,12 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
 
     private void updateAdressTable(DiscoveryProbe probe) {
 
+        SocketAddress check = probe.getAddress();
+        String name = probe.getName();
+
+        if(check == null || name == null)
+            return;
+
         AddressPool pool = serviceCache.get(probe.getName());
 
         if(pool != null){
@@ -201,6 +211,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
     }
 
     protected void updateHandling(ServiceConnection from, DiscoveryPacket packet) {
+
         DiscoveryPacketType type = packet.getPacketType();
         //to do: switch not functioning properly with enums
         switch(type){
@@ -236,8 +247,8 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         for(String nameKey : serviceCache.keySet()) {
             serviceList.add(nameKey);
         }
-        
-        AnnoncePacket annonce = new AnnoncePacket(localAddress, (String[]) serviceList.toArray());
+        String[] serviceNameList = serviceList.toArray(new String[serviceList.size()]);
+        AnnoncePacket annonce = new AnnoncePacket(localAddress, serviceNameList);
         packet.setAnnonce(annonce);
         
         DefaultServiceConnection globalDest = new DefaultServiceConnection(UUID.randomUUID());

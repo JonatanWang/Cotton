@@ -36,6 +36,15 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import cotton.network.*;
 import cotton.servicediscovery.*;
+import java.net.InetSocketAddress;
+import java.net.InetAddress;
+import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+
+
 
 
 public class UnitTest {
@@ -267,6 +276,56 @@ public class UnitTest {
         ServiceChain chain = new DummyServiceChain().into("test");
         assertTrue(RouteSignal.NOTFOUND == local.getDestination(null, chain));
     }
+
+    @Test
+    public void LocalServiceDiscoveryUpdate(){
+        System.out.println("LocalServiceDiscoveryUpdate, testing discoveryUpdate");
+
+        InetSocketAddress name = null;
+        try{
+            name = new InetSocketAddress(InetAddress.getByName(null), 1234);
+        }catch(IOException e){}
+
+        DiscoveryProbe prob = new DiscoveryProbe("test", name);
+
+        DiscoveryPacket pack = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE);
+        //pack.setPacketType(DiscoveryPacketType.DISCOVERYRESPONSE);
+        pack.setProbe(prob);
+
+        InputStream message = serializableToInputStream(pack);
+
+        ServiceConnection from = new DefaultServiceConnection();
+
+        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        lookup.registerService("Store", new TestFactory(), 10);
+        ServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        local.discoveryUpdate(from, message);
+
+        ServiceConnection dest = new DefaultServiceConnection();
+        ServiceChain chain = new DummyServiceChain().into("test");
+        assertTrue(RouteSignal.NETWORKDESTINATION == local.getDestination(dest, from, chain));
+
+    }
+
+
+    private InputStream serializableToInputStream(Serializable data){
+        ServicePacket servicePacket = null;
+        InputStream in = null;
+        try{
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
+
+            objectStream.writeObject(data);
+            objectStream.flush();
+            objectStream.close();
+
+            in = new ByteArrayInputStream(byteStream.toByteArray());
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+        return in;
+    }
+
 
 
 }
