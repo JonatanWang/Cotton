@@ -2,6 +2,7 @@ package cotton.services;
 
 import java.util.Enumeration;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentHashMap.KeySetView;
 
 /**
  *
@@ -35,6 +36,11 @@ public class DefaultActiveServiceLookup implements ActiveServiceLookup{
         return hashMap.keys();
     }
 
+    @Override
+    public KeySetView<String, ServiceMetaData> getKeySet() {
+        return hashMap.keySet();
+    }
+    
     @Override
     public ServiceMetaData removeServiceEntry(String service) {
         return hashMap.remove(service);

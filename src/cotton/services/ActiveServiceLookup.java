@@ -1,5 +1,6 @@
 package cotton.services;
 import java.util.Enumeration;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
@@ -14,6 +15,7 @@ public interface ActiveServiceLookup {
     public ServiceMetaData getService(String serviceName);
 
     public Enumeration<String> getServiceEnumeration();
+    public ConcurrentHashMap.KeySetView<String, ServiceMetaData> getKeySet();
 
     public ServiceMetaData removeServiceEntry(String service);
 

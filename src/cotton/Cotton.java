@@ -20,7 +20,7 @@ import cotton.network.DummyServiceChain;
 import cotton.servicediscovery.DefaultGlobalServiceDiscovery;
 import cotton.services.ServiceHandler;
 import cotton.servicediscovery.ServiceDiscovery;
-
+import java.util.concurrent.ThreadLocalRandom;
 /**
  *
  * @author Jonathan
@@ -36,16 +36,17 @@ public class Cotton {
     public Cotton (boolean GlobalServiceDiscovery) throws java.net.UnknownHostException {
         lookup = new DefaultActiveServiceLookup();
         GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
+        DefaultNetworkHandler net = null;
         if(GlobalServiceDiscovery) {
             this.discovery = new DefaultGlobalServiceDiscovery(lookup,globalDiscoveryDNS);
+            net = new DefaultNetworkHandler(discovery);
         }else {
             this.discovery = new DefaultLocalServiceDiscovery(lookup,globalDiscoveryDNS);
+            net = new DefaultNetworkHandler(discovery,ThreadLocalRandom.current().nextInt(3000,20000));
         }
-        DefaultNetworkHandler net = new DefaultNetworkHandler(discovery);
         network = net;
         clientNetwork = net;
         services = new ServiceHandler(lookup, network);
-        discovery.announce();
     }
     
     public Cotton () throws java.net.UnknownHostException {
@@ -56,12 +57,12 @@ public class Cotton {
         network = net;
         clientNetwork = net;
         services = new ServiceHandler(lookup, network);
-        discovery.announce();
     }
 
     public void start(){
         new Thread(services).start();
         new Thread(network).start();
+        discovery.announce();
     }
 
     public void shutdown() {

@@ -11,7 +11,7 @@ public class ServiceInstance2 {
     public static void main(String[] args) {
         Cotton cotton = null;
         try {
-            cotton = new Cotton(true);
+            cotton = new Cotton(false);
         } catch (UnknownHostException ex) {
             Logger.getLogger(GlobalDiscoveryExample.class.getName()).log(Level.SEVERE, null, ex);
         }
