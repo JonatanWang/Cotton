@@ -129,7 +129,7 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
         from.setPathType(PathType.DISCOVERY);
         ServiceRequest req = null;
         try {
-            req = network.sendWithResponse(packet, from);
+            network.send(packet, from);
         } catch (Throwable e) {
             System.out.println("Error " + e.getMessage());
             e.printStackTrace();
@@ -153,6 +153,7 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
             //to do: switch not functioning properly with enums
             switch (type) {
                 case DISCOVERYREQUEST:
+                    processProbeRequest(from, packet.getProbe());
                     break;
                 case DISCOVERYRESPONSE:
                     localDiscovery.updateHandling(from, packet);
