@@ -26,7 +26,7 @@ public class ClientPart {
         cotton.start();
         ClientNetwork clientNetwork = cotton.getClientNetwork();
         ServiceChain chain = new DummyServiceChain()
-                .into("MathPow2").into("StringModifier");
+                .into("TransmissionService").into("StringModifier");
         ServiceRequest serviceRequest = clientNetwork.sendToService("Hej", chain);
         String result = (String) serviceRequest.getData();
         System.out.println("this is the result: " + result);
