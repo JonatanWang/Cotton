@@ -125,7 +125,7 @@ public class ImageManipulationService implements ServiceInstance{
     private byte[] bufferedImageToBytes(BufferedImage image){
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try {
-            ImageIO.write(image, "png", output);
+            ImageIO.write(image, "jpg", output);
         }
         catch (Throwable e) {
             System.out.println("Error " + e.getMessage());

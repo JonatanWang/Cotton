@@ -70,7 +70,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
      * @return Whether the connection succeeded or not.
      */
     @Override
-    public boolean send(Serializable data, ServiceConnection destination) {
+    public boolean sendObject(Serializable data, ServiceConnection destination) {
         Socket socket = new Socket(); // TODO: Encryption
         try {
             socket.connect(destination.getAddress());
@@ -87,6 +87,19 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
                 return false;
             }
         }
+    }
+
+    /**
+     * Send a serializable piece of data to the specified destination
+     *
+     * @param data The object to send.
+     * @param destination The information about where the packet is headed.
+     * @return Whether the connection succeeded or not.
+     */
+    @Override
+    public boolean send(Serializable data, ServiceConnection destination) {
+        data = buildServicePacket(data, null, null, destination.getPathType());
+        return sendObject(data, destination);
     }
 
     /**
@@ -146,7 +159,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
 
         data = buildServicePacket(data, path, from, dest.getPathType());
 
-        send(data, dest);
+        sendObject(data, dest);
     }
 
     /**
@@ -169,7 +182,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
 
         data = buildServicePacket(data, path, getLocalServiceConnection(), dest.getPathType());
 
-        if(send(data,dest)){
+        if(sendObject(data,dest)){
             this.connectionTable.put(uuid, result);
             return result;
         }
