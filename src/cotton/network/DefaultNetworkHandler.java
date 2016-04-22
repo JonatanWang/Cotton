@@ -98,7 +98,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
      */
     @Override
     public boolean send(Serializable data, ServiceConnection destination) {
-        data = buildServicePacket(data, null, null, destination.getPathType());
+        data = buildServicePacket(data, null, destination, destination.getPathType());
         return sendObject(data, destination);
     }
 
@@ -112,12 +112,13 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     @Override
     public ServiceRequest sendWithResponse(Serializable data, ServiceConnection destination) throws IOException{
         Socket socket = new Socket(); // TODO: Encryption
-        UUID uuid = UUID.randomUUID();
+        //UUID uuid = UUID.randomUUID();
         DefaultServiceRequest request = new DefaultServiceRequest();
+        data = buildServicePacket(data, null, destination, destination.getPathType());
         try {
             socket.connect(destination.getAddress());
             new ObjectOutputStream(socket.getOutputStream()).writeObject(data);
-            this.connectionTable.put(uuid, request);
+            this.connectionTable.put(destination.getUserConnectionId(), request);
             return request;
         }catch (IOException e) {
             logError("send: " + e.getMessage());
@@ -183,7 +184,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         data = buildServicePacket(data, path, getLocalServiceConnection(), dest.getPathType());
 
         if(sendObject(data,dest)){
-            this.connectionTable.put(uuid, result);
+            this.connectionTable.put(dest.getUserConnectionId(), result);
             return result;
         }
         return null;

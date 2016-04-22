@@ -9,6 +9,7 @@ import cotton.services.ActiveServiceLookup;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -113,7 +114,12 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
 
     private void processAnnouncePacket(ServiceConnection from, AnnoncePacket packet) {
         String[] serviceList = packet.getServiceList();
+        if(from == null) {
+            System.out.println("Ip:" + ((InetSocketAddress)from.getAddress()).toString());
+            
+        }
         for (int i = 0; i < serviceList.length; i++) {
+            System.out.println("\tService: " + serviceList[i]);
             addService(from.getAddress(), serviceList[i]);
         }
     }
