@@ -128,13 +128,17 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
         AddressPool pool = this.serviceCache.get(probe.getName());
         if (pool == null) {
             probe.setAddress(null);
+        }else {
+            probe.setAddress(pool.getAddress());
+            
         }
-        probe.setAddress(pool.getAddress());
         DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacket.DiscoveryPacketType.DISCOVERYRESPONSE);
         packet.setProbe(probe);
         from.setPathType(PathType.DISCOVERY);
+        
         ServiceRequest req = null;
         try {
+            //from.setPathType(PathType.SERVICE); // bug
             network.send(packet, from);
         } catch (Throwable e) {
             System.out.println("Error " + e.getMessage());

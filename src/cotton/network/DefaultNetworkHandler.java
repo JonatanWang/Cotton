@@ -339,8 +339,11 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
                 ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
 
                 NetworkPacket input = (NetworkPacket)in.readObject();
+                System.out.println("Socket closed, parsing packet!");
+                if(input == null) {
+                    System.out.println("NetworkPacket null");
+                }
 
-                System.out.println("Packet recieved, parsing");
 
                 switch(input.getType()){
                 case SERVICE:
@@ -357,7 +360,8 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
                     localServiceDiscovery.discoveryUpdate(input.getOrigin(), serializableToInputStream(input.getData()));
                     break;
                 default:
-                    System.out.println("Non-servicepacket recieved, not yet implemented");
+                    System.out.println("Non-servicepacket recieved, not yet implemented: type" + input.getType());
+
                     break;
                 }
                 in.close();

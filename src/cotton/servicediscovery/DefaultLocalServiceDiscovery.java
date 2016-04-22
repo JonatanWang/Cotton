@@ -2,6 +2,7 @@
 package cotton.servicediscovery;
 
 import cotton.network.DefaultServiceConnection;
+import cotton.network.DummyServiceChain;
 import cotton.network.NetworkHandler;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceRequest;
@@ -62,7 +63,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
     }
 
     private RouteSignal getReturnAddress(ServiceConnection destination, ServiceConnection from) {
-        if(from == null){
+        if(from == null || from.getAddress() == null){
             return RouteSignal.NOTFOUND;
         }
         destination.setAddress(from.getAddress());
@@ -108,6 +109,9 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
             System.out.println("Error " + e.getMessage());
             e.printStackTrace();
         }
+        if(req == null) {
+            return RouteSignal.NOTFOUND;
+        }
 
         DiscoveryPacket answers = (DiscoveryPacket)req.getData(); //TODO: io checks
         
@@ -137,9 +141,11 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         if(destination == null) {
             return RouteSignal.NOTFOUND;
         }
-        String serviceName;
+        String serviceName = null;
 
-        serviceName = to.peekNextServiceName();
+        if(to != null) {
+            serviceName = to.peekNextServiceName();
+        }
 
         if(serviceName == null){
             return getReturnAddress(destination, from);
@@ -216,8 +222,12 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
 
         DiscoveryPacketType type = packet.getPacketType();
         //to do: switch not functioning properly with enums
-       /* System.out.println("DefaultLocalServiceDiscovery: " + type 
-                            + " from: " + ((InetSocketAddress)localAddress).toString());*/
+       /* 
+       System.out.println("DefaultLocalServiceDiscovery: " + type 
+                            + " from: " + ((InetSocketAddress)localAddress).toString()
+                            + " dest: " + ((InetSocketAddress)packet.getProbe().getAddress()).toString());
+       */
+       DefaultServiceConnection dest = null;
         switch(type){
         case DISCOVERYREQUEST:
             //updateAdressTable(packet.getProbe());
@@ -225,6 +235,10 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
             break;
         case DISCOVERYRESPONSE:
             updateAdressTable(packet.getProbe());
+            if(from != null && network != null){
+                dest = new DefaultServiceConnection(from.getUserConnectionId());
+                network.sendToService(packet, new DummyServiceChain(),dest );
+            }
             break;
         case ANNOUNCE:
             //intern handeling method

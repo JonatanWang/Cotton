@@ -18,6 +18,7 @@ public class TransmissionService implements ServiceInstance {
     public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
 
         String text = null;
+        System.out.println("Starting ServiceInstancew ,TransmissionService" );
 
         try {
             ObjectInputStream input = new ObjectInputStream(data);
