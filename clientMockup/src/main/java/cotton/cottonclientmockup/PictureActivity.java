@@ -14,6 +14,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +57,7 @@ public class PictureActivity extends AppCompatActivity{
                 intent.putExtra("filename", CurrentPhotoPath);
                 intent.putExtra("reciever", new PictureResultReciever(new Handler()));
                 startService(intent);
+                setToast("Sending to server!");
             }
         });
         sendButton.setClickable(false);
@@ -135,9 +137,14 @@ public class PictureActivity extends AppCompatActivity{
                 Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
                 view.setImageBitmap(myBitmap);
                 sendButton.setClickable(true);
+                setToast("Recieved image from server!");
             }
 
         }
+    }
+
+    private void setToast(String s) {
+        Toast.makeText(PictureActivity.this, s, Toast.LENGTH_SHORT).show();
     }
 
 }

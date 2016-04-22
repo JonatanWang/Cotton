@@ -4,6 +4,7 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -76,12 +77,13 @@ public class NetworkService extends IntentService {
 
             try {
                 NetworkPacket result = (NetworkPacket)resultStream.readObject();
-                byte[] data = (byte[])result.getData();
+                ImageManipulationPacket returnImage = (ImageManipulationPacket) result.getData();
+                byte[] data = returnImage.getImage();
                 Bitmap editedImage = BitmapFactory.decodeByteArray(data, 0, data.length);
-                String savename = filename.substring(0, filename.length()-4)+"edited.png";
+                String savename = filename.substring(0, filename.length()-4)+"edited.jpg";
                 FileOutputStream saveImage = new FileOutputStream(savename);
                 galleryAddPic(savename);
-                editedImage.compress(Bitmap.CompressFormat.PNG, 100, saveImage);
+                editedImage.compress(Bitmap.CompressFormat.JPEG, 100, saveImage);
                 System.out.println("Recieved manipulated image, saving into: "+savename);
                 Bundle activityReturn = new Bundle();
                 activityReturn.putString("filename", savename);

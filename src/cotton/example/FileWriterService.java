@@ -31,7 +31,7 @@ public class FileWriterService implements ServiceInstance{
             input = (ImageManipulationPacket)new ObjectInputStream(data).readObject();
             image = bytesToBufferedImage(input.getImage());
 
-            ImageIO.write(image, "png", new File("test.png"));
+            ImageIO.write(image, "jpg", new File("test.jpg"));
         }catch (IOException ex) {
             Logger.getLogger(ImageManipulationService.class.getName()).log(Level.SEVERE, null, ex);
         }catch (ClassNotFoundException e){
@@ -70,7 +70,7 @@ public class FileWriterService implements ServiceInstance{
     private byte[] bufferedImageToBytes(BufferedImage image){
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try {
-            ImageIO.write(image, "png", output);
+            ImageIO.write(image, "jpg", output);
         }
         catch (Throwable e) {
             System.out.println("Error " + e.getMessage());
