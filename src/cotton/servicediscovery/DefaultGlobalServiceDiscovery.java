@@ -129,7 +129,7 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
         if (pool == null) {
             probe.setAddress(null);
         }
-
+        probe.setAddress(pool.getAddress());
         DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacket.DiscoveryPacketType.DISCOVERYRESPONSE);
         packet.setProbe(probe);
         from.setPathType(PathType.DISCOVERY);
