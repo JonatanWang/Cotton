@@ -299,7 +299,7 @@ public class UnitTest {
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("Store", new TestFactory(), 10);
         ServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
-        local.announce();
+        //local.announce();
         local.discoveryUpdate(from, message);
 
         ServiceConnection dest = new DefaultServiceConnection();

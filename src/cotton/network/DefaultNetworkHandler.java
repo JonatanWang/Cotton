@@ -344,16 +344,20 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
                 in.close();
                 clientSocket.close();
                 System.out.println("Socket closed, parsing packet!");
-
+                if(input == null) {
+                    System.out.println("NetworkPacket null");
+                }
                 switch(input.getType()){
                 case SERVICE:
                     sendToService(input.getData(), input.getPath(), input.getOrigin());
-                    System.out.println("ServicePacket with ID: " + input.getOrigin().getUserConnectionId() + "\nSpecifying services: " + ((DummyServiceChain)input.getPath()).toString());
+                    //System.out.println("ServicePacket with ID: " + input.getOrigin().getUserConnectionId() + "\nSpecifying services: " + ((DummyServiceChain)input.getPath()).toString());
                     break;
                 case DISCOVERY:
                     localServiceDiscovery.discoveryUpdate(input.getOrigin(), serializableToInputStream(input.getData()));
+                    break;
                 default:
-                    System.out.println("Non-servicepacket recieved, not yet implemented");
+                    System.out.println("Non-servicepacket recieved, not yet implemented: type" + input.getType());
+                    break;
                 }
             }catch (Throwable e) {
                 System.out.println("Error " + e.getMessage());

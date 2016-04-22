@@ -25,7 +25,7 @@ public class GlobalDiscoveryExample {
         }
         cotton.start();
         try {
-            Thread.sleep(20000);
+            Thread.sleep(30000);
         } catch (InterruptedException ignore) { }
         cotton.shutdown();
         

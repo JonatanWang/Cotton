@@ -52,6 +52,7 @@ public class ServiceInstance1 implements ServiceInstance{
 
     public Serializable consumeServiceOrder(CloudContext ctx,ServiceConnection from, InputStream data,ServiceChain to){
         String s = null;
+        System.out.println("Starting ServiceInstance1 ,StringModifier" );
         try{
             ObjectInputStream input = new ObjectInputStream(data);
             s = (String) input.readObject();
