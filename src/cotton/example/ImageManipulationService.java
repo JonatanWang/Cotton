@@ -12,11 +12,15 @@ import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
+import javax.imageio.ImageIO;
 
 /**
  * Service that manipulates an incoming image
@@ -27,31 +31,25 @@ import javax.swing.ImageIcon;
 public class ImageManipulationService implements ServiceInstance{
 
     private ImageManipulationService () {
-        
     }
 
     @Override
-    public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data,
-                                            ServiceChain to) {
-
+    public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
         BufferedImage image = null;
 
         System.out.println("Manipulation");
 
-        ObjectInputStream inStream;
-        try {
-            inStream = new ObjectInputStream(data);
-            image = ((ImageManipulationPacket)inStream.readObject()).getImage();
-        }catch (IOException ex) {
-            Logger.getLogger(ImageManipulationService.class.getName()).log(Level.SEVERE, null, ex);
-        }catch (ClassNotFoundException ex) {
+        try{
+            ImageManipulationPacket input = (ImageManipulationPacket)new ObjectInputStream(data).readObject();
+            image = bytesToBufferedImage(input.getImage());
+
+            image = invertColors(image);
+            image = applyText(image, 100, 100, new Font("Arial", Font.PLAIN, 30), "Amazing");
+        }catch (Exception ex) {
             Logger.getLogger(ImageManipulationService.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        image = invertColors(image);
-        image = applyText(image, 100, 100, new Font("Arial", Font.PLAIN, 30), "Amazing");
-
-        return new ImageManipulationPacket(image);
+        return new ImageManipulationPacket(bufferedImageToBytes(image));
     }
 
     private BufferedImage invertColors(BufferedImage image) {
@@ -60,14 +58,21 @@ public class ImageManipulationService implements ServiceInstance{
         WritableRaster raster = image.getRaster();
         int[] pixels = null;
 
-        for (int xx = 0; xx < width; xx++) {
-            for (int yy = 0; yy < height; yy++) {
-                pixels = raster.getPixel(xx, yy, (int[]) null);
-                if(pixels[3] != 0){
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                pixels = raster.getPixel(x, y, (int[]) null);
+                if(pixels.length > 3){
+                    if(pixels[3] != 0){
+                        pixels[0] = 255-pixels[0];
+                        pixels[1] = 255-pixels[1];
+                        pixels[2] = 255-pixels[2];
+                        raster.setPixel(x, y, pixels);
+                    }
+                }else{
                     pixels[0] = 255-pixels[0];
                     pixels[1] = 255-pixels[1];
                     pixels[2] = 255-pixels[2];
-                    raster.setPixel(xx, yy, pixels);
+                    raster.setPixel(x, y, pixels);
                 }
             }
         }
@@ -103,5 +108,29 @@ public class ImageManipulationService implements ServiceInstance{
             return new ImageManipulationService();
         }
 
+    }
+
+    private BufferedImage bytesToBufferedImage(byte[] serializedImage){
+        InputStream in = new ByteArrayInputStream(serializedImage);
+        BufferedImage image = null;
+        try {
+            image = ImageIO.read(in);
+        }catch (Throwable e) {
+            System.out.println("Error " + e.getMessage());
+            e.printStackTrace();
+        }
+        return image;
+    }
+
+    private byte[] bufferedImageToBytes(BufferedImage image){
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try {
+            ImageIO.write(image, "png", output);
+        }
+        catch (Throwable e) {
+            System.out.println("Error " + e.getMessage());
+            e.printStackTrace();
+        }
+        return output.toByteArray();
     }
 }

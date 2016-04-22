@@ -13,6 +13,7 @@ import java.util.UUID;
  * @author Magnus
  */
 public class DefaultServiceConnection implements ServiceConnection, Serializable {
+    private static final long serialVersionUID = 1L;
     private UUID conId;
     private String name;
     private PathType pathType = PathType.SERVICE;

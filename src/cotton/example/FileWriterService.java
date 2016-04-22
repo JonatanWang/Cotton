@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,19 +22,19 @@ import javax.swing.ImageIcon;
 public class FileWriterService implements ServiceInstance{
 
     @Override
-    public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data,
-                                            ServiceChain to) {
-
+    public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
         System.out.println("Write");
+        BufferedImage image = null;
 
-        try {
-            ObjectInputStream inStream = new ObjectInputStream(data);
-            BufferedImage image = ((ImageManipulationPacket)inStream.readObject()).getImage(); 
+        try{
+            ImageManipulationPacket input = (ImageManipulationPacket)new ObjectInputStream(data).readObject();
+            image = bytesToBufferedImage(input.getImage());
+
             ImageIO.write(image, "png", new File("test.png"));
         }catch (IOException ex) {
             Logger.getLogger(ImageManipulationService.class.getName()).log(Level.SEVERE, null, ex);
-        }catch (ClassNotFoundException ex) {
-            Logger.getLogger(ImageManipulationService.class.getName()).log(Level.SEVERE, null, ex);
+        }catch (ClassNotFoundException e){
+            System.out.println(e.getMessage());
         }
 
         return "null";
@@ -49,6 +51,31 @@ public class FileWriterService implements ServiceInstance{
             return new FileWriterService();
         }
 
+    }
+
+    private BufferedImage bytesToBufferedImage(byte[] serializedImage){
+        InputStream in = new ByteArrayInputStream(serializedImage);
+        BufferedImage image = null;
+        try {
+            image = ImageIO.read(in);
+        }
+        catch (Throwable e) {
+            System.out.println("Error " + e.getMessage());
+            e.printStackTrace();
+        }
+        return image;
+    }
+
+    private byte[] bufferedImageToBytes(BufferedImage image){
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try {
+            ImageIO.write(image, "png", output);
+        }
+        catch (Throwable e) {
+            System.out.println("Error " + e.getMessage());
+            e.printStackTrace();
+        }
+        return output.toByteArray();
     }
 
 }

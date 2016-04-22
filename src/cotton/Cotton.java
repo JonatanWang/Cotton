@@ -92,10 +92,10 @@ public class Cotton {
 
         c.start();
 
-        c.getNetwork().sendToService(new ImageManipulationPacket(i), s, null);
+        //        c.getNetwork().sendToService(new ImageManipulationPacket(i), s, null);
 
         try {
-            Thread.sleep(20000);
+            Thread.sleep(50000);
         } catch (InterruptedException ignore) { }
    
         c.shutdown();

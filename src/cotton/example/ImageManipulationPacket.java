@@ -16,32 +16,14 @@ import javax.imageio.ImageIO;
  * @author Mats
  */
 public class ImageManipulationPacket implements Serializable {
+    private static final long serialVersionUID = 1L;
     byte[] image;
 
-    public ImageManipulationPacket(BufferedImage i){
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            ImageIO.write(i, "png", baos);
-            baos.flush();
-            image = baos.toByteArray();
-            baos.close();
-        }
-        catch (Throwable e) {
-            System.out.println("Error " + e.getMessage());
-            e.printStackTrace();
-        }
+    public ImageManipulationPacket(byte[] i){
+        this.image = i;
     }
 
-    public BufferedImage getImage(){
-        InputStream in = new ByteArrayInputStream(image);
-        BufferedImage bimage = null;
-        try {
-            bimage = ImageIO.read(in);
-        }
-        catch (Throwable e) {
-            System.out.println("Error " + e.getMessage());
-            e.printStackTrace();
-        }
-        return bimage;
+    public byte[] getImage(){
+        return image;
     }
 }

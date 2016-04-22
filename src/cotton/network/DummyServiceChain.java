@@ -9,12 +9,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @author Magnus
  */
 public class DummyServiceChain implements ServiceChain, Serializable {
+    private static final long serialVersionUID = 1L;
     private ConcurrentLinkedQueue<String> chain;
-    
+
     public DummyServiceChain() {
         this.chain = new ConcurrentLinkedQueue<String>();
     }
-    
+
     public DummyServiceChain(String serviceName) {
         this.chain = new ConcurrentLinkedQueue<String>();
         chain.add(serviceName);
@@ -40,6 +41,11 @@ public class DummyServiceChain implements ServiceChain, Serializable {
     public ServiceChain into(String name) {
         chain.add(name);
         return this;
+    }
+
+    @Override
+    public String toString(){
+        return chain.toString();
     }
 
 }

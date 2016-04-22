@@ -253,7 +253,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     }
 
     private NetworkPacket buildServicePacket(Serializable data, ServiceChain path, ServiceConnection from, PathType type){
-        return new NetworkPacket(data, path, from, type);
+        return new DefaultNetworkPacket(data, path, from, type);
     }
 
     private ServiceConnection getLocalServiceConnection(){
@@ -287,11 +287,12 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
                 NetworkPacket input = (NetworkPacket)in.readObject();
                 in.close();
                 clientSocket.close();
+                System.out.println("Socket closed, parsing packet!");
 
                 switch(input.getType()){
                 case SERVICE:
                     sendToService(input.getData(), input.getPath(), input.getOrigin());
-                    System.out.println("ServicePacket with ID: " + input.getOrigin().getUserConnectionId());
+                    System.out.println("ServicePacket with ID: " + input.getOrigin().getUserConnectionId() + "\nSpecifying services: " + ((DummyServiceChain)input.getPath()).toString());
                     break;
                 case DISCOVERY:
                     localServiceDiscovery.discoveryUpdate(input.getOrigin(), serializableToInputStream(input.getData()));
