@@ -46,7 +46,10 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     private ExecutorService threadPool;
 
     public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery) throws java.net.UnknownHostException{
-        this.localPort = 3333; // TODO: Remove hardcode on port
+        if(localServiceDiscovery == null)
+            throw new NullPointerException("Recieved null servicediscovery");
+
+        this.localPort = 3333; // TODO: Remove hardcoded port
         try{
             //this.localIP = InetAddress.getByName(null);
             this.localIP = Inet4Address.getLocalHost();
@@ -54,6 +57,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
             logError("initialization process local address "+e.getMessage());
             throw e;
         }
+
         this.serviceBuffer = new DefaultServiceBuffer();
         this.connectionTable = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();
@@ -70,6 +74,9 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
      * @return Whether the connection succeeded or not.
      */
     private boolean sendObject(Serializable data, ServiceConnection destination) {
+        if(data == null) throw new NullPointerException("Null data");
+        if(destination == null) throw new NullPointerException("Null destination");
+
         Socket socket = new Socket(); // TODO: Encryption
         try {
             socket.connect(destination.getAddress());
@@ -97,6 +104,8 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
      */
     @Override
     public boolean send(Serializable data, ServiceConnection destination) {
+        
+
         data = buildServicePacket(data, null, getLocalServiceConnection(), destination.getPathType());
         return sendObject(data, destination);
     }
@@ -260,6 +269,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     private ServiceConnection getLocalServiceConnection(){
         SocketAddress address = getLocalSocketAddress();
         ServiceConnection local = new DefaultServiceConnection();
+        local.setAddress(address);
         return local;
     }
 
