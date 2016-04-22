@@ -67,7 +67,7 @@ public class NetworkService extends IntentService {
         Socket s = new Socket();
 
         try {
-            s = new Socket("130.229.184.228", 3333);
+            s = new Socket(, 3333);
 
             new ObjectOutputStream(s.getOutputStream()).writeObject(packet);
 

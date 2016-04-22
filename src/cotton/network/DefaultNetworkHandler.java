@@ -162,11 +162,10 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
      */
     @Override
     public ServiceRequest sendWithResponse(Serializable data, ServiceConnection destination) throws IOException{
-        UUID uuid = UUID.randomUUID();
         DefaultServiceRequest result = new DefaultServiceRequest();
 
         if(send(data, destination)){
-            this.connectionTable.put(uuid, result);
+            this.connectionTable.put(destination.getUserConnectionId(), result);
             return result;
         }
         return null;
