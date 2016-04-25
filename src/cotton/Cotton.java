@@ -25,6 +25,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * @author Jonathan
  * @author Magnus
+ * @author Gunnlaugur
  */
 public class Cotton {
     private ActiveServiceLookup lookup;
@@ -43,6 +44,22 @@ public class Cotton {
         }else {
             this.discovery = new DefaultLocalServiceDiscovery(lookup,globalDiscoveryDNS);
             net = new DefaultNetworkHandler(discovery,ThreadLocalRandom.current().nextInt(3000,20000));
+        }
+        network = net;
+        clientNetwork = net;
+        services = new ServiceHandler(lookup, network);
+    }
+    
+    public Cotton (boolean GlobalServiceDiscovery, int portNumber) throws java.net.UnknownHostException {
+        lookup = new DefaultActiveServiceLookup();
+        GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
+        DefaultNetworkHandler net = null;
+        if(GlobalServiceDiscovery) {
+            this.discovery = new DefaultGlobalServiceDiscovery(lookup,globalDiscoveryDNS);
+            net = new DefaultNetworkHandler(discovery);
+        }else {
+            this.discovery = new DefaultLocalServiceDiscovery(lookup,globalDiscoveryDNS);
+            net = new DefaultNetworkHandler(discovery, portNumber);
         }
         network = net;
         clientNetwork = net;
