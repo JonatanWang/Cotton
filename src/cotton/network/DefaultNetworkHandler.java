@@ -230,7 +230,6 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         data = buildServicePacket(data, path, getLocalServiceConnection(dest.getUserConnectionId()), dest.getPathType());
 
         if(sendObject(data,dest)){
-            //this.connectionTable.put(dest.getUserConnectionId(), result);
             return result;
         }
         return null;
@@ -375,7 +374,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
                 ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
 
                 NetworkPacket input = (NetworkPacket)in.readObject();
-                System.out.println("Socket closed, parsing packet!");
+                //System.out.println("Socket closed, parsing packet!");
                 if(input == null) {
                     System.out.println("NetworkPacket null");
                 }
@@ -383,7 +382,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
 
                 switch(input.getType()){
                 case SERVICE:
-                    System.out.println("ServicePacket with ID: " + input.getOrigin().getUserConnectionId() + "\nSpecifying services: " + ((DummyServiceChain)input.getPath()).toString());
+                    //System.out.println("ServicePacket with ID: " + input.getOrigin().getUserConnectionId() + "\nSpecifying services: " + ((DummyServiceChain)input.getPath()).toString());
                     if(input.keepAlive()){
                         ServiceRequest s = sendToService(input.getData(), input.getPath());
                         Serializable returnPacket = buildServicePacket(s.getData(), null, getLocalServiceConnection(), PathType.SERVICE);

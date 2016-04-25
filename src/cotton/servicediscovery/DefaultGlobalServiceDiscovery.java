@@ -180,11 +180,11 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
         from.setPathType(PathType.DISCOVERY);
         ServiceConnection dest = new DefaultServiceConnection(from.getUserConnectionId());
         dest.setAddress(from.getAddress());
-        dest.setPathType(PathType.SERVICE);
+        dest.setPathType(PathType.DISCOVERY);
         ServiceRequest req = null;
         try {
-            network.send(packet, from);
-            //network.send(packet, dest);
+            //network.send(packet, from);
+            network.send(packet, dest);
         } catch (Throwable e) {
             System.out.println("Error " + e.getMessage());
             e.printStackTrace();

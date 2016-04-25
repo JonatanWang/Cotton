@@ -265,7 +265,8 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         case DISCOVERYRESPONSE:
             updateAdressTable(packet.getProbe());
             if(from != null && network != null) {
-                System.out.println("debug updateHandling: from uuid " + from.getUserConnectionId());
+                //System.out.println("debug updateHandling: from uuid " + from.getUserConnectionId());
+                System.out.println("updateAdressTable" );
                 network.sendEnd(packet, from);
             }
             /*if(from != null && network != null){
