@@ -76,7 +76,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         }
         
         //isLocalAddress()
-        return RouteSignal.NETWORKDESTINATION;
+        return RouteSignal.RETURNTOORIGIN;
         
     }
     public void stop() {}

@@ -199,6 +199,9 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
             } // TODO: dont drop results, and send data to service discovary
             req.setData(data);
             return;
+        case RETURNTOORIGIN:
+            // TODO: implement this
+            break;
         case NOTFOUND:
             
             return;
@@ -226,7 +229,10 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
             sendToServiceBuffer(dest, data, path);
             return result;
         }
-
+        if(route == RouteSignal.RETURNTOORIGIN) {
+             // TODO: implement this
+        }
+           
         data = buildServicePacket(data, path, getLocalServiceConnection(dest.getUserConnectionId()), dest.getPathType());
 
         if(sendObject(data,dest)){

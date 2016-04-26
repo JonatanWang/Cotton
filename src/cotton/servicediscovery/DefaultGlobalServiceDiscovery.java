@@ -102,12 +102,12 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
     public RouteSignal getDestination(ServiceConnection destination, ServiceConnection from, ServiceChain to) {
         RouteSignal signal = RouteSignal.NOTFOUND;
         String key = to.peekNextServiceName();
-        if(key == null){
+        if(key == null){ //service chain is empty, send back to origin 
             if(from == null) {return signal;}
             destination.setAddress(from.getAddress());
             destination.setPathType(from.getPathType());
             ((DefaultServiceConnection)destination).setUserConnectionId(from.getUserConnectionId());
-            return RouteSignal.NETWORKDESTINATION;
+            return RouteSignal.RETURNTOORIGIN;
         }
         AddressPool pool = serviceCache.get(key);
         
