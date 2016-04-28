@@ -4,7 +4,7 @@ import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceConnection;
 import cotton.services.ServiceFactory;
-import cotton.services.ServiceInstance;
+import cotton.services.Service;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -19,26 +19,25 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
-public class FileWriterService implements ServiceInstance{
+public class FileWriterService implements Service{
 
     @Override
-    public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
+    public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
         System.out.println("Write");
         BufferedImage image = null;
 
         ImageManipulationPacket input = null;
         try{
-            input = (ImageManipulationPacket)new ObjectInputStream(data).readObject();
-            image = bytesToBufferedImage(input.getImage());
+            //input = (ImageManipulationPacket)new ObjectInputStream(data).readObject();
+            //image = bytesToBufferedImage(input.getImage());
+            image = bytesToBufferedImage(data);
 
             ImageIO.write(image, "jpg", new File("test.jpg"));
         }catch (IOException ex) {
             Logger.getLogger(ImageManipulationService.class.getName()).log(Level.SEVERE, null, ex);
-        }catch (ClassNotFoundException e){
-            System.out.println(e.getMessage());
         }
 
-        return input;
+        return data;
     }
 
     public static ServiceFactory getFactory(){
@@ -48,7 +47,7 @@ public class FileWriterService implements ServiceInstance{
     public static class FileFactory implements ServiceFactory {
 
         @Override
-        public ServiceInstance newServiceInstance() {
+        public Service newService() {
             return new FileWriterService();
         }
 
@@ -78,6 +77,5 @@ public class FileWriterService implements ServiceInstance{
         }
         return output.toByteArray();
     }
-
 }
 

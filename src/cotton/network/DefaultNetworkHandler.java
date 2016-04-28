@@ -36,7 +36,7 @@ import cotton.servicediscovery.ServiceDiscovery;
  * @author Jonathan
  * @author Gunnlaugur
  */
-public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
+public class DefaultNetworkHandler implements NetworkHandler, ClientNetwork {
     private ServiceBuffer serviceBuffer;
     private ConcurrentHashMap<UUID,DefaultServiceRequest> connectionTable;
     private AtomicBoolean running;
@@ -89,7 +89,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         this.localSocketAddress = localSocketAddress;
     }
 
-    public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery,int port) throws java.net.UnknownHostException{
+    public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery, int port) throws java.net.UnknownHostException{
         if(localServiceDiscovery == null)
             throw new NullPointerException("Recieved null servicediscovery");
 
@@ -108,7 +108,30 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         this.localServiceDiscovery = localServiceDiscovery;
         localServiceDiscovery.setNetwork(this, getLocalSocketAddress()); // TODO: get socket address
         running = new AtomicBoolean(true);
-        
+
+    }
+
+    private boolean sendTransportPacket(TransportPacket.Packet data, ServiceConnection destination) throws IOException{
+        if(data == null) throw new NullPointerException("Null data");
+        if(destination == null) throw new NullPointerException("Null destination");
+
+        Socket socket = new Socket(); // TODO: Encryption
+        try {
+            socket.connect(destination.getAddress());
+            data.writeTo(socket.getOutputStream());
+            //new ObjectOutputStream(socket.getOutputStream()).writeObject(data);
+            return true;
+        }catch (IOException e) {
+            logError("send: " + e.getMessage());
+            return false;
+        }finally{
+            try {
+                socket.close();
+            } catch (Throwable e) {
+                logError("send socket close: " + e.getMessage());
+                return false;
+            }
+        }
     }
 
     /**
@@ -118,7 +141,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
      * @param destination The information about where the packet is headed.
      * @return Whether the connection succeeded or not.
      */
-    private boolean sendObject(Serializable data, ServiceConnection destination) {
+    private boolean sendObject(String data, ServiceConnection destination) {
         if(data == null) throw new NullPointerException("Null data");
         if(destination == null) throw new NullPointerException("Null destination");
 
@@ -148,9 +171,40 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
      * @return Whether the connection succeeded or not.
      */
     @Override
-    public boolean send(Serializable data, ServiceConnection destination) {
-        data = buildServicePacket(data, null, getLocalServiceConnection(destination.getUserConnectionId()), destination.getPathType());
-        return sendObject(data, destination);
+    public boolean send(byte[] data, ServiceConnection destination) throws IOException {
+        TransportPacket.Packet packet = buildTransportPacket(data,
+                                                         null,
+                                                         getLocalServiceConnection(destination.getUserConnectionId()),
+                                                         destination.getPathType());
+
+        try{
+            return sendTransportPacket(packet, destination);
+        }catch(IOException e){
+            logError("Failed to send packet");
+            throw e;
+        }
+    }
+
+    /**
+     * Send a serializable piece of data to the specified destination
+     *
+     * @param data The object to send.
+     * @param destination The information about where the packet is headed.
+     * @return Whether the connection succeeded or not.
+     */
+    @Override
+    public boolean send(Serializable data, ServiceConnection destination) throws IOException {
+        TransportPacket.Packet packet = buildTransportPacket(serializableToBytes(data),
+                                                             null,
+                                                             getLocalServiceConnection(destination.getUserConnectionId()),
+                                                             destination.getPathType());
+
+        try{
+            return sendTransportPacket(packet, destination);
+        }catch(IOException e){
+            logError("Failed to send packet");
+            throw e;
+        }
     }
 
     /**
@@ -164,8 +218,8 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
     public ServiceRequest sendWithResponse(Serializable data, ServiceConnection destination) throws IOException{
         DefaultServiceRequest result = new DefaultServiceRequest();
         ServiceConnection local = getLocalServiceConnection();
-        NetworkPacket packet = buildServicePacket(data, null, local, destination.getPathType());
-        if(sendObject(packet, destination)){
+        TransportPacket.Packet packet = buildTransportPacket(serializableToBytes(data), null, local, destination.getPathType());
+        if(sendTransportPacket(packet, destination)){
             this.connectionTable.put(local.getUserConnectionId(), result);
             return result;
         }
@@ -180,7 +234,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
      * @param from The origin of this request.
      */
     @Override
-    public void sendToService(Serializable data, ServiceChain path, ServiceConnection from) {
+    public void sendToService(byte[] data, ServiceChain path, ServiceConnection from) throws IOException {
         ServiceConnection dest = new DefaultServiceConnection();
         RouteSignal route = localServiceDiscovery.getDestination(dest, from, path);
 
@@ -191,10 +245,10 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         case ENDPOINT:
             DefaultServiceRequest req = connectionTable.get(from.getUserConnectionId());
             if(req == null) {
-/*                System.out.println("Network route table error, ENDPOINT " 
-                        +"\n\tfrom: " + from.getUserConnectionId()
-                        +"\n\tdest: " + dest.getUserConnectionId());
-      */          
+                /*                System.out.println("Network route table error, ENDPOINT "
+                                  +"\n\tfrom: " + from.getUserConnectionId()
+                                  +"\n\tdest: " + dest.getUserConnectionId());
+                */
                 return;
             } // TODO: dont drop results, and send data to service discovary
             req.setData(data);
@@ -203,13 +257,13 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
             // TODO: implement this
             break;
         case NOTFOUND:
-            
+
             return;
         }
 
-        data = buildServicePacket(data, path, from, dest.getPathType());
+        TransportPacket.Packet packet = buildTransportPacket(data, path, from, dest.getPathType());
 
-        sendObject(data, dest);
+        sendTransportPacket(packet, dest);
     }
 
     /**
@@ -219,7 +273,7 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
      * @param path The predefined services to pass through.
      */
     @Override
-    public ServiceRequest sendToService(Serializable data, ServiceChain path) { // TODO: Make sure that this doesn't drop packages with this as last destination
+    public ServiceRequest sendToService(byte[] data, ServiceChain path) throws IOException { // TODO: Make sure that this doesn't drop packages with this as last destination
         UUID uuid = UUID.randomUUID();
         ServiceConnection dest = new DefaultServiceConnection(uuid);
         RouteSignal route = localServiceDiscovery.getDestination(dest, path);
@@ -230,15 +284,20 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
             return result;
         }
         if(route == RouteSignal.RETURNTOORIGIN) {
-             // TODO: implement this
+            // TODO: implement this
         }
-           
-        data = buildServicePacket(data, path, getLocalServiceConnection(dest.getUserConnectionId()), dest.getPathType());
 
-        if(sendObject(data,dest)){
-            return result;
+        TransportPacket.Packet packet = buildTransportPacket(data, path, getLocalServiceConnection(dest.getUserConnectionId()), dest.getPathType());
+
+        try{
+            if(sendTransportPacket(packet, dest)){
+                return result;
+            }
+            return null;
+        }catch(IOException e){
+            logError("Failed to send packet");
+            throw e;
         }
-        return null;
     }
 
     @Override
@@ -294,56 +353,44 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         running.set(false);
     }
 
-    private InputStream serializableToInputStream(Serializable data){
-        ServicePacket servicePacket = null;
-        InputStream in = null;
-        try{
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
-
-            objectStream.writeObject(data);
-            objectStream.flush();
-            objectStream.close();
-
-            in = new ByteArrayInputStream(byteStream.toByteArray());
-        }catch(IOException e){
-            e.printStackTrace();
-        }
-        return in;
-    }
-/**
- * Sends the data to a local service waiting on the data , puts it in the right ServiceRequest, 
- * @param data the result of a client ServiceRequest
- * @param destination
- * @return 
- */
-    public boolean sendEnd(Serializable data, ServiceConnection destination) {
+    /**
+     * Sends the data to a local service waiting on the data , puts it in the right ServiceRequest,
+     * @param data the result of a client ServiceRequest
+     * @param destination
+     * @return
+     */
+    public boolean sendEnd(byte[] data, ServiceConnection destination) {
         DefaultServiceRequest req = this.connectionTable.get(destination.getUserConnectionId());
         if(req == null) return false;
         req.setData(data);
         return true;
     }
-    
-    private void sendToServiceBuffer(ServiceConnection from, Serializable data, ServiceChain path) {
-        ServicePacket servicePacket = new ServicePacket(from, serializableToInputStream(data), path);
+
+    private byte[] serializableToBytes(Serializable data) throws IOException{
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ObjectOutputStream objectStream = new ObjectOutputStream(stream);
+        objectStream.writeObject(data);
+        return stream.toByteArray();
+    }
+
+    private void sendToServiceBuffer(ServiceConnection from, byte[] data, ServiceChain path) {
+        ServicePacket servicePacket = new ServicePacket(from, data, path);
         serviceBuffer.add(servicePacket);
     }
 
-    private NetworkPacket buildServicePacket(Serializable data, ServiceChain path, ServiceConnection from, PathType type){
-        return new DefaultNetworkPacket(data, path, from, type);
-    }
-/**
- * Give back a new ServiceConnection but keeps the uuid between jumps
- * This is needed to prevent a huge bug when the uuid gets lost between machines
- * @param uuid the uuid the new ServiceConnection should contain
- * @return 
- */
+    /**
+     * Give back a new ServiceConnection but keeps the uuid between jumps
+     * This is needed to prevent a huge bug when the uuid gets lost between machines
+     * @param uuid the uuid the new ServiceConnection should contain
+     * @return
+     */
     private ServiceConnection getLocalServiceConnection(UUID uuid){
         SocketAddress address = getLocalSocketAddress();
         ServiceConnection local = new DefaultServiceConnection(uuid);
         local.setAddress(address);
         return local;
     }
+
     /**
      * getLocalServiceConnection
      * Warning: improper use of this method can lead to huge network routing bugs,
@@ -377,42 +424,134 @@ public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
         public void run(){
             System.out.println("Incoming connection to: " + clientSocket.getLocalSocketAddress() +" from" + clientSocket.getRemoteSocketAddress());
             try {
-                ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
+                //ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
+                TransportPacket.Packet input = TransportPacket.Packet.parseFrom(clientSocket.getInputStream());
 
-                NetworkPacket input = (NetworkPacket)in.readObject();
+                //NetworkPacket input = (NetworkPacket)in.readObject();
                 //System.out.println("Socket closed, parsing packet!");
                 if(input == null) {
-                    System.out.println("NetworkPacket null");
+                    System.out.println("TransportPacket null");
                 }
 
 
-                switch(input.getType()){
+                switch(input.getPathtype()){
                 case SERVICE:
-                    //System.out.println("ServicePacket with ID: " + input.getOrigin().getUserConnectionId() + "\nSpecifying services: " + ((DummyServiceChain)input.getPath()).toString());
-                    if(input.keepAlive()){
-                        ServiceRequest s = sendToService(input.getData(), input.getPath());
-                        Serializable returnPacket = buildServicePacket(s.getData(), null, getLocalServiceConnection(), PathType.SERVICE);
-                        new ObjectOutputStream(clientSocket.getOutputStream()).writeObject(returnPacket);
+                    /*System.out.println("ServicePacket with ID: "
+                                       + input.getOrigin().getUserConnectionId()
+                                       + "\nSpecifying services: "
+                                       + ((DummyServiceChain)input.getPath()).toString());
+                    */
+                    if(input.getKeepalive()){
+                        ServiceRequest s = sendToService(input.getData().toByteArray(),
+                                                         parsePath(input));
+
+                        TransportPacket.Packet returnPacket = buildTransportPacket(s.getData(),
+                                                                                   null,
+                                                                                   getLocalServiceConnection(),
+                                                                                   PathType.SERVICE);
+
+                        returnPacket.writeTo(clientSocket.getOutputStream());
                     }else{
-                        sendToService(input.getData(), input.getPath(), input.getOrigin());
+                        sendToService(input.getData().toByteArray(), parsePath(input), parseOrigin(input));
                     }
                     break;
                 case DISCOVERY:
-                    localServiceDiscovery.discoveryUpdate(input.getOrigin(), serializableToInputStream(input.getData()));
+                    ServiceConnection origin = parseOrigin(input);
+                    localServiceDiscovery.discoveryUpdate(origin, input.getData().toByteArray());
                     break;
                 default:
-                    System.out.println("Non-servicepacket recieved, not yet implemented: type" + input.getType());
+                    System.out.println("Non-servicepacket recieved, not yet implemented: type" + input.getPathtype());
 
                     break;
                 }
-                in.close();
+                //in.close();
                 clientSocket.close();
             }catch (Throwable e) {
                 System.out.println("Error " + e.getMessage());
                 e.printStackTrace();
             }
         }
+    }
 
+    private ServiceConnection parseOrigin(TransportPacket.Packet input) throws java.net.UnknownHostException{
+        ServiceConnection origin = new DefaultServiceConnection(UUID.fromString(input.getOrigin().getUuid()));
+        origin.setAddress(new InetSocketAddress(Inet4Address.getByName(input.getOrigin().getIp()), input.getOrigin().getPort()));
+        return origin;
+    }
+
+    private ServiceChain parsePath(TransportPacket.Packet input){
+        DummyServiceChain path = new DummyServiceChain();
+        for (int i = 0; i < input.getPath().getPathCount(); i++)
+            path.addService(input.getPath().getPath(i));
+        return path;
+    }
+
+    private NetworkPacket parseTransportPacket(TransportPacket.Packet input) throws java.net.UnknownHostException{
+        DummyServiceChain path = new DummyServiceChain();
+        for (int i = 0; i < input.getPath().getPathCount(); i++)
+            path.addService(input.getPath().getPath(i));
+
+        ServiceConnection from = new DefaultServiceConnection(UUID.fromString(input.getOrigin().getUuid()));
+        from.setAddress(new InetSocketAddress(Inet4Address.getByName(input.getOrigin().getIp()), input.getOrigin().getPort()));
+
+        NetworkPacket packet = new NetworkPacket(input.getData().toByteArray(), path, from, PathType.valueOf(input.getPathtype().toString()));
+
+        return packet;
+    }
+
+    private TransportPacket.Packet buildTransportPacket(NetworkPacket input) throws IOException{
+        TransportPacket.Packet.Builder builder = TransportPacket.Packet.newBuilder();
+
+        TransportPacket.Path.Builder pathBuilder = TransportPacket.Path.newBuilder();
+        while (input.getPath().peekNextServiceName() != null) {
+            pathBuilder.addPath(input.getPath().getNextServiceName());
+        }
+
+        builder.setPath(pathBuilder);
+
+        InetSocketAddress address = (InetSocketAddress)input.getOrigin().getAddress();
+        TransportPacket.Origin origin = TransportPacket.Origin.newBuilder()
+            .setIp(address.getAddress().getHostAddress())
+            .setUuid(input.getOrigin().getUserConnectionId().toString())
+            .setName(input.getOrigin().getServiceName())
+            .setPort(address.getPort())
+            .build();
+        builder.setOrigin(origin);
+
+        try{
+            builder.setData(com.google.protobuf.ByteString.copyFrom(input.getDataBytes()));
+        }catch(IOException e){
+            logError("Could not unpack data from local packet");
+            throw e;
+        }
+
+        builder.setPathtype(TransportPacket.Packet.PathType.valueOf(input.getType().toString()));
+        return builder.build();
+    }
+
+    private TransportPacket.Packet buildTransportPacket(byte[] data, ServiceChain path, ServiceConnection origin, PathType type){
+        TransportPacket.Packet.Builder builder = TransportPacket.Packet.newBuilder();
+
+        TransportPacket.Path.Builder pathBuilder = TransportPacket.Path.newBuilder();
+        while (path.peekNextServiceName() != null) {
+            pathBuilder.addPath(path.getNextServiceName());
+        }
+
+        builder.setPath(pathBuilder);
+
+        InetSocketAddress address = (InetSocketAddress)origin.getAddress();
+        TransportPacket.Origin originInfo = TransportPacket.Origin.newBuilder()
+            .setIp(address.getAddress().getHostAddress())
+            .setUuid(origin.getUserConnectionId().toString())
+            .setName(origin.getServiceName())
+            .setPort(address.getPort())
+            .build();
+        builder.setOrigin(originInfo);
+
+        builder.setData(com.google.protobuf.ByteString.copyFrom(data));
+
+        builder.setPathtype(TransportPacket.Packet.PathType.valueOf(type.toString()));
+        return builder.build();
     }
 
 }

@@ -11,10 +11,10 @@ import java.io.Serializable;
  *
  * @author Gunnlaugur Juliusson
  */
-public class MathServices implements ServiceInstance {
+public class MathServices implements Service{
 
     @Override
-    public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
+    public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

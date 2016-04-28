@@ -8,6 +8,6 @@ package cotton.services;
  */
 public interface ServiceFactory {
 
-    public ServiceInstance newServiceInstance();
+    public Service newService();
 
 }

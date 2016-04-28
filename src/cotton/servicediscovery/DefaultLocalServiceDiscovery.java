@@ -9,12 +9,15 @@ import cotton.network.ServiceRequest;
 import cotton.services.ActiveServiceLookup;
 import cotton.network.ServiceConnection;
 import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
 import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import cotton.services.ServiceMetaData;
 import java.util.UUID;
 import cotton.network.PathType;
 import java.io.ObjectInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -118,8 +121,17 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
             return RouteSignal.NOTFOUND;
         }
 
-        DiscoveryPacket answers = (DiscoveryPacket)req.getData(); //TODO: io checks
-        
+        DiscoveryPacket answers = null;
+        try{
+            ByteArrayInputStream dataStream = new ByteArrayInputStream(req.getData());
+            ObjectInputStream objStream = new ObjectInputStream(dataStream);
+            answers = (DiscoveryPacket)objStream.readObject(); //TODO: io checks
+        }catch(IOException e){// TODO: Log error
+            e.printStackTrace();
+        }catch(ClassNotFoundException e){
+            e.printStackTrace();
+        }
+
         SocketAddress targetAddr = answers.getProbe().getAddress();
         if(targetAddr == null) {
             return RouteSignal.NOTFOUND;
@@ -195,12 +207,13 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private DiscoveryPacket packetUnpack(InputStream data) {
+    private DiscoveryPacket packetUnpack(byte[] data) {
 
         DiscoveryPacket probe = null;
 
         try{
-            ObjectInputStream input = new ObjectInputStream(data);
+            ByteArrayInputStream in = new ByteArrayInputStream(data);
+            ObjectInputStream input = new ObjectInputStream(in);
             probe =  (DiscoveryPacket)input.readObject();
 
         }catch (IOException ex) {
@@ -266,8 +279,15 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
             updateAdressTable(packet.getProbe());
             if(from != null && network != null) {
                 //System.out.println("debug updateHandling: from uuid " + from.getUserConnectionId());
-                System.out.println("updateAdressTable" );
-                network.sendEnd(packet, from);
+                System.out.println("updateAdressTable");
+                try{
+                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                    ObjectOutputStream objectStream = new ObjectOutputStream(stream);
+                    objectStream.writeObject(packet);
+                    network.sendEnd(stream.toByteArray(), from);
+                }catch(IOException e){// TODO: Log/Resolve error
+                    e.printStackTrace();
+                }
             }
             /*if(from != null && network != null){
                 dest = new DefaultServiceConnection(from.getUserConnectionId());
@@ -282,8 +302,9 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
             break;
         }
     }
+
     @Override
-    public void discoveryUpdate(ServiceConnection from, InputStream data) {
+    public void discoveryUpdate(ServiceConnection from, byte[] data) {
         DiscoveryPacket packet = packetUnpack(data);
         updateHandling(from, packet);
     }
@@ -294,7 +315,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         if(addr == null){
             return false;
         }
-        
+
         DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.ANNOUNCE);
         ArrayList<String> serviceList = new ArrayList<String>();
         for(String nameKey : internalLookup.getKeySet()) {
@@ -307,11 +328,19 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         for (int i = 0; i < serviceNameList.length; i++) {
             System.out.println("\tService: " + serviceNameList[i]);
         }
-        
+
         DefaultServiceConnection globalDest = new DefaultServiceConnection(UUID.randomUUID());
         globalDest.setPathType(PathType.DISCOVERY);
         globalDest.setAddress(addr);
-        this.network.send(packet, globalDest);
+        try {
+            this.network.send(packet, globalDest);
+        }
+        catch (Throwable e) {
+            System.out.println("Error " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+
         return true;
     }
 

@@ -70,11 +70,11 @@ public class ServiceHandler implements Runnable{
         public void run(){
             if(succesfulInit == false)
                 return;
-            ServiceInstance service = serviceFactory.newServiceInstance();
+            Service service = serviceFactory.newService();
             try{
 
-                Serializable result = service.consumeServiceOrder(null,servicePacket.getFrom(),servicePacket.getDataStream(),servicePacket.getTo());
-                networkHandler.sendToService(result, servicePacket.getTo(),servicePacket.getFrom());
+                byte[] result = service.execute(null, servicePacket.getFrom(), servicePacket.getData(),servicePacket.getTo());
+                networkHandler.sendToService(result, servicePacket.getTo(), servicePacket.getFrom());
 
             }catch(Exception e){
                 e.printStackTrace();

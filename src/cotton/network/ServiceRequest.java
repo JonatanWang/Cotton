@@ -10,5 +10,5 @@ import java.io.Serializable;
  * @author Gunnlaugur
  **/
 public interface ServiceRequest{
-    public Serializable getData();
+    public byte[] getData();
 }

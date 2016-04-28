@@ -10,6 +10,7 @@ import cotton.services.ActiveServiceLookup;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
@@ -132,10 +133,10 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
         return RouteSignal.NOTFOUND;
     }
 
-    private DiscoveryPacket packetUnpack(InputStream data) {
+    private DiscoveryPacket packetUnpack(byte[] data) {
         DiscoveryPacket probe = null;
         try {
-            ObjectInputStream input = new ObjectInputStream(data);
+            ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
             probe = (DiscoveryPacket) input.readObject();
         } catch (IOException ex) {
             Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
@@ -173,7 +174,6 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
             probe.setAddress(null);
         }else {
             probe.setAddress(pool.getAddress());
-            
         }
         DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacket.DiscoveryPacketType.DISCOVERYRESPONSE);
         packet.setProbe(probe);
@@ -194,9 +194,9 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
     private class DiscoveryLookup implements Runnable {
 
         private ServiceConnection from;
-        private InputStream data;
+        private byte[] data;
 
-        public DiscoveryLookup(ServiceConnection from, InputStream data) {
+        public DiscoveryLookup(ServiceConnection from, byte[] data) {
             this.from = from;
             this.data = data;
         }
@@ -224,11 +224,10 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
                     break;
             }
         }
-
     }
 
     @Override
-    public void discoveryUpdate(ServiceConnection from, InputStream data) {
+    public void discoveryUpdate(ServiceConnection from, byte[] data) {
         DiscoveryLookup th = new DiscoveryLookup(from, data);
         threadPool.execute(th);
 

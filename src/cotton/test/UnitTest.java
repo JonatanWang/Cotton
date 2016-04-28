@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,7 +25,7 @@ import cotton.services.ServiceBuffer;
 import cotton.network.ServiceConnection;
 import cotton.services.ServiceFactory;
 import cotton.services.ServiceHandler;
-import cotton.services.ServiceInstance;
+import cotton.services.Service;
 import cotton.services.ServiceMetaData;
 import cotton.services.ServicePacket;
 import cotton.test.services.MathPow2;
@@ -85,26 +86,18 @@ public class UnitTest {
         assertNull(lookup.getService("test"));
     }
 
-    private class TestService implements ServiceInstance {
+    private class TestService implements Service{
 
         @Override
-        public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
+        public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
             String in = "fail";
 
             ObjectInputStream inStream;
-            try {
-                inStream = new ObjectInputStream(data);
-                in = (String)inStream.readObject();
-
-            } catch (IOException ex) {
-                Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-            }catch (ClassNotFoundException ex) {
-                    Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            in = new String(data);
 
             System.out.println(in);
 
-            return in + "hej";
+            return (in+"hej").getBytes();
         }
 
     }
@@ -112,7 +105,7 @@ public class UnitTest {
     public class TestFactory implements ServiceFactory {
 
         @Override
-        public ServiceInstance newServiceInstance() {
+        public Service newService() {
             return new TestService();
         }
 
@@ -121,27 +114,26 @@ public class UnitTest {
     private class DummyBufferStuffer{
         private ServicePacket servicePacket;
         ServiceBuffer serviceBuffer;
-        public DummyBufferStuffer(ServiceBuffer buffer,ServiceConnection from, Serializable data, ServiceChain to){
+        public DummyBufferStuffer(ServiceBuffer buffer, ServiceConnection from, byte[] data, ServiceChain to){
             this.serviceBuffer = buffer;
-            try{
+            //try{
+                /*
                 PipedInputStream in = new PipedInputStream();
                 PipedOutputStream outStream = new PipedOutputStream(in);
                 ObjectOutputStream objectOutStream = new ObjectOutputStream(outStream);
                 objectOutStream.writeObject(data);
                 objectOutStream.close();
-
-                this.servicePacket = new ServicePacket(from,in,to);
-            }catch(IOException e){
+                */
+                this.servicePacket = new ServicePacket(from, data, to);
+                /*}catch(IOException e){
                 System.out.println("io exeption");
                 e.printStackTrace();
-            }
+                }*/
         }
 
         public void fillBuffer(){
             serviceBuffer.add(this.servicePacket);
         }
-
-
     }
 
     private class Threadrun implements Runnable {
@@ -181,10 +173,14 @@ public class UnitTest {
         to1.addService("test");
         to1.addService("test");
         to1.addService("test");
-        net.sendToService("hej", to1, null);
+        try{
+            net.sendToService("hej".getBytes(), to1, null);
 
-        ServiceChain to2 = new DummyServiceChain("test");
-        net.sendToService("service2", to2, null);
+            ServiceChain to2 = new DummyServiceChain("test");
+            net.sendToService("service2".getBytes(), to2, null);
+        }catch(IOException e){
+            e.printStackTrace();
+        }
 
         Thread th = new Thread(new Threadrun(handler));
         th.start();
@@ -215,18 +211,22 @@ public class UnitTest {
 
         ClientNetwork net = cotton.getClientNetwork();
 
-        Integer data = new Integer(2);
         ServiceChain chain = new DummyServiceChain()
                 .into("MathPow2").into("MathPow2")
                 .into("MathPow2").into("MathPow2");
 
-        ServiceRequest jobId = net.sendToService(data, chain);
+        ServiceRequest jobId = null;
+        try{
+            jobId = net.sendToService(ByteBuffer.allocate(4).putInt(2).array(), chain);
+        }catch(IOException e){
+            e.printStackTrace();
+        }
 
-        Integer result = (Integer)jobId.getData();
+        int result = ByteBuffer.wrap(jobId.getData()).getInt();
 
         System.out.println(result);
         cotton.shutdown();
-        assertTrue(65536 == result.intValue());
+        assertTrue(65536 == result);
      }
 
     @Test
@@ -292,7 +292,12 @@ public class UnitTest {
         //pack.setPacketType(DiscoveryPacketType.DISCOVERYRESPONSE);
         pack.setProbe(prob);
 
-        InputStream message = serializableToInputStream(pack);
+        byte[] message = null;
+        try{
+            message = serializableToBytes(pack);
+        }catch(IOException e){
+            e.printStackTrace();
+        }
 
         ServiceConnection from = new DefaultServiceConnection();
 
@@ -308,25 +313,11 @@ public class UnitTest {
 
     }
 
-
-    private InputStream serializableToInputStream(Serializable data){
-        ServicePacket servicePacket = null;
-        InputStream in = null;
-        try{
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
-
-            objectStream.writeObject(data);
-            objectStream.flush();
-            objectStream.close();
-
-            in = new ByteArrayInputStream(byteStream.toByteArray());
-        }catch(IOException e){
-            e.printStackTrace();
-        }
-        return in;
+    private byte[] serializableToBytes(Serializable data) throws IOException{
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ObjectOutputStream objectStream = new ObjectOutputStream(stream);
+        objectStream.writeObject(data);
+        return stream.toByteArray();
     }
-
-
 
 }

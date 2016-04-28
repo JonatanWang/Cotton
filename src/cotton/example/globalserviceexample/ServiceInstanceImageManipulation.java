@@ -1,10 +1,11 @@
 package cotton.example.globalserviceexample;
-import cotton.services.ServiceInstance;
+import cotton.services.Service;
 import cotton.services.ServiceFactory;
 import cotton.services.CloudContext;
 import cotton.network.ServiceConnection;
 import cotton.network.ServiceChain;
 import java.io.Serializable;
+import java.io.ByteArrayInputStream;
 import cotton.Cotton;
 import cotton.example.ImageManipulationService;
 import java.net.UnknownHostException;
@@ -20,7 +21,7 @@ import java.io.IOException;
  * @author Tony
  * @author Gunnlaugur
  **/
-public class ServiceInstanceImageManipulation implements ServiceInstance{
+public class ServiceInstanceImageManipulation implements Service{
     public static void main(String[] args) {
         Cotton cotton = null;
         try {
@@ -52,16 +53,16 @@ public class ServiceInstanceImageManipulation implements ServiceInstance{
     }
     private static class Factory implements ServiceFactory{
         @Override
-        public ServiceInstance newServiceInstance(){
+        public Service newService(){
             return new ServiceInstanceImageManipulation();
         }
     }
 
-    public Serializable consumeServiceOrder(CloudContext ctx,ServiceConnection from, InputStream data,ServiceChain to){
+    public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data,ServiceChain to){
         String s = null;
         System.out.println("Starting ServiceInstance1 ,StringModifier" );
         try{
-            ObjectInputStream input = new ObjectInputStream(data);
+            ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
             s = (String) input.readObject();
             System.out.println("Before modified: " + s);
 
@@ -72,7 +73,7 @@ public class ServiceInstanceImageManipulation implements ServiceInstance{
         }finally{
             s += " modified";
         }
-        return s;
+        return s.getBytes();
     }
 
 }

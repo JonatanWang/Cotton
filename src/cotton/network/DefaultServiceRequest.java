@@ -12,11 +12,11 @@ import java.util.concurrent.CountDownLatch;
  * @author Magnus
  **/
 public class DefaultServiceRequest implements ServiceRequest{
-    private Serializable data = null;
+    private byte[] data= null;
     private CountDownLatch latch = new CountDownLatch(1);
 
     @Override
-    public Serializable getData() {
+    public byte[] getData() {
         boolean loop = false;
         do {
             try {
@@ -27,7 +27,7 @@ public class DefaultServiceRequest implements ServiceRequest{
         return data;
     }
 
-    public void setData(Serializable data) {
+    public void setData(byte[] data) {
         this.data = data;
         latch.countDown();
     }

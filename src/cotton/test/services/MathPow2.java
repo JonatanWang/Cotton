@@ -5,11 +5,13 @@ import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceConnection;
 import cotton.services.ServiceFactory;
-import cotton.services.ServiceInstance;
+import cotton.services.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.io.ByteArrayInputStream;
+import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,22 +19,14 @@ import java.util.logging.Logger;
  *
  * @author Magnus
  */
-public class MathPow2 implements ServiceInstance {
+public class MathPow2 implements Service{
     @Override
-    public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
+    public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
         Integer num = new Integer(0);
-        try {
-            ObjectInputStream input = new ObjectInputStream(data);
-            num =  (Integer)input.readObject();
-        } catch (IOException ex) {
-            Logger.getLogger(MathPow2.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(MathPow2.class.getName()).log(Level.SEVERE, null, ex);
-        }finally {
-            int value = num.intValue();
-            num = new Integer(value * value);
-        }        
-        return num;
+        num = ByteBuffer.wrap(data).getInt();
+        int value = num.intValue();
+        num = new Integer(value * value);
+        return ByteBuffer.allocate(4).putInt(num).array();
     }
 
     public static ServiceFactory getFactory() {
@@ -42,7 +36,7 @@ public class MathPow2 implements ServiceInstance {
     public static class Factory implements ServiceFactory {
 
         @Override
-        public ServiceInstance newServiceInstance() {
+        public Service newService() {
             return new MathPow2();
         }
     }

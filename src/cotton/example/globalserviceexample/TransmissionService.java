@@ -4,25 +4,27 @@ import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceConnection;
 import cotton.services.ServiceFactory;
-import cotton.services.ServiceInstance;
+import cotton.services.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
-public class TransmissionService implements ServiceInstance {
+public class TransmissionService implements Service {
     @Override
-    public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
+    public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
 
         String text = null;
         System.out.println("Starting ServiceInstancew ,TransmissionService" );
 
         try {
-            ObjectInputStream input = new ObjectInputStream(data);
-            text =  (String)input.readObject();
+            ByteArrayInputStream in = new ByteArrayInputStream(data);
+            ObjectInputStream input = new ObjectInputStream(in);
+            text = (String)input.readObject();
             System.out.println("In try: " +text);
         } catch (IOException ex) {
             Logger.getLogger(TransmissionService.class.getName()).log(Level.SEVERE, null, ex);
@@ -34,15 +36,16 @@ public class TransmissionService implements ServiceInstance {
             System.out.println("In finally: " +text);
         }
 
-        return text;
+        return text.getBytes();
     }
-    
+
     public static ServiceFactory getFactory(){
         return new Factory();
     }
+
     public static class Factory implements ServiceFactory {
         @Override
-        public ServiceInstance newServiceInstance() {
+        public Service newService() {
             return new TransmissionService();
         }
     }

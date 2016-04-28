@@ -6,6 +6,7 @@ import cotton.network.DummyServiceChain;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceRequest;
 import java.io.Serializable;
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,15 +27,23 @@ public class ClientPart {
         cotton.start();
         ClientNetwork clientNetwork = cotton.getClientNetwork();
         ServiceChain chain = new DummyServiceChain()
-                .into("TransmissionService").into("StringModifier");
-        ServiceRequest serviceRequest = clientNetwork.sendToService("Hej", chain);
+            .into("TransmissionService").into("StringModifier");
+        ServiceRequest serviceRequest = null;
+        try {
+            serviceRequest = clientNetwork.sendToService("Hej".getBytes(), chain);
+        }
+        catch (IOException e) {
+            System.out.println("Error " + e.getMessage());
+            e.printStackTrace();
+        }
+
         if(serviceRequest != null) {
-            String result = (String) serviceRequest.getData();
+            String result = new String(serviceRequest.getData());
             System.out.println("this is the result: " + result);
         }else {
             System.out.println("Failed to send");
         }
-        
+
         cotton.shutdown();
 
     }

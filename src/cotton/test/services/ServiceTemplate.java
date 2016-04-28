@@ -1,7 +1,7 @@
 
 package cotton.test.services;
 
-import cotton.services.ServiceInstance;
+import cotton.services.Service;
 import cotton.services.ServiceFactory;
 import cotton.services.CloudContext;
 import cotton.network.ServiceConnection;
@@ -21,10 +21,10 @@ import java.io.IOException;
  * @author Tony
  * @author Magnus
  **/
-public class ServiceTemplate implements ServiceInstance {    
+public class ServiceTemplate implements Service {
     @Override
-    public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
-        return "none";
+    public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
+        return "none".getBytes();
     }
     
     public static ServiceFactory getFactory(){
@@ -32,7 +32,7 @@ public class ServiceTemplate implements ServiceInstance {
     }
     public static class Factory implements ServiceFactory {
         @Override
-        public ServiceInstance newServiceInstance() {
+        public Service newService() {
             return new ServiceTemplate();
         }
     }

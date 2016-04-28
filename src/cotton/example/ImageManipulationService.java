@@ -4,7 +4,7 @@ import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceConnection;
 import cotton.services.ServiceFactory;
-import cotton.services.ServiceInstance;
+import cotton.services.Service;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -28,20 +28,19 @@ import javax.imageio.ImageIO;
  * @author Jonathan
  * @author Mats
  */
-public class ImageManipulationService implements ServiceInstance{
+public class ImageManipulationService implements Service {
 
     private ImageManipulationService () {
     }
 
     @Override
-    public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
+    public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
         BufferedImage image = null;
 
         System.out.println("Manipulation");
 
         try{
-            ImageManipulationPacket input = (ImageManipulationPacket)new ObjectInputStream(data).readObject();
-            image = bytesToBufferedImage(input.getImage());
+            image = bytesToBufferedImage(data);
 
             image = invertColors(image);
             image = applyText(image, 100, 100, new Font("Arial", Font.PLAIN, 30), "Amazing");
@@ -49,7 +48,7 @@ public class ImageManipulationService implements ServiceInstance{
             Logger.getLogger(ImageManipulationService.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        return new ImageManipulationPacket(bufferedImageToBytes(image));
+        return bufferedImageToBytes(image);
     }
 
     private BufferedImage invertColors(BufferedImage image) {
@@ -104,7 +103,7 @@ public class ImageManipulationService implements ServiceInstance{
         }
 
         @Override
-        public ServiceInstance newServiceInstance() {
+        public Service newService() {
             return new ImageManipulationService();
         }
 

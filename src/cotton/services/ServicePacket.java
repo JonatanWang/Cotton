@@ -12,18 +12,18 @@ import java.io.Serializable;
  * @author Tony
  */
 public class ServicePacket implements Serializable{
-    private InputStream dataStream;
+    private byte[] data;
     private ServiceConnection from;
     private ServiceChain to;
 
-    public ServicePacket(ServiceConnection from,InputStream data,ServiceChain to) {
-        this.dataStream = data;
+    public ServicePacket(ServiceConnection from, byte[] data, ServiceChain to) {
+        this.data = data;
         this.from = from;
         this.to = to;
     }
 
-    public InputStream getDataStream() {
-        return dataStream;
+    public byte[] getData() {
+        return data;
     }
 
     public ServiceConnection getFrom() {

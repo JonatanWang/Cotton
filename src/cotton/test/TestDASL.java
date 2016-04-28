@@ -6,15 +6,17 @@ import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceConnection;
 import cotton.services.ServiceFactory;
-import cotton.services.ServiceInstance;
-import cotton.test.TestDASL.TestServiceFactory.TestServiceInstance;
+import cotton.services.Service;
+import cotton.test.TestDASL.TestServiceFactory.TestService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,40 +55,18 @@ public class TestDASL {
     public class TestServiceFactory implements ServiceFactory {
 
         @Override
-        public ServiceInstance newServiceInstance() {
-            return new TestServiceInstance();
+        public Service newService() {
+            return new TestService();
         }
 
         //TODO Test and change
-        public class TestServiceInstance implements ServiceInstance {
+        public class TestService implements Service{
 
             @Override
-            public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
-                int number = convertInputStream(data);
-                
+            public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
+                int number = ByteBuffer.wrap(data).getInt();
                 number *= 2;
-                
-                return number;
-            }
-
-            //TODO Complete
-            private int convertInputStream(InputStream data) {
-                Integer number = -1;
-
-                ObjectInputStream inStream;
-                try {
-                    System.out.println("asd");
-                    inStream = new ObjectInputStream(data);
-                    System.out.println("asd");
-                    number = (Integer)inStream.readObject();
-
-                } catch (IOException ex) {
-                    Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-                }catch (ClassNotFoundException ex) {
-                        Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-                }
-
-                return number;
+                return ByteBuffer.allocate(4).putInt(number).array();
             }
         }
     }
@@ -156,19 +136,12 @@ public class TestDASL {
     @Test
     public void testFactory() throws IOException {
         ServiceFactory sf = new TestServiceFactory();
-        TestServiceInstance si = (TestServiceInstance)sf.newServiceInstance();
-        
-        // Pipe connections
-        PipedInputStream in = new PipedInputStream();
-        PipedOutputStream outStream = new PipedOutputStream(in);
-        ObjectOutputStream objectOutStream = new ObjectOutputStream(outStream);
-        
-        // Number for the service to multiply
-        objectOutStream.writeObject(new Integer(2));
-        
-        objectOutStream.close();
-        
-        assertEquals(4,si.consumeServiceOrder(null, null, in, null));
-        in.close();
+        TestService si = (TestService)sf.newService();
+
+        byte[] res = si.execute(null, null, ByteBuffer.allocate(4).putInt(2).array(), null);
+
+        int result = ByteBuffer.wrap(res).getInt();
+
+        assertEquals(4, result);
     }
 }
