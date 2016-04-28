@@ -34,9 +34,28 @@ public interface ActiveServiceLookup {
      * @return the meta data of the service.
      */
     public ServiceMetaData getService(String serviceName);
+    
+    /**
+     * Returns an <code>String Enumeration</code> of the keys in the lookup table.
+     * The order of the keys will be kept from the lookup table.
+     * 
+     * @return the keys in the lookup table.
+     */
     public Enumeration<String> getServiceEnumeration();
+    
+    /**
+     * Returns the key set in the hash map table. The order of the keys will be
+     * unpredictable.
+     * 
+     * @return the key set of the hash map.
+     */
     public ConcurrentHashMap.KeySetView<String, ServiceMetaData> getKeySet();
 
+    /**
+     * Removes a service entry from the lookup table.
+     * 
+     * @param service the service name.
+     * @return the meta data about the removed service.
+     */
     public ServiceMetaData removeServiceEntry(String service);
-
 }
