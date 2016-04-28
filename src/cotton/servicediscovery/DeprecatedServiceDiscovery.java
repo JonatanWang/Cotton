@@ -17,5 +17,5 @@ public interface DeprecatedServiceDiscovery{
     public RouteSignal getLocalInterface(ServiceConnection from,ServiceChain to); // incoming packaged 
     public boolean announce();
     public void stop();
-    public void discoveryUpdate(ServiceConnection from, InputStream data);
+    public void discoveryUpdate(ServiceConnection from, byte[] data);
 }

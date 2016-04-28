@@ -1,6 +1,6 @@
 package cotton.internalRouting;
-import cotton.network.NetworkPacket;
 import cotton.network.SocketLatch;
+import cotton.network.NetworkPacket;
 
 public interface InternalRoutingNetwork {
     public void pushNetworkPacket(NetworkPacket networkPacket);

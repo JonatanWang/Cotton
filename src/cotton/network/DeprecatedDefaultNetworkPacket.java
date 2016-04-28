@@ -8,7 +8,7 @@ import java.io.Serializable;
  * @author Jonathan Kåhre
  * @author Tony Tran
  */
-public class DefaultNetworkPacket implements NetworkPacket{
+public class DeprecatedDefaultNetworkPacket implements DeprecatedNetworkPacket{
     private static final long serialVersionUID = 1L;
     private Serializable data;
     private ServiceConnection from;
@@ -16,15 +16,18 @@ public class DefaultNetworkPacket implements NetworkPacket{
     private PathType pt;
     private boolean keepAlive;
 
-    public DefaultNetworkPacket(Serializable data, ServiceChain path, ServiceConnection from, PathType pt) {
+    public DeprecatedDefaultNetworkPacket(Serializable data, ServiceChain path, ServiceConnection from, PathType pt) {
         this.data = data;
         this.from = from;
         this.path = path;
+        if(this.path == null) {
+            this.path = new DummyServiceChain();
+        }
         this.pt = pt;
         this.keepAlive = false;
     }
 
-    public DefaultNetworkPacket(Serializable data, ServiceChain path, ServiceConnection from, PathType pt, boolean keepAlive) {
+    public DeprecatedDefaultNetworkPacket(Serializable data, ServiceChain path, ServiceConnection from, PathType pt, boolean keepAlive) {
         this.data = data;
         this.from = from;
         this.path = path;

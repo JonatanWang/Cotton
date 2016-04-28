@@ -14,11 +14,21 @@ import java.util.concurrent.CountDownLatch;
  * @author Gunnlaugur
  */
 public interface DeprecatedNetworkHandler extends Runnable {
+
     public ServicePacket nextPacket();
-    public void sendToService(Serializable data, ServiceChain path, ServiceConnection from);
-    public ServiceRequest sendToService(Serializable data, ServiceChain path);
-    public boolean send(Serializable data, ServiceConnection destination);
-    public ServiceRequest sendWithResponse(Serializable data, ServiceConnection destination) throws IOException;
-    public boolean sendEnd(Serializable data, ServiceConnection destination);
+
+    public void sendToService(byte[] data, ServiceChain path, ServiceConnection from) throws IOException;
+
+    public DeprecatedServiceRequest sendToService(byte[] data, ServiceChain path) throws IOException;
+
+    public boolean send(byte[] data, ServiceConnection destination) throws IOException;
+
+    public boolean send(Serializable data, ServiceConnection destination) throws IOException;
+
+    public DeprecatedServiceRequest sendWithResponse(Serializable data, ServiceConnection destination) throws IOException;
+
+    public boolean sendEnd(byte[] data, ServiceConnection destination);
+
     public void stop();
+
 }

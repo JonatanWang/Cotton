@@ -1,7 +1,8 @@
 package network;
 
 import java.net.SocketAddress;
-import java.util.concurrent.CountDownLatch;
+import cotton.network.NetworkPacket;
+import cotton.network.SocketLatch;
 
 /**
  *
@@ -25,9 +26,8 @@ public interface NetworkHandler extends Runnable {
     public boolean sendEnd(byte[] data, ServiceConnection destination);
 
     =======*/
-    public boolean send(cotton.network.NetworkPacket netPacket, SocketAddress addr);
-
-    public CountDownLatch sendKeepAlive(cotton.network.NetworkPacket netPacket,SocketAddress addr);
-    //>>>>>>> 3f959a990344bc0537bb67d5c3694bbd7ff02f02
+    public boolean send(NetworkPacket netPacket, SocketAddress addr);
+    public SocketLatch sendKeepAlive(NetworkPacket netPacket,SocketAddress addr);
+    public SocketAddress getLocalAddress();
     public void stop();
 }

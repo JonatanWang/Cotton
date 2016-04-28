@@ -7,21 +7,20 @@ import java.io.Serializable;
 
 /**
  *
- * @author Gunnlaugur Juliusson
- * @author Jonathan Kåhre
- * @author Tony Tran
+ * @author tony
+ * @author Magnus
  */
 public class NetworkPacket implements Serializable{
     private static final long serialVersionUID = 1L;
     private byte[] data;
-    private ServiceConnection from;
+    private Origin origin;
     private ServiceChain path;
     private PathType pt;
     private boolean keepAlive;
 
-    public NetworkPacket(byte[] data, ServiceChain path, ServiceConnection from, PathType pt) {
+    public NetworkPacket(byte[] data, ServiceChain path, Origin origin, PathType pt) {
         this.data = data;
-        this.from = from;
+        this.origin = origin;
         this.path = path;
         if(this.path == null) {
             this.path = new DummyServiceChain();
@@ -30,20 +29,24 @@ public class NetworkPacket implements Serializable{
         this.keepAlive = false;
     }
 
-    public NetworkPacket(byte[] data, ServiceChain path, ServiceConnection from, PathType pt, boolean keepAlive) {
+    public NetworkPacket(byte[] data, ServiceChain path, Origin origin, PathType pt, boolean keepAlive) {
         this.data = data;
-        this.from = from;
+        this.origin = origin;
         this.path = path;
         this.pt = pt;
         this.keepAlive = keepAlive;
+    }
+
+    public void setData(byte[] data){
+        this.data = data;
     }
 
     public ServiceChain getPath(){
         return path;
     }
 
-    public ServiceConnection getOrigin(){
-        return from;
+    public Origin getOrigin(){
+        return origin;
     }
 
     public PathType getType(){
@@ -64,5 +67,4 @@ public class NetworkPacket implements Serializable{
     public boolean keepAlive(){
         return keepAlive;
     }
-
 }

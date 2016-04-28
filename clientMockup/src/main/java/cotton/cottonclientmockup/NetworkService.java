@@ -4,7 +4,6 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -20,15 +19,16 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
-import cotton.example.ImageManipulationPacket;
-import cotton.network.DefaultNetworkPacket;
+import cotton.network.DefaultNetworkHandler;
 import cotton.network.DefaultServiceConnection;
+import cotton.network.DeprecatedNetworkHandler;
 import cotton.network.DummyServiceChain;
-import cotton.network.NetworkPacket;
 import cotton.network.PathType;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceConnection;
+import cotton.network.TransportPacket;
 
 /**
  *
@@ -60,37 +60,38 @@ public class NetworkService extends IntentService {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         img.compress(Bitmap.CompressFormat.JPEG, 100, stream);
 
-        ImageManipulationPacket out = new ImageManipulationPacket(stream.toByteArray());
+        DefaultNetworkHandler h = null;
+        try {
+            h = new DefaultNetworkHandler();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
 
-        NetworkPacket packet = new DefaultNetworkPacket(out, path, from, PathType.SERVICE, true);
+        TransportPacket.Packet packet = h.buildTransportPacket(stream.toByteArray(), path, from, PathType.SERVICE);
 
         Socket s = new Socket();
 
         try {
-            s = new Socket(, 3333);
+            s = new Socket("130.229.180.2", 3333);
+
+            packet.writeTo(s.getOutputStream());
 
             new ObjectOutputStream(s.getOutputStream()).writeObject(packet);
 
             System.out.println("Finished sending image!");
 
-            ObjectInputStream resultStream = new ObjectInputStream(s.getInputStream());
+            TransportPacket.Packet result = TransportPacket.Packet.parseFrom(s.getInputStream());
+            byte[] data = result.getData().toByteArray();
+            Bitmap editedImage = BitmapFactory.decodeByteArray(data, 0, data.length);
+            String savename = filename.substring(0, filename.length()-4)+"edited.jpg";
+            FileOutputStream saveImage = new FileOutputStream(savename);
+            galleryAddPic(savename);
+            editedImage.compress(Bitmap.CompressFormat.JPEG, 100, saveImage);
+            System.out.println("Recieved manipulated image, saving into: "+savename);
+            Bundle activityReturn = new Bundle();
+            activityReturn.putString("filename", savename);
+            r.send(111, activityReturn);
 
-            try {
-                NetworkPacket result = (NetworkPacket)resultStream.readObject();
-                ImageManipulationPacket returnImage = (ImageManipulationPacket) result.getData();
-                byte[] data = returnImage.getImage();
-                Bitmap editedImage = BitmapFactory.decodeByteArray(data, 0, data.length);
-                String savename = filename.substring(0, filename.length()-4)+"edited.jpg";
-                FileOutputStream saveImage = new FileOutputStream(savename);
-                galleryAddPic(savename);
-                editedImage.compress(Bitmap.CompressFormat.JPEG, 100, saveImage);
-                System.out.println("Recieved manipulated image, saving into: "+savename);
-                Bundle activityReturn = new Bundle();
-                activityReturn.putString("filename", savename);
-                r.send(111, activityReturn);
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {

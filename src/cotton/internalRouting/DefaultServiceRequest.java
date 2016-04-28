@@ -1,21 +1,22 @@
-package cotton.network;
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package cotton.internalRouting;
 
-import java.io.Serializable;
+import internalRouting.ServiceRequest;
 import java.util.concurrent.CountDownLatch;
-
 
 /**
  *
- * @author Tony
- * @author Jonathan
- * @author Gunnlaugur
- * @author Magnus
- **/
-public class DefaultServiceRequest implements DeprecatedServiceRequest{
-    private byte[] data= null;
+ * @author tony
+ */
+public class DefaultServiceRequest implements ServiceRequest{
+    private byte[] data = null;
     private CountDownLatch latch = new CountDownLatch(1);
 
-    @Override
+    
     public byte[] getData() {
         boolean loop = false;
         do {
@@ -31,8 +32,8 @@ public class DefaultServiceRequest implements DeprecatedServiceRequest{
         this.data = data;
         latch.countDown();
     }
-    public void setFailed() {
-        this.data = null;
+    public void setFailed(byte[] errorMessage) {
+        data = errorMessage;
         latch.countDown();
     }
 }
