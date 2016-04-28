@@ -56,9 +56,9 @@ public class ServiceHandler implements Runnable{
                 succesfulInit = false;
                 return;
             }
-            int currentServiceCount = serviceMetaData.serviceStarted();
+            int currentServiceCount = serviceMetaData.incrementThreadCount();
             if(currentServiceCount > serviceMetaData.getMaxCapacity()){
-                serviceMetaData.serviceFinished();
+                serviceMetaData.decrementThreadCount();
                 succesfulInit = false;
                 return;
             }
@@ -79,7 +79,7 @@ public class ServiceHandler implements Runnable{
             }catch(Exception e){
                 e.printStackTrace();
             }
-            serviceLookup.getService(serviceName).serviceFinished();
+            serviceLookup.getService(serviceName).decrementThreadCount();
         }
     }
 }

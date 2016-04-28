@@ -16,29 +16,63 @@ public class ServiceMetaData {
     private int maxCapacity;
     private AtomicInteger currentThreadCount;
 
+    /**
+     * Constructs a object with information about the service. The thread count
+     * will start at zero.
+     * 
+     * @param serviceFactory the <code>ServiceFactory</code> for the service.
+     * @param maxCapacity defines the maximum amount of simultaneously services.
+     */
     public ServiceMetaData(ServiceFactory serviceFactory, int maxCapacity) {
             this.maxCapacity = maxCapacity;
             this.serviceFactory = serviceFactory;
             currentThreadCount = new AtomicInteger();
     }
 
-    //TODO GET BETTER NAME
-    public int serviceStarted(){
+    /**
+     * Increments the number keeping track of running instances. This function
+     * should be executed when a new thread is launched.
+     * 
+     * @return the number of instances running.
+     */
+    public int incrementThreadCount(){
             return currentThreadCount.incrementAndGet();
     }
 
-    public int serviceFinished(){
+    /**
+     * Decrements the number keeping track of running instances. This function
+     * should be executed when a thread is turned off.
+     * 
+     * @return the number of instances running.
+     */
+    public int decrementThreadCount(){
             return currentThreadCount.decrementAndGet();
     }
 
+    /**
+     * Returns the maximum amount of instances that are allowed to run 
+     * simultaneously.
+     * 
+     * @return maximum capacity of the service.
+     */
     public int getMaxCapacity() {
             return maxCapacity;
     }
 
+    /**
+     * Returns the current amount of instances running in the thread pool.
+     * 
+     * @return current amount of instances.
+     */
     public int getCurrentThreadCount(){
             return currentThreadCount.get();
     }
 
+    /**
+     * Returns the <code>ServiceFactory</code> connected to the service.
+     * 
+     * @return the <code>ServiceFactory</code> connected to the service.
+     */
     public ServiceFactory getServiceFactory(){
             return serviceFactory;
     }
