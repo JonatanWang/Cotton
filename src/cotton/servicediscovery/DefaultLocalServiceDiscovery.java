@@ -301,7 +301,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
             serviceList.add(nameKey);
         }
         String[] serviceNameList = serviceList.toArray(new String[serviceList.size()]);
-        AnnoncePacket annonce = new AnnoncePacket(localAddress, serviceNameList);
+        AnnouncePacket annonce = new AnnouncePacket(localAddress, serviceNameList);
         packet.setAnnonce(annonce);
         System.out.println("Announcing Service on: " + (InetSocketAddress)this.localAddress);
         for (int i = 0; i < serviceNameList.length; i++) {

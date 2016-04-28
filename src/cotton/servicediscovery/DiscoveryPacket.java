@@ -26,13 +26,13 @@ public class DiscoveryPacket implements Serializable {
     }
     
     private DiscoveryProbe probe = null;
-    private AnnoncePacket annonce = null;
+    private AnnouncePacket annonce = null;
 
-    public AnnoncePacket getAnnonce() {
+    public AnnouncePacket getAnnonce() {
         return annonce;
     }
 
-    public void setAnnonce(AnnoncePacket annonce) {
+    public void setAnnonce(AnnouncePacket annonce) {
         this.annonce = annonce;
     }
     

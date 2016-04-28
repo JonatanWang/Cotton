@@ -10,7 +10,7 @@ package cotton.services;
 public interface ServiceBuffer{
 
     /**
-     * Distributes the next packet in the <ocde>ServiceBuffer</code>.
+     * Distributes the next packet in the <code>ServiceBuffer</code>.
      * 
      * @return the next <code>ServicePacket</code> in the buffer.
      */

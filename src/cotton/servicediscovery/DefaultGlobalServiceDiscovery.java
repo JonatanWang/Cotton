@@ -155,7 +155,7 @@ public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery
         }
     }
 
-    private void processAnnouncePacket(ServiceConnection from, AnnoncePacket packet) {
+    private void processAnnouncePacket(ServiceConnection from, AnnouncePacket packet) {
         String[] serviceList = packet.getServiceList();
         if(from == null) {
             System.out.println("Ip:" + ((InetSocketAddress)from.getAddress()).toString());
