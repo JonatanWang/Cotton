@@ -216,7 +216,7 @@ public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery
                     //localDiscovery.updateHandling(from, packet);
                     break;
                 case ANNOUNCE:
-                    processAnnouncePacket(from, packet.getAnnonce());
+                    processAnnouncePacket(from, packet.getAnnounce());
                     //intern handeling method
                     break;
                 default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
