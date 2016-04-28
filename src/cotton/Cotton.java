@@ -18,9 +18,9 @@ import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.DummyServiceChain;
 import cotton.servicediscovery.DefaultGlobalServiceDiscovery;
 import cotton.services.ServiceHandler;
-import cotton.servicediscovery.ServiceDiscovery;
 import java.util.concurrent.ThreadLocalRandom;
 import cotton.network.DeprecatedNetworkHandler;
+import cotton.servicediscovery.DeprecatedServiceDiscovery;
 /**
  *
  * @author Jonathan
@@ -32,7 +32,7 @@ public class Cotton {
     private DeprecatedNetworkHandler network;
     private ClientNetwork clientNetwork;
     private ServiceHandler services;
-    private ServiceDiscovery discovery;
+    private DeprecatedServiceDiscovery discovery;
 
     public Cotton (boolean GlobalServiceDiscovery) throws java.net.UnknownHostException {
         lookup = new DefaultActiveServiceLookup();

@@ -26,7 +26,7 @@ import cotton.services.DefaultServiceBuffer;
 import cotton.services.ServiceBuffer;
 import cotton.services.ServicePacket;
 import cotton.network.NetworkPacket;
-import cotton.servicediscovery.ServiceDiscovery;
+import cotton.servicediscovery.DeprecatedServiceDiscovery;
 
 /**
  * Handles all of the packet buffering and relaying.
@@ -40,13 +40,13 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
     private ServiceBuffer serviceBuffer;
     private ConcurrentHashMap<UUID,DefaultServiceRequest> connectionTable;
     private AtomicBoolean running;
-    private ServiceDiscovery localServiceDiscovery;
+    private DeprecatedServiceDiscovery localServiceDiscovery;
     private int localPort;
     private InetAddress localIP;
     private ExecutorService threadPool;
     private SocketAddress localSocketAddress;
 
-    public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery) throws java.net.UnknownHostException{
+    public DefaultNetworkHandler(DeprecatedServiceDiscovery localServiceDiscovery) throws java.net.UnknownHostException{
         if(localServiceDiscovery == null)
             throw new NullPointerException("Recieved null servicediscovery");
 
@@ -67,7 +67,7 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
         running = new AtomicBoolean(true);
     }
 
-    public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery,SocketAddress localSocketAddress) throws java.net.UnknownHostException{
+    public DefaultNetworkHandler(DeprecatedServiceDiscovery localServiceDiscovery,SocketAddress localSocketAddress) throws java.net.UnknownHostException{
         if(localServiceDiscovery == null)
             throw new NullPointerException("Recieved null servicediscovery");
 
@@ -89,7 +89,7 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
         this.localSocketAddress = localSocketAddress;
     }
 
-    public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery,int port) throws java.net.UnknownHostException{
+    public DefaultNetworkHandler(DeprecatedServiceDiscovery localServiceDiscovery,int port) throws java.net.UnknownHostException{
         if(localServiceDiscovery == null)
             throw new NullPointerException("Recieved null servicediscovery");
 

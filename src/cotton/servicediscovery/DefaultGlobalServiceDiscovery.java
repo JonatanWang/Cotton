@@ -22,7 +22,7 @@ import cotton.network.DeprecatedNetworkHandler;
  *
  * @author Magnus
  */
-public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
+public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery {
 
     private ActiveServiceLookup internalLookup;
     private DeprecatedNetworkHandler network = null;

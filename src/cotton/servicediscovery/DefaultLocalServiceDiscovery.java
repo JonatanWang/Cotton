@@ -27,7 +27,7 @@ import cotton.network.DeprecatedNetworkHandler;
  *
  * @author Magnus, Mats
  */
-public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
+public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery {
     private ActiveServiceLookup internalLookup;
     private DeprecatedNetworkHandler network = null;
     private SocketAddress localAddress;
