@@ -36,7 +36,7 @@ import cotton.servicediscovery.ServiceDiscovery;
  * @author Jonathan
  * @author Gunnlaugur
  */
-public class DefaultNetworkHandler implements NetworkHandler,ClientNetwork {
+public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNetwork {
     private ServiceBuffer serviceBuffer;
     private ConcurrentHashMap<UUID,DefaultServiceRequest> connectionTable;
     private AtomicBoolean running;

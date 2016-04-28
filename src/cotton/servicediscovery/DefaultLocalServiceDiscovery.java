@@ -3,7 +3,6 @@ package cotton.servicediscovery;
 
 import cotton.network.DefaultServiceConnection;
 import cotton.network.DummyServiceChain;
-import cotton.network.NetworkHandler;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceRequest;
 import cotton.services.ActiveServiceLookup;
@@ -22,6 +21,7 @@ import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import cotton.network.DeprecatedNetworkHandler;
 
 /**
  *
@@ -29,7 +29,7 @@ import java.util.Enumeration;
  */
 public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
     private ActiveServiceLookup internalLookup;
-    private NetworkHandler network = null;
+    private DeprecatedNetworkHandler network = null;
     private SocketAddress localAddress;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
     private AddressPool globalDiscovery;
@@ -56,7 +56,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         initGlobalDiscoveryPool(globalDNS);
     }
 
-    public void setNetwork(NetworkHandler network, SocketAddress localAddress) {
+    public void setNetwork(DeprecatedNetworkHandler network, SocketAddress localAddress) {
         this.network = network;
         this.localAddress = localAddress;
         System.out.println("local ip: " + ((InetSocketAddress)localAddress).toString());

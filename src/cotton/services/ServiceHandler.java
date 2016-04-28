@@ -1,17 +1,17 @@
 package cotton.services;
 
-import cotton.network.NetworkHandler;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.io.Serializable;
+import cotton.network.DeprecatedNetworkHandler;
 
 public class ServiceHandler implements Runnable{
     private ActiveServiceLookup serviceLookup;
-    private NetworkHandler networkHandler;
+    private DeprecatedNetworkHandler networkHandler;
     private ExecutorService threadPool;
     private volatile boolean active = true;
 
-    public ServiceHandler(ActiveServiceLookup serviceLookup, NetworkHandler networkHandler){
+    public ServiceHandler(ActiveServiceLookup serviceLookup, DeprecatedNetworkHandler networkHandler){
         this.networkHandler = networkHandler;
         this.serviceLookup = serviceLookup;
         threadPool = Executors.newCachedThreadPool();

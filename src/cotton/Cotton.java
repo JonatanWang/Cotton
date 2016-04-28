@@ -10,7 +10,6 @@ import cotton.example.ImageManipulationPacket;
 import cotton.example.ImageManipulationService;
 import cotton.network.ClientNetwork;
 import cotton.network.DefaultNetworkHandler;
-import cotton.network.NetworkHandler;
 import cotton.network.ServiceChain;
 import cotton.servicediscovery.DefaultLocalServiceDiscovery;
 import cotton.servicediscovery.GlobalDiscoveryDNS;
@@ -21,6 +20,7 @@ import cotton.servicediscovery.DefaultGlobalServiceDiscovery;
 import cotton.services.ServiceHandler;
 import cotton.servicediscovery.ServiceDiscovery;
 import java.util.concurrent.ThreadLocalRandom;
+import cotton.network.DeprecatedNetworkHandler;
 /**
  *
  * @author Jonathan
@@ -29,7 +29,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class Cotton {
     private ActiveServiceLookup lookup;
-    private NetworkHandler network;
+    private DeprecatedNetworkHandler network;
     private ClientNetwork clientNetwork;
     private ServiceHandler services;
     private ServiceDiscovery discovery;
@@ -92,7 +92,7 @@ public class Cotton {
         return lookup;
     }
 
-    public NetworkHandler getNetwork() {
+    public DeprecatedNetworkHandler getNetwork() {
         return network;
     }
     

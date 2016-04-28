@@ -13,7 +13,6 @@ import java.util.logging.Logger;
 import cotton.Cotton;
 import cotton.network.ClientNetwork;
 import cotton.network.DefaultNetworkHandler;
-import cotton.network.NetworkHandler;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceRequest;
 import cotton.services.ActiveServiceLookup;
@@ -42,6 +41,7 @@ import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import cotton.network.DeprecatedNetworkHandler;
 
 
 
@@ -166,7 +166,7 @@ public class UnitTest {
         lookup.registerService("test", new TestFactory(), 10);
         ServiceDiscovery discovery = new DefaultLocalServiceDiscovery(lookup);
 
-        NetworkHandler net = null;
+        DeprecatedNetworkHandler net = null;
 
         try {
             net = new DefaultNetworkHandler(discovery);

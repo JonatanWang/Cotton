@@ -2,7 +2,6 @@ package cotton.test;
 
 import cotton.network.DefaultNetworkHandler;
 import cotton.network.DummyServiceChain;
-import cotton.network.NetworkHandler;
 import cotton.network.ServiceRequest;
 import cotton.servicediscovery.DefaultLocalServiceDiscovery;
 import cotton.servicediscovery.ServiceDiscovery;
@@ -17,6 +16,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import cotton.network.DeprecatedNetworkHandler;
 
 /**
  *
@@ -50,7 +50,7 @@ public class TestNH {
         
         ActiveServiceLookup asl = new DefaultActiveServiceLookup();
         ServiceDiscovery sd = new DefaultLocalServiceDiscovery(asl);
-        NetworkHandler nh = null;
+        DeprecatedNetworkHandler nh = null;
         try {
             nh = new DefaultNetworkHandler(sd);
         } catch(UnknownHostException e) {}
