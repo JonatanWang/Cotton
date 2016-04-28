@@ -3,7 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package cotton.network;
+package InternalRouting;
+
+import cotton.network.DestinationMetaData;
+import cotton.network.Origin;
+import cotton.network.PathType;
+import cotton.network.ServiceRequest;
+
 
 /**
  *
