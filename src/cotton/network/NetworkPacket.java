@@ -1,22 +1,20 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package cotton.network;
-
-import java.io.Serializable;
-
 
 /**
  *
- * @author Gunnlaugur Juliusson
- * @author Jonathan Kåhre
- * @author Tony Tran
+ * @author tony
+ * @author Magnus
  */
-public interface NetworkPacket extends Serializable{
-    public ServiceChain getPath();
-
-    public ServiceConnection getOrigin();
-
-    public PathType getType();
-
-    public Serializable getData();
-
-    public boolean keepAlive();
+public interface NetworkPacket {
+    public byte[] getData();
+    public Origin getOrigin();
+    public ServiceChain getServiceChain();
+    public PathType getPathType();
+    public void setPathType(PathType pathType);
+    public void setData(byte[] data);
 }

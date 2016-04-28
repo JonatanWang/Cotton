@@ -1,15 +1,81 @@
 package cotton.network;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+import java.net.SocketAddress;
+import java.util.UUID;
 
 /**
  *
- * @author tony
+ * @author Tony
+ * @author Magnus
  */
 public class Origin {
+
+    private SocketAddress address;
+    private UUID serviceRequestID;
+    private UUID socketLatchID;
+
+    public Origin() {
+        this.address = null;
+        this.serviceRequestID = null;
+        this.socketLatchID = null;
+    }
+
+    public Origin(SocketAddress address, UUID serviceRequestID) {
+        this.address = address;
+        this.serviceRequestID = serviceRequestID;
+        this.socketLatchID = null;
+    }
+
+    /**
+     * Returns value of address
+     *
+     * @return
+     */
+    public SocketAddress getAddress() {
+        return this.address;
+    }
+
+    /**
+     * Returns value of serviceRequestID
+     *
+     * @return
+     */
+    public UUID getServiceRequestID() {
+        return this.serviceRequestID;
+    }
+
+    /**
+     * Returns value of socketLatchID
+     *
+     * @return
+     */
+    public UUID getSocketLatchID() {
+        return this.socketLatchID;
+    }
+
+    /**
+     * Sets new value of address
+     *
+     * @param
+     */
+    public void setAddress(SocketAddress address) {
+        this.address = address;
+    }
     
+    /**
+     * Sets new value of requestID
+     * @param serviceRequestID 
+     */
+    public void setServiceRequestID(UUID serviceRequestID){
+      this.serviceRequestID = serviceRequestID;
+    }
+    /**
+     * Sets new value of socketLatchID
+     *
+     * @param
+     */
+    public void setSocketLatchID(UUID socketLatchID) {
+        this.socketLatchID = socketLatchID;
+    }
+
 }

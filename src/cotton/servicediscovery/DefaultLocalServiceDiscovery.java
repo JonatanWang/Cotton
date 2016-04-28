@@ -4,7 +4,6 @@ package cotton.servicediscovery;
 import cotton.network.DefaultServiceConnection;
 import cotton.network.DummyServiceChain;
 import cotton.network.ServiceChain;
-import cotton.network.ServiceRequest;
 import cotton.services.ActiveServiceLookup;
 import cotton.network.ServiceConnection;
 import java.io.InputStream;
@@ -22,6 +21,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import cotton.network.DeprecatedNetworkHandler;
+import cotton.network.DeprecatedServiceRequest;
 
 /**
  *
@@ -107,7 +107,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
         DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
         packet.setProbe(discoveryProbe);
         globalDest.setAddress(addr);
-        ServiceRequest req = null;
+        DeprecatedServiceRequest req = null;
         try {
             req = network.sendWithResponse(packet, globalDest);
         } catch (Throwable e) {

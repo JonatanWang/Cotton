@@ -1,3 +1,4 @@
+
 package cotton.network;
 
 import java.io.Serializable;
@@ -11,7 +12,7 @@ import java.util.concurrent.CountDownLatch;
  * @author Gunnlaugur
  * @author Magnus
  **/
-public class DefaultServiceRequest implements DeprecatedServiceRequest{
+public class DeprecatedDefaultServiceRequest implements DeprecatedServiceRequest{
     private Serializable data = null;
     private CountDownLatch latch = new CountDownLatch(1);
 
@@ -35,4 +36,5 @@ public class DefaultServiceRequest implements DeprecatedServiceRequest{
         this.data = null;
         latch.countDown();
     }
-}
+}    
+

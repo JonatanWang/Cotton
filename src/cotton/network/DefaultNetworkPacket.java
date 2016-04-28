@@ -1,58 +1,62 @@
-package cotton.network;
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package ncotton.etwork;
 
-import java.io.Serializable;
+import cotton.network.NetworkPacket;
+import cotton.network.Origin;
+import cotton.network.PathType;
+import cotton.network.ServiceChain;
 
 /**
  *
- * @author Gunnlaugur Juliusson
- * @author Jonathan Kåhre
- * @author Tony Tran
+ * @author tony
+ * @author magnus
  */
-public class DefaultNetworkPacket implements NetworkPacket{
-    private static final long serialVersionUID = 1L;
-    private Serializable data;
-    private ServiceConnection from;
-    private ServiceChain path;
-    private PathType pt;
-    private boolean keepAlive;
+public class DefaultNetworkPacket implements NetworkPacket {
+    private Origin origin;
+    private ServiceChain serviceChain;
+    private PathType pathType;
+    private byte[] result;
 
-    public DefaultNetworkPacket(Serializable data, ServiceChain path, ServiceConnection from, PathType pt) {
-        this.data = data;
-        this.from = from;
-        this.path = path;
-        if(this.path == null) {
-            this.path = new DummyServiceChain();
-        }
-        this.pt = pt;
-        this.keepAlive = false;
+    public DefaultNetworkPacket(Origin origin, ServiceChain serviceChain, PathType pathType, byte[] result) {
+        this.origin = origin;
+        this.serviceChain = serviceChain;
+        this.pathType = pathType;
+        this.result = result;
+    }
+    
+    
+    @Override
+    public byte[] getData() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    public DefaultNetworkPacket(Serializable data, ServiceChain path, ServiceConnection from, PathType pt, boolean keepAlive) {
-        this.data = data;
-        this.from = from;
-        this.path = path;
-        this.pt = pt;
-        this.keepAlive = keepAlive;
+    @Override
+    public Origin getOrigin() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    public ServiceChain getPath(){
-        return path;
+    @Override
+    public ServiceChain getServiceChain() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    public ServiceConnection getOrigin(){
-        return from;
+    @Override
+    public PathType getPathType() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    public PathType getType(){
-        return pt;
+    @Override
+    public void setPathType(PathType pathType) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    public Serializable getData() {
-        return data;
+    @Override
+    public void setData(byte[] data) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-
-    public boolean keepAlive(){
-        return keepAlive;
-    }
-
+    
 }

@@ -11,12 +11,12 @@ import java.util.concurrent.CountDownLatch;
  * @author Gunnlaugur
  * @author Magnus
  **/
-public class SocketLatch implements ServiceRequest{
+public class SocketLatch{
     private NetworkPacket networkPacket = null;
     private CountDownLatch latch = new CountDownLatch(1);
 
-    @Override
-    public Serializable getData() {
+    
+    public NetworkPacket getData() {
         boolean loop = false;
         do {
             try {
@@ -31,8 +31,8 @@ public class SocketLatch implements ServiceRequest{
         this.networkPacket = networkPacket;
         latch.countDown();
     }
-    public void setFailed() {
-        this.networkPacket = null;
+    public void setFailed(NetworkPacket errorMessage) {
+        networkPacket = errorMessage;
         latch.countDown();
     }
 }

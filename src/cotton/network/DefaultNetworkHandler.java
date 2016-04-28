@@ -25,8 +25,8 @@ import cotton.servicediscovery.RouteSignal;
 import cotton.services.DefaultServiceBuffer;
 import cotton.services.ServiceBuffer;
 import cotton.services.ServicePacket;
-import cotton.network.NetworkPacket;
 import cotton.servicediscovery.DeprecatedServiceDiscovery;
+import cotton.network.DeprecatedNetworkPacket;
 
 /**
  * Handles all of the packet buffering and relaying.
@@ -38,7 +38,7 @@ import cotton.servicediscovery.DeprecatedServiceDiscovery;
  */
 public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNetwork {
     private ServiceBuffer serviceBuffer;
-    private ConcurrentHashMap<UUID,DefaultServiceRequest> connectionTable;
+    private ConcurrentHashMap<UUID,DeprecatedDefaultServiceRequest> connectionTable;
     private AtomicBoolean running;
     private DeprecatedServiceDiscovery localServiceDiscovery;
     private int localPort;
@@ -161,10 +161,10 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
      * @return The result with which the response will be returned.
      */
     @Override
-    public ServiceRequest sendWithResponse(Serializable data, ServiceConnection destination) throws IOException{
-        DefaultServiceRequest result = new DefaultServiceRequest();
+    public DeprecatedServiceRequest sendWithResponse(Serializable data, ServiceConnection destination) throws IOException{
+        DeprecatedDefaultServiceRequest result = new DeprecatedDefaultServiceRequest();
         ServiceConnection local = getLocalServiceConnection();
-        NetworkPacket packet = buildServicePacket(data, null, local, destination.getPathType());
+        DeprecatedNetworkPacket packet = buildServicePacket(data, null, local, destination.getPathType());
         if(sendObject(packet, destination)){
             this.connectionTable.put(local.getUserConnectionId(), result);
             return result;
@@ -189,7 +189,7 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
             sendToServiceBuffer(from, data, path);
             return;
         case ENDPOINT:
-            DefaultServiceRequest req = connectionTable.get(from.getUserConnectionId());
+            DeprecatedDefaultServiceRequest req = connectionTable.get(from.getUserConnectionId());
             if(req == null) {
 /*                System.out.println("Network route table error, ENDPOINT " 
                         +"\n\tfrom: " + from.getUserConnectionId()
@@ -219,11 +219,11 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
      * @param path The predefined services to pass through.
      */
     @Override
-    public ServiceRequest sendToService(Serializable data, ServiceChain path) { // TODO: Make sure that this doesn't drop packages with this as last destination
+    public DeprecatedServiceRequest sendToService(Serializable data, ServiceChain path) { // TODO: Make sure that this doesn't drop packages with this as last destination
         UUID uuid = UUID.randomUUID();
         ServiceConnection dest = new DefaultServiceConnection(uuid);
         RouteSignal route = localServiceDiscovery.getDestination(dest, path);
-        DefaultServiceRequest result = new DefaultServiceRequest();
+        DeprecatedDefaultServiceRequest result = new DeprecatedDefaultServiceRequest();
         this.connectionTable.put(dest.getUserConnectionId(), result);
         if(route == RouteSignal.LOCALDESTINATION) {
             sendToServiceBuffer(dest, data, path);
@@ -318,7 +318,7 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
  * @return 
  */
     public boolean sendEnd(Serializable data, ServiceConnection destination) {
-        DefaultServiceRequest req = this.connectionTable.get(destination.getUserConnectionId());
+        DeprecatedDefaultServiceRequest req = this.connectionTable.get(destination.getUserConnectionId());
         if(req == null) return false;
         req.setData(data);
         return true;
@@ -329,8 +329,8 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
         serviceBuffer.add(servicePacket);
     }
 
-    private NetworkPacket buildServicePacket(Serializable data, ServiceChain path, ServiceConnection from, PathType type){
-        return new DefaultNetworkPacket(data, path, from, type);
+    private DeprecatedNetworkPacket buildServicePacket(Serializable data, ServiceChain path, ServiceConnection from, PathType type){
+        return new DeprecatedDefaultNetworkPacket(data, path, from, type);
     }
 /**
  * Give back a new ServiceConnection but keeps the uuid between jumps
@@ -379,7 +379,7 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
             try {
                 ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
 
-                NetworkPacket input = (NetworkPacket)in.readObject();
+                DeprecatedNetworkPacket input = (DeprecatedNetworkPacket)in.readObject();
                 //System.out.println("Socket closed, parsing packet!");
                 if(input == null) {
                     System.out.println("NetworkPacket null");
@@ -390,7 +390,7 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
                 case SERVICE:
                     //System.out.println("ServicePacket with ID: " + input.getOrigin().getUserConnectionId() + "\nSpecifying services: " + ((DummyServiceChain)input.getPath()).toString());
                     if(input.keepAlive()){
-                        ServiceRequest s = sendToService(input.getData(), input.getPath());
+                        DeprecatedServiceRequest s = sendToService(input.getData(), input.getPath());
                         Serializable returnPacket = buildServicePacket(s.getData(), null, getLocalServiceConnection(), PathType.SERVICE);
                         new ObjectOutputStream(clientSocket.getOutputStream()).writeObject(returnPacket);
                     }else{

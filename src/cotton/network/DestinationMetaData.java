@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 package cotton.network;
-
+import cotton.network.PathType;
 import java.net.SocketAddress;
 
 /**
@@ -15,12 +15,24 @@ public class DestinationMetaData {
     private SocketAddress socketAddress;
     private PathType pathType;
 
+    /**
+  	* Default empty DestinationMetaData constructor
+  	*/
+  	public DestinationMetaData() {
+      socketAddress = null;
+      pathType = PathType.NOTFOUND;
+  	}
+
+    /**
+    *
+    *
+    **/
     public DestinationMetaData(SocketAddress socketAddress, PathType pathType) {
         this.socketAddress = socketAddress;
         this.pathType = pathType;
     }
-    
-    
+
+
     public SocketAddress getSocketAddress() {
         return socketAddress;
     }
@@ -36,4 +48,5 @@ public class DestinationMetaData {
     public void setPathType(PathType pathType) {
         this.pathType = pathType;
     }
+
 }

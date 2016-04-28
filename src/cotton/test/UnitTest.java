@@ -14,7 +14,6 @@ import cotton.Cotton;
 import cotton.network.ClientNetwork;
 import cotton.network.DefaultNetworkHandler;
 import cotton.network.ServiceChain;
-import cotton.network.ServiceRequest;
 import cotton.services.ActiveServiceLookup;
 import cotton.services.CloudContext;
 import cotton.services.DefaultActiveServiceLookup;
@@ -42,6 +41,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import cotton.network.DeprecatedNetworkHandler;
+import cotton.network.DeprecatedServiceRequest;
 
 
 
@@ -220,7 +220,7 @@ public class UnitTest {
                 .into("MathPow2").into("MathPow2")
                 .into("MathPow2").into("MathPow2");
 
-        ServiceRequest jobId = net.sendToService(data, chain);
+        DeprecatedServiceRequest jobId = net.sendToService(data, chain);
 
         Integer result = (Integer)jobId.getData();
 

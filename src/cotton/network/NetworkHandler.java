@@ -6,15 +6,17 @@
 package network;
 
 import java.net.SocketAddress;
-import java.util.concurrent.CountDownLatch;
+import cotton.network.NetworkPacket;
+import cotton.network.SocketLatch;
 
 /**
  *
  * @author tony
  */
 public interface NetworkHandler extends Runnable {
-    public boolean send(cotton.network.NetworkPacket netPacket, SocketAddress addr);
-    public CountDownLatch sendKeepAlive(cotton.network.NetworkPacket netPacket,SocketAddress addr);
+    public boolean send(NetworkPacket netPacket, SocketAddress addr);
+    public SocketLatch sendKeepAlive(NetworkPacket netPacket,SocketAddress addr);
+    public SocketAddress getLocalAddress();
     public void stop();
 
 }

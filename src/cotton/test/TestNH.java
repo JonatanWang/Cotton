@@ -2,7 +2,6 @@ package cotton.test;
 
 import cotton.network.DefaultNetworkHandler;
 import cotton.network.DummyServiceChain;
-import cotton.network.ServiceRequest;
 import cotton.servicediscovery.DefaultLocalServiceDiscovery;
 import cotton.services.ActiveServiceLookup;
 import cotton.services.DefaultActiveServiceLookup;
@@ -17,6 +16,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import cotton.network.DeprecatedNetworkHandler;
 import cotton.servicediscovery.DeprecatedServiceDiscovery;
+import cotton.network.DeprecatedServiceRequest;
 
 /**
  *
@@ -59,7 +59,7 @@ public class TestNH {
         new Thread(dsh).start();
         
         asl.registerService("MathPow2", MathPow2.getFactory(), 1);
-        ServiceRequest sr = nh.sendToService(numberToTest, new DummyServiceChain().into("MathPow2"));
+        DeprecatedServiceRequest sr = nh.sendToService(numberToTest, new DummyServiceChain().into("MathPow2"));
         
         assertTrue(25 == (Integer)sr.getData());
     }

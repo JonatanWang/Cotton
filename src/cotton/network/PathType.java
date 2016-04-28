@@ -5,5 +5,5 @@ package cotton.network;
  */
 
 public enum PathType{
-    RELAY, DISCOVERY, SERVICE, UNKNOWN
+    RELAY, DISCOVERY, SERVICE, UNKNOWN, NOTFOUND
 }

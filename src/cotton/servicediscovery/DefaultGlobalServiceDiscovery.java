@@ -4,7 +4,6 @@ import cotton.network.DefaultServiceConnection;
 import cotton.network.PathType;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceConnection;
-import cotton.network.ServiceRequest;
 import cotton.services.ActiveServiceLookup;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,6 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import cotton.network.DeprecatedNetworkHandler;
+import cotton.network.DeprecatedServiceRequest;
 
 /**
  *
@@ -181,7 +181,7 @@ public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery
         ServiceConnection dest = new DefaultServiceConnection(from.getUserConnectionId());
         dest.setAddress(from.getAddress());
         dest.setPathType(PathType.DISCOVERY);
-        ServiceRequest req = null;
+        DeprecatedServiceRequest req = null;
         try {
             //network.send(packet, from);
             network.send(packet, dest);
