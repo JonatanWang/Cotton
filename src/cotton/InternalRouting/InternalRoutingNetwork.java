@@ -1,4 +1,4 @@
-package InternalRouting;
+package cotton.internalRouting;
 import cotton.network.NetworkPacket;
 import cotton.network.SocketLatch;
 
