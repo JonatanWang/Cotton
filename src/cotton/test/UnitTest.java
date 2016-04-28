@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 import cotton.Cotton;
 import cotton.network.ClientNetwork;
 import cotton.network.DefaultNetworkHandler;
-import cotton.network.NetworkHandler;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceRequest;
 import cotton.services.ActiveServiceLookup;
@@ -43,6 +42,7 @@ import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import cotton.network.DeprecatedNetworkHandler;
 
 
 
@@ -156,9 +156,9 @@ public class UnitTest {
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
 
         lookup.registerService("test", new TestFactory(), 10);
-        ServiceDiscovery discovery = new DefaultLocalServiceDiscovery(lookup);
+        DeprecatedServiceDiscovery discovery = new DefaultLocalServiceDiscovery(lookup);
 
-        NetworkHandler net = null;
+        DeprecatedNetworkHandler net = null;
 
         try {
             net = new DefaultNetworkHandler(discovery);
@@ -235,7 +235,7 @@ public class UnitTest {
 
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
-        ServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        DeprecatedServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         ServiceConnection dest = new DefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain().into("test");
         assertTrue(RouteSignal.LOCALDESTINATION == local.getDestination(dest, null, chain));
@@ -247,7 +247,7 @@ public class UnitTest {
 
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
-        ServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        DeprecatedServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         ServiceConnection dest = new DefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain().into("test");
         assertTrue(RouteSignal.LOCALDESTINATION == local.getDestination(dest, chain));
@@ -259,7 +259,7 @@ public class UnitTest {
 
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
-        ServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        DeprecatedServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         ServiceConnection dest = new DefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain();
         assertTrue(RouteSignal.NOTFOUND == local.getDestination(dest, null, chain));
@@ -271,7 +271,7 @@ public class UnitTest {
 
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
-        ServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        DeprecatedServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         ServiceConnection dest = new DefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain().into("test");
         assertTrue(RouteSignal.NOTFOUND == local.getDestination(null, chain));
@@ -303,7 +303,7 @@ public class UnitTest {
 
         ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("Store", new TestFactory(), 10);
-        ServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
+        DeprecatedServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         //local.announce();
         local.discoveryUpdate(from, message);
 

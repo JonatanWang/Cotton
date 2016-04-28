@@ -1,7 +1,6 @@
 package cotton.servicediscovery;
 
 import cotton.network.DefaultServiceConnection;
-import cotton.network.NetworkHandler;
 import cotton.network.PathType;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceConnection;
@@ -18,19 +17,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import cotton.network.DeprecatedNetworkHandler;
 
 /**
  *
  * @author Magnus
  */
-public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
+public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery {
 
     private ActiveServiceLookup internalLookup;
-    private NetworkHandler network = null;
+    private DeprecatedNetworkHandler network = null;
     private SocketAddress localAddress;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
     private AddressPool discoveryCache;
-    private NetworkHandler networkHandler;
+    private DeprecatedNetworkHandler networkHandler;
     private ExecutorService threadPool;
     private volatile boolean active = true;
 
@@ -58,7 +58,7 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
         threadPool.shutdown();
     }
 
-    private void startLocalDiscovery(NetworkHandler network, SocketAddress localAddress) {
+    private void startLocalDiscovery(DeprecatedNetworkHandler network, SocketAddress localAddress) {
         SocketAddress[] tmp = new SocketAddress[1];
         tmp[0] = localAddress;
         GlobalDiscoveryDNS discoveryDNSPool = new GlobalDiscoveryDNS();
@@ -70,7 +70,7 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
     }
 
     @Override
-    public void setNetwork(NetworkHandler network, SocketAddress localAddress) {
+    public void setNetwork(DeprecatedNetworkHandler network, SocketAddress localAddress) {
         this.network = network;
         this.localAddress = localAddress;
         //startLocalDiscovery(network, localAddress);
@@ -156,7 +156,7 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
         }
     }
 
-    private void processAnnouncePacket(ServiceConnection from, AnnoncePacket packet) {
+    private void processAnnouncePacket(ServiceConnection from, AnnouncePacket packet) {
         String[] serviceList = packet.getServiceList();
         if(from == null) {
             System.out.println("Ip:" + ((InetSocketAddress)from.getAddress()).toString());
@@ -216,7 +216,7 @@ public class DefaultGlobalServiceDiscovery implements ServiceDiscovery {
                     //localDiscovery.updateHandling(from, packet);
                     break;
                 case ANNOUNCE:
-                    processAnnouncePacket(from, packet.getAnnonce());
+                    processAnnouncePacket(from, packet.getAnnounce());
                     //intern handeling method
                     break;
                 default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);

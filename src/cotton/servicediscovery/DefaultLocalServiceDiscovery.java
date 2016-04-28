@@ -3,7 +3,6 @@ package cotton.servicediscovery;
 
 import cotton.network.DefaultServiceConnection;
 import cotton.network.DummyServiceChain;
-import cotton.network.NetworkHandler;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceRequest;
 import cotton.services.ActiveServiceLookup;
@@ -25,14 +24,15 @@ import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import cotton.network.DeprecatedNetworkHandler;
 
 /**
  *
  * @author Magnus, Mats
  */
-public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
+public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery {
     private ActiveServiceLookup internalLookup;
-    private NetworkHandler network = null;
+    private DeprecatedNetworkHandler network = null;
     private SocketAddress localAddress;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
     private AddressPool globalDiscovery;
@@ -59,7 +59,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
         initGlobalDiscoveryPool(globalDNS);
     }
 
-    public void setNetwork(NetworkHandler network, SocketAddress localAddress) {
+    public void setNetwork(DeprecatedNetworkHandler network, SocketAddress localAddress) {
         this.network = network;
         this.localAddress = localAddress;
         System.out.println("local ip: " + ((InetSocketAddress)localAddress).toString());
@@ -322,7 +322,7 @@ public class DefaultLocalServiceDiscovery implements ServiceDiscovery {
             serviceList.add(nameKey);
         }
         String[] serviceNameList = serviceList.toArray(new String[serviceList.size()]);
-        AnnoncePacket annonce = new AnnoncePacket(localAddress, serviceNameList);
+        AnnouncePacket annonce = new AnnouncePacket(localAddress, serviceNameList);
         packet.setAnnonce(annonce);
         System.out.println("Announcing Service on: " + (InetSocketAddress)this.localAddress);
         for (int i = 0; i < serviceNameList.length; i++) {

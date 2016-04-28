@@ -11,11 +11,7 @@ package cotton.network;
 public interface ServiceChain {
 
     public String getNextServiceName();
-
     public String peekNextServiceName();
-
     public boolean addService(String name);
-
     public ServiceChain into(String name);
-
 }

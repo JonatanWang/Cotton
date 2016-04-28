@@ -26,7 +26,7 @@ import cotton.services.DefaultServiceBuffer;
 import cotton.services.ServiceBuffer;
 import cotton.services.ServicePacket;
 import cotton.network.NetworkPacket;
-import cotton.servicediscovery.ServiceDiscovery;
+import cotton.servicediscovery.DeprecatedServiceDiscovery;
 
 /**
  * Handles all of the packet buffering and relaying.
@@ -36,17 +36,17 @@ import cotton.servicediscovery.ServiceDiscovery;
  * @author Jonathan
  * @author Gunnlaugur
  */
-public class DefaultNetworkHandler implements NetworkHandler, ClientNetwork {
+public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNetwork {
     private ServiceBuffer serviceBuffer;
     private ConcurrentHashMap<UUID,DefaultServiceRequest> connectionTable;
     private AtomicBoolean running;
-    private ServiceDiscovery localServiceDiscovery;
+    private DeprecatedServiceDiscovery localServiceDiscovery;
     private int localPort;
     private InetAddress localIP;
     private ExecutorService threadPool;
     private SocketAddress localSocketAddress;
 
-    public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery) throws java.net.UnknownHostException{
+    public DefaultNetworkHandler(DeprecatedServiceDiscovery localServiceDiscovery) throws java.net.UnknownHostException{
         if(localServiceDiscovery == null)
             throw new NullPointerException("Recieved null servicediscovery");
 
@@ -67,7 +67,7 @@ public class DefaultNetworkHandler implements NetworkHandler, ClientNetwork {
         running = new AtomicBoolean(true);
     }
 
-    public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery,SocketAddress localSocketAddress) throws java.net.UnknownHostException{
+    public DefaultNetworkHandler(DeprecatedServiceDiscovery localServiceDiscovery,SocketAddress localSocketAddress) throws java.net.UnknownHostException{
         if(localServiceDiscovery == null)
             throw new NullPointerException("Recieved null servicediscovery");
 
@@ -89,7 +89,7 @@ public class DefaultNetworkHandler implements NetworkHandler, ClientNetwork {
         this.localSocketAddress = localSocketAddress;
     }
 
-    public DefaultNetworkHandler(ServiceDiscovery localServiceDiscovery, int port) throws java.net.UnknownHostException{
+    public DefaultNetworkHandler(DeprecatedServiceDiscovery localServiceDiscovery,int port) throws java.net.UnknownHostException{
         if(localServiceDiscovery == null)
             throw new NullPointerException("Recieved null servicediscovery");
 
@@ -173,9 +173,9 @@ public class DefaultNetworkHandler implements NetworkHandler, ClientNetwork {
     @Override
     public boolean send(byte[] data, ServiceConnection destination) throws IOException {
         TransportPacket.Packet packet = buildTransportPacket(data,
-                                                         null,
-                                                         getLocalServiceConnection(destination.getUserConnectionId()),
-                                                         destination.getPathType());
+                                                             null,
+                                                             getLocalServiceConnection(destination.getUserConnectionId()),
+                                                             destination.getPathType());
 
         try{
             return sendTransportPacket(packet, destination);
@@ -437,9 +437,9 @@ public class DefaultNetworkHandler implements NetworkHandler, ClientNetwork {
                 switch(input.getPathtype()){
                 case SERVICE:
                     /*System.out.println("ServicePacket with ID: "
-                                       + input.getOrigin().getUserConnectionId()
-                                       + "\nSpecifying services: "
-                                       + ((DummyServiceChain)input.getPath()).toString());
+                      + input.getOrigin().getUserConnectionId()
+                      + "\nSpecifying services: "
+                      + ((DummyServiceChain)input.getPath()).toString());
                     */
                     if(input.getKeepalive()){
                         ServiceRequest s = sendToService(input.getData().toByteArray(),
