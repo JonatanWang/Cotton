@@ -10,73 +10,71 @@ import cotton.example.ImageManipulationPacket;
 import cotton.example.ImageManipulationService;
 import cotton.network.ClientNetwork;
 import cotton.network.DefaultNetworkHandler;
+import cotton.network.DeprecatedDefaultNetworkHandler;
 import cotton.network.ServiceChain;
 import cotton.servicediscovery.DefaultLocalServiceDiscovery;
 import cotton.servicediscovery.GlobalDiscoveryDNS;
 import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.DummyServiceChain;
 import cotton.servicediscovery.DefaultGlobalServiceDiscovery;
+import cotton.services.DeprecatedServiceHandler;
 import java.util.concurrent.ThreadLocalRandom;
-import cotton.network.NetworkHandler;
+import cotton.network.DeprecatedNetworkHandler;
 import cotton.servicediscovery.DeprecatedServiceDiscovery;
 import cotton.services.DeprecatedActiveServiceLookup;
-import cotton.services.ServiceHandler;
 /**
  *
  * @author Jonathan
  * @author Magnus
  * @author Gunnlaugur
  */
-public class Cotton {
+public class DeprecatedCotton {
     private DeprecatedActiveServiceLookup lookup;
-    private NetworkHandler network;
+    private DeprecatedDefaultNetworkHandler network;
     private ClientNetwork clientNetwork;
-    private ServiceHandler services;
+    private DeprecatedServiceHandler services;
     private DeprecatedServiceDiscovery discovery;
 
-    public Cotton (boolean GlobalServiceDiscovery) throws java.net.UnknownHostException {
+    public DeprecatedCotton (boolean GlobalServiceDiscovery) throws java.net.UnknownHostException {
         lookup = new DefaultActiveServiceLookup();
         GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
-        NetworkHandler net = null;
+        DeprecatedDefaultNetworkHandler net = null;
         if(GlobalServiceDiscovery) {
             this.discovery = new DefaultGlobalServiceDiscovery(lookup,globalDiscoveryDNS);
-            net = new DefaultNetworkHandler();
+            net = new DeprecatedDefaultNetworkHandler(discovery);
         }else {
             this.discovery = new DefaultLocalServiceDiscovery(lookup,globalDiscoveryDNS);
-            net = new DefaultNetworkHandler(ThreadLocalRandom.current().nextInt(3000,20000));
+            net = new DeprecatedDefaultNetworkHandler(discovery,ThreadLocalRandom.current().nextInt(3000,20000));
         }
         network = net;
-        //clientNetwork = net;
-        //services = new DeprecatedServiceHandler(lookup, network);
-        //TODO swap for current versions
+        clientNetwork = net;
+        services = new DeprecatedServiceHandler(lookup, network);
     }
     
-    public Cotton (boolean GlobalServiceDiscovery, int portNumber) throws java.net.UnknownHostException {
+    public DeprecatedCotton (boolean GlobalServiceDiscovery, int portNumber) throws java.net.UnknownHostException {
         lookup = new DefaultActiveServiceLookup();
         GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
-        NetworkHandler net = null;
+        DeprecatedDefaultNetworkHandler net = null;
         if(GlobalServiceDiscovery) {
             this.discovery = new DefaultGlobalServiceDiscovery(lookup,globalDiscoveryDNS);
-            net = new DefaultNetworkHandler();
+            net = new DeprecatedDefaultNetworkHandler(discovery);
         }else {
             this.discovery = new DefaultLocalServiceDiscovery(lookup,globalDiscoveryDNS);
-            net = new DefaultNetworkHandler(portNumber);
+            net = new DeprecatedDefaultNetworkHandler(discovery, portNumber);
         }
         network = net;
-        //clientNetwork = net;
-        //services = new DeprecatedServiceHandler(lookup, network);
-        //TODO swap for current versions
+        clientNetwork = net;
+        services = new DeprecatedServiceHandler(lookup, network);
     }
     
-    public Cotton () throws java.net.UnknownHostException {
+    public DeprecatedCotton () throws java.net.UnknownHostException {
         lookup = new DefaultActiveServiceLookup();
         GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
         this.discovery = new DefaultLocalServiceDiscovery(lookup,globalDiscoveryDNS);
-        NetworkHandler net = new DefaultNetworkHandler();
+        DeprecatedDefaultNetworkHandler net = new DeprecatedDefaultNetworkHandler(discovery);
         network = net;
-        //clientNetwork = net;
-        //services = new DeprecatedServiceHandler(lookup, network);
-        //TODO swap for current versions
+        clientNetwork = net;
+        services = new DeprecatedServiceHandler(lookup, network);
     }
 
     public void start(){
@@ -95,7 +93,7 @@ public class Cotton {
         return lookup;
     }
 
-    public NetworkHandler getNetwork() {
+    public DeprecatedNetworkHandler getNetwork() {
         return network;
     }
     

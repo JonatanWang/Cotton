@@ -1,28 +1,32 @@
 package cotton.network;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.InetAddress;
 import java.net.Inet4Address;
-import java.net.UnknownHostException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 import cotton.servicediscovery.RouteSignal;
+import cotton.services.DefaultServiceBuffer;
 import cotton.services.DeprecatedServicePacket;
-import cotton.services.BridgeServiceBuffer;
-import cotton.services.ServicePacket;
-import cotton.internalRouting.InternalRoutingNetwork;
-import cotton.internalRouting.ServiceRequest;
+import cotton.servicediscovery.DeprecatedServiceDiscovery;
+import cotton.network.DeprecatedNetworkPacket;
+import cotton.services.DeprecatedServiceBuffer;
 
 /**
  * Handles all of the packet buffering and relaying.
@@ -32,26 +36,17 @@ import cotton.internalRouting.ServiceRequest;
  * @author Jonathan
  * @author Gunnlaugur
  */
-public class DefaultNetworkHandler implements NetworkHandler {
-    /*private DeprecatedServiceBuffer serviceBuffer;
+public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNetwork {
+    private DeprecatedServiceBuffer serviceBuffer;
     private ConcurrentHashMap<UUID,DeprecatedDefaultServiceRequest> connectionTable;
     private AtomicBoolean running;
     private DeprecatedServiceDiscovery localServiceDiscovery;
     private int localPort;
     private InetAddress localIP;
     private ExecutorService threadPool;
-    private SocketAddress localSocketAddress;*/
-    
-    private int localPort;
-    private InetAddress localIP;
-    private InternalRoutingNetwork internalRouting;
-    private ExecutorService threadPool;
-    private ConcurrentHashMap<UUID,DefaultServiceRequest> connectionTable;
-    private AtomicBoolean running;
     private SocketAddress localSocketAddress;
-    private BridgeServiceBuffer serviceBuffer;
 
-    /*public DefaultNetworkHandler() throws java.net.UnknownHostException{
+    public DeprecatedDefaultNetworkHandler() throws java.net.UnknownHostException{
         if(localServiceDiscovery == null)
             throw new NullPointerException("Recieved null servicediscovery");
 
@@ -65,7 +60,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         }
     }
 
-    public DefaultNetworkHandler(DeprecatedServiceDiscovery localServiceDiscovery) throws java.net.UnknownHostException{
+    public DeprecatedDefaultNetworkHandler(DeprecatedServiceDiscovery localServiceDiscovery) throws java.net.UnknownHostException{
         if(localServiceDiscovery == null)
             throw new NullPointerException("Recieved null servicediscovery");
 
@@ -86,7 +81,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         running = new AtomicBoolean(true);
     }
 
-    public DefaultNetworkHandler(DeprecatedServiceDiscovery localServiceDiscovery,SocketAddress localSocketAddress) throws java.net.UnknownHostException{
+    public DeprecatedDefaultNetworkHandler(DeprecatedServiceDiscovery localServiceDiscovery,SocketAddress localSocketAddress) throws java.net.UnknownHostException{
         if(localServiceDiscovery == null)
             throw new NullPointerException("Recieved null servicediscovery");
 
@@ -108,7 +103,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         this.localSocketAddress = localSocketAddress;
     }
 
-    public DefaultNetworkHandler(DeprecatedServiceDiscovery localServiceDiscovery,int port) throws java.net.UnknownHostException{
+    public DeprecatedDefaultNetworkHandler(DeprecatedServiceDiscovery localServiceDiscovery,int port) throws java.net.UnknownHostException{
         if(localServiceDiscovery == null)
             throw new NullPointerException("Recieved null servicediscovery");
 
@@ -128,66 +123,6 @@ public class DefaultNetworkHandler implements NetworkHandler {
         localServiceDiscovery.setNetwork(this, getLocalSocketAddress()); // TODO: get socket address
         running = new AtomicBoolean(true);
 
-    }*/
-    
-    public DefaultNetworkHandler() throws UnknownHostException {
-        this.localPort = 3333; // TODO: Remove hardcoded port
-        try{
-            //this.localIP = InetAddress.getByName(null);
-            this.localIP = Inet4Address.getLocalHost();
-        }catch(java.net.UnknownHostException e){// TODO: Get address from outside
-            logError("initialization process local address "+e.getMessage());
-            throw e;
-        }
-        
-        threadPool = Executors.newCachedThreadPool();
-        connectionTable = new ConcurrentHashMap<>();
-        running = new AtomicBoolean(true);
-        localSocketAddress = getLocalSocketAddress();
-        serviceBuffer = new BridgeServiceBuffer();
-    }
-    
-        public DefaultNetworkHandler(SocketAddress socketAddress) throws UnknownHostException {
-        this.localPort = 3333; // TODO: Remove hardcoded port
-        try{
-            //this.localIP = InetAddress.getByName(null);
-            this.localIP = Inet4Address.getLocalHost();
-        }catch(java.net.UnknownHostException e){// TODO: Get address from outside
-            logError("initialization process local address "+e.getMessage());
-            throw e;
-        }
-        
-        localSocketAddress = socketAddress;
-        
-        threadPool = Executors.newCachedThreadPool();
-        connectionTable = new ConcurrentHashMap<>();
-        running = new AtomicBoolean(true);
-        localSocketAddress = getLocalSocketAddress();
-        serviceBuffer = new BridgeServiceBuffer();
-    }
-        
-    public DefaultNetworkHandler(int port) throws UnknownHostException {
-        this.localPort = port; // TODO: Remove hardcoded port
-        try{
-            //this.localIP = InetAddress.getByName(null);
-            this.localIP = Inet4Address.getLocalHost();
-        }catch(java.net.UnknownHostException e){// TODO: Get address from outside
-            logError("initialization process local address "+e.getMessage());
-            throw e;
-        }
-
-        threadPool = Executors.newCachedThreadPool();
-        connectionTable = new ConcurrentHashMap<>();
-        running = new AtomicBoolean(true);
-        localSocketAddress = getLocalSocketAddress();
-        serviceBuffer = new BridgeServiceBuffer();
-    }
-    
-    public void setInternalRoutingNetwork(InternalRoutingNetwork internalRouting) {
-        if(internalRouting != null)
-            this.internalRouting = internalRouting;
-        else
-            throw new NullPointerException("InternalRoutingNetwork points to null");
     }
 
     public boolean sendTransportPacket(TransportPacket.Packet data, ServiceConnection destination) throws IOException{
@@ -249,7 +184,8 @@ public class DefaultNetworkHandler implements NetworkHandler {
      * @param destination The information about where the packet is headed.
      * @return Whether the connection succeeded or not.
      */
-    /*public boolean send(byte[] data, ServiceConnection destination) throws IOException {
+    @Override
+    public boolean send(byte[] data, ServiceConnection destination) throws IOException {
         TransportPacket.Packet packet = buildTransportPacket(data,
                                                              null,
                                                              getLocalServiceConnection(destination.getUserConnectionId()),
@@ -261,7 +197,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             logError("Failed to send packet");
             throw e;
         }
-    }*/
+    }
 
     /**
      * Send a serializable piece of data to the specified destination
@@ -270,7 +206,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
      * @param destination The information about where the packet is headed.
      * @return Whether the connection succeeded or not.
      */
-    /*
+    @Override
     public boolean send(Serializable data, ServiceConnection destination) throws IOException {
         TransportPacket.Packet packet = buildTransportPacket(serializableToBytes(data),
                                                              null,
@@ -283,7 +219,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             logError("Failed to send packet");
             throw e;
         }
-    }*/
+    }
 
     /**
      * Sends a serializable object to the specified destination, returning a response.
@@ -292,8 +228,9 @@ public class DefaultNetworkHandler implements NetworkHandler {
      * @param destination The information about where the packet is headed.
      * @return The result with which the response will be returned.
      */
+    @Override
     public DeprecatedServiceRequest sendWithResponse(Serializable data, ServiceConnection destination) throws IOException{
-        DefaultServiceRequest result = new DefaultServiceRequest();
+        DeprecatedDefaultServiceRequest result = new DeprecatedDefaultServiceRequest();
         ServiceConnection local = getLocalServiceConnection();
         TransportPacket.Packet packet = buildTransportPacket(serializableToBytes(data), null, local, destination.getPathType());
         if(sendTransportPacket(packet, destination)){
@@ -310,23 +247,23 @@ public class DefaultNetworkHandler implements NetworkHandler {
      * @param path The predefined services to pass through.
      * @param from The origin of this request.
      */
-    public void sendToService(byte[] data, ServiceChain path, Origin origin) throws IOException {
+    @Override
+    public void sendToService(byte[] data, ServiceChain path, ServiceConnection from) throws IOException {
         ServiceConnection dest = new DefaultServiceConnection();
-        //RouteSignal route = localServiceDiscovery.getDestination(dest, origin, path);
-        //TODO remove localServiceDiscovery dependancy.
-        
-        /*switch(route){
+        RouteSignal route = localServiceDiscovery.getDestination(dest, from, path);
+
+        switch(route){
         case LOCALDESTINATION:
-            sendToServiceBuffer(origin, data, path);
+            sendToServiceBuffer(from, data, path);
             return;
         case ENDPOINT:
-            DefaultServiceRequest req = connectionTable.get(from.getUserConnectionId());
+            DeprecatedDefaultServiceRequest req = connectionTable.get(from.getUserConnectionId());
             if(req == null) {
-                *//*                System.out.println("Network route table error, ENDPOINT "
+                /*                System.out.println("Network route table error, ENDPOINT "
                                   +"\n\tfrom: " + from.getUserConnectionId()
                                   +"\n\tdest: " + dest.getUserConnectionId());
                 */
-                /*return;
+                return;
             } // TODO: dont drop results, and send data to service discovary
             req.setData(data);
             return;
@@ -336,10 +273,9 @@ public class DefaultNetworkHandler implements NetworkHandler {
         case NOTFOUND:
 
             return;
-        }*/
-        //TODO remove localServiceDiscovery dependancy.
+        }
 
-        TransportPacket.Packet packet = buildTransportPacket(data, path, dest, dest.getPathType());
+        TransportPacket.Packet packet = buildTransportPacket(data, path, from, dest.getPathType());
 
         sendTransportPacket(packet, dest);
     }
@@ -350,28 +286,26 @@ public class DefaultNetworkHandler implements NetworkHandler {
      * @param data The object to send.
      * @param path The predefined services to pass through.
      */
-    public ServiceRequest sendToService(byte[] data, ServiceChain path) throws IOException { // TODO: Make sure that this doesn't drop packages with this as last destination
+    @Override
+    public DeprecatedServiceRequest sendToService(byte[] data, ServiceChain path) throws IOException { // TODO: Make sure that this doesn't drop packages with this as last destination
         UUID uuid = UUID.randomUUID();
         ServiceConnection dest = new DefaultServiceConnection(uuid);
-        //RouteSignal route = localServiceDiscovery.getDestination(dest, path);
-        //TODO remove localServiceDiscovery dependancy.
-        DefaultServiceRequest result = new DefaultServiceRequest();
+        RouteSignal route = localServiceDiscovery.getDestination(dest, path);
+        DeprecatedDefaultServiceRequest result = new DeprecatedDefaultServiceRequest();
         this.connectionTable.put(dest.getUserConnectionId(), result);
-        
-        /*if(route == RouteSignal.LOCALDESTINATION) {
+        if(route == RouteSignal.LOCALDESTINATION) {
             sendToServiceBuffer(dest, data, path);
             return result;
         }
         if(route == RouteSignal.RETURNTOORIGIN) {
             // TODO: implement this
-        }*/
-        //TODO remove localServiceDiscovery dependancy.
+        }
 
         TransportPacket.Packet packet = buildTransportPacket(data, path, getLocalServiceConnection(dest.getUserConnectionId()), dest.getPathType());
 
         try{
             if(sendTransportPacket(packet, dest)){
-                return (ServiceRequest)result;
+                return result;
             }
             return null;
         }catch(IOException e){
@@ -421,7 +355,8 @@ public class DefaultNetworkHandler implements NetworkHandler {
      *
      * @return The next package.
      */
-    public ServicePacket nextPacket() {
+    @Override
+    public DeprecatedServicePacket nextPacket() {
         return serviceBuffer.nextPacket();
     }
 
@@ -439,7 +374,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
      * @return
      */
     public boolean sendEnd(byte[] data, ServiceConnection destination) {
-        DefaultServiceRequest req = this.connectionTable.get(destination.getUserConnectionId());
+        DeprecatedDefaultServiceRequest req = this.connectionTable.get(destination.getUserConnectionId());
         if(req == null) return false;
         req.setData(data);
         return true;
@@ -452,8 +387,8 @@ public class DefaultNetworkHandler implements NetworkHandler {
         return stream.toByteArray();
     }
 
-    private void sendToServiceBuffer(Origin origin, byte[] data, ServiceChain path) {
-        ServicePacket servicePacket = new ServicePacket(origin, data, path);
+    private void sendToServiceBuffer(ServiceConnection from, byte[] data, ServiceChain path) {
+        DeprecatedServicePacket servicePacket = new DeprecatedServicePacket(from, data, path);
         serviceBuffer.add(servicePacket);
     }
 
@@ -492,21 +427,6 @@ public class DefaultNetworkHandler implements NetworkHandler {
         System.out.println("Network exception, " + error); // TODO: MAKE THIS ACTUALLY LOG
     }
 
-    @Override
-    public boolean send(NetworkPacket netPacket, SocketAddress addr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public boolean sendKeepAlive(NetworkPacket netPacket, SocketAddress addr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public SocketAddress getLocalAddress() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
     private class NetworkUnpacker implements Runnable {
         Socket clientSocket = null;
 
@@ -538,7 +458,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
                     if(input.getKeepalive()){
                         System.out.println("Keepalive");
                         System.out.println("Services: "+parsePath(input).toString());
-                        ServiceRequest s = sendToService(input.getData().toByteArray(),
+                        DeprecatedServiceRequest s = sendToService(input.getData().toByteArray(),
                                                                    parsePath(input));
 
                         TransportPacket.Packet returnPacket = buildTransportPacket(s.getData(),
@@ -552,9 +472,8 @@ public class DefaultNetworkHandler implements NetworkHandler {
                     }
                     break;
                 case DISCOVERY:
-                    //ServiceConnection origin = parseOrigin(input);
-                    // localServiceDiscovery.discoveryUpdate(origin, input.getData().toByteArray());
-                    //TODO Change the localServiceDiscovery dependancy
+                    ServiceConnection origin = parseOrigin(input);
+                    localServiceDiscovery.discoveryUpdate(origin, input.getData().toByteArray());
                     break;
                 default:
                     System.out.println("Non-servicepacket recieved, not yet implemented: type" + input.getPathtype());
@@ -570,9 +489,10 @@ public class DefaultNetworkHandler implements NetworkHandler {
         }
     }
 
-    private Origin parseOrigin(TransportPacket.Packet input) throws java.net.UnknownHostException{
-        InetSocketAddress iSocketAddress = new InetSocketAddress(Inet4Address.getByName(input.getOrigin().getIp()), input.getOrigin().getPort());
-        return new Origin(iSocketAddress , UUID.fromString(input.getOrigin().getUuid()));
+    private ServiceConnection parseOrigin(TransportPacket.Packet input) throws java.net.UnknownHostException{
+        ServiceConnection origin = new DefaultServiceConnection(UUID.fromString(input.getOrigin().getUuid()));
+        origin.setAddress(new InetSocketAddress(Inet4Address.getByName(input.getOrigin().getIp()), input.getOrigin().getPort()));
+        return origin;
     }
 
     private ServiceChain parsePath(TransportPacket.Packet input){
@@ -642,4 +562,5 @@ public class DefaultNetworkHandler implements NetworkHandler {
         builder.setKeepalive(false);
         return builder.build();
     }
+
 }

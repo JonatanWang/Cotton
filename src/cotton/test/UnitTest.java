@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import cotton.Cotton;
+import cotton.DeprecatedCotton;
 import cotton.network.ClientNetwork;
 import cotton.network.DefaultNetworkHandler;
 import cotton.network.ServiceChain;
@@ -157,7 +158,7 @@ public class UnitTest {
         DeprecatedNetworkHandler net = null;
 
         try {
-            net = new DefaultNetworkHandler(discovery);
+            net = new DeprecatedDefaultNetworkHandler(discovery);
         }
         catch (Throwable e) {
             System.out.println("Error " + e.getMessage());
@@ -192,9 +193,9 @@ public class UnitTest {
 
     @Test
     public void CottonClientTest(){
-        Cotton cotton = null;
+        DeprecatedCotton cotton = null;
         try {
-            cotton = new Cotton();
+            cotton = new DeprecatedCotton();
         }
         catch (Throwable e) {
             System.out.println("Error " + e.getMessage());
