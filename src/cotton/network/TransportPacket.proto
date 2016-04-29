@@ -11,14 +11,14 @@ message Packet{
     NOTFOUND = 4;
 	}
   optional bool keepalive = 1;
-	required PathType pathtype = 2;
-	required bytes data = 3;
+	optional PathType pathtype = 2;
+	optional bytes data = 3;
 	optional Origin origin = 4;
   repeated string path = 6;
 }
 
 message Origin{
-	required string uuid = 1;
-	required string ip = 2;
-	required int32 port = 3;
+	optional string uuid = 1;
+	optional string ip = 2;
+	optional int32 port = 3;
 }
