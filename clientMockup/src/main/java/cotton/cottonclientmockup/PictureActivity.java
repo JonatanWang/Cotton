@@ -66,7 +66,9 @@ public class PictureActivity extends AppCompatActivity{
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
             if (requestCode == 111) {
-                File imgFile = new File(CurrentPhotoPath);
+                /*Bitmap image = (Bitmap) data.getExtras().get("data");
+                view.setImageBitmap(image);
+                */File imgFile = new File(CurrentPhotoPath);
 
                 if(imgFile.exists()){
                     Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
@@ -148,5 +150,4 @@ public class PictureActivity extends AppCompatActivity{
     }
 
 }
-
 

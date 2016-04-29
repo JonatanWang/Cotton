@@ -8,22 +8,17 @@ message Packet{
 		DISCOVERY = 1;
 		SERVICE = 2;
 		UNKNOWN = 3;
+    NOTFOUND = 4;
 	}
-  required bool keepalive = 1;
+  optional bool keepalive = 1;
 	required PathType pathtype = 2;
 	required bytes data = 3;
-	required Origin origin = 4;
-	required Path path = 5;
+	optional Origin origin = 4;
+  repeated string path = 6;
 }
 
 message Origin{
 	required string uuid = 1;
-	required string name = 2;
-	required string ip = 3;
-	required int32 port = 4;
-}
-
-message Path{
-	repeated string path = 1;
-	required int32 pos = 2;
+	required string ip = 2;
+	required int32 port = 3;
 }
