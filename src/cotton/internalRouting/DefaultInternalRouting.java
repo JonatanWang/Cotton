@@ -17,6 +17,8 @@ import cotton.internalRouting.ServiceRequest;
 import cotton.network.DefaultServiceConnection;
 import cotton.network.DummyServiceChain;
 import cotton.network.NetworkHandler;
+import cotton.services.DeprecatedServiceBuffer;
+import cotton.services.ServiceBuffer;
 
 /**
  *
@@ -184,6 +186,11 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         return resolveDestination(origin, serviceChain, result, false);
     }
 
+    @Override
+    public ServiceBuffer getServiceBuffer() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
     /**
      * The InternalRouting helper methods implementation
      */
@@ -283,5 +290,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
          }
          return success;
      }
+
+    
 
 }

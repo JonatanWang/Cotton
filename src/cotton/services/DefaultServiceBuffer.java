@@ -8,19 +8,19 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @author Magnus
  * @author Tony
  */
-public class DefaultServiceBuffer implements ServiceBuffer{
+public class DefaultServiceBuffer implements DeprecatedServiceBuffer{
 
-    private ConcurrentLinkedQueue<ServicePacket> buffer;
+    private ConcurrentLinkedQueue<DeprecatedServicePacket> buffer;
 
     public DefaultServiceBuffer(){
         buffer = new ConcurrentLinkedQueue<>();
     }
 
-    public ServicePacket nextPacket(){
+    public DeprecatedServicePacket nextPacket(){
         return buffer.poll();
     }
 
-    public boolean add(ServicePacket servicePacket){
+    public boolean add(DeprecatedServicePacket servicePacket){
         return buffer.add(servicePacket);
     }
 

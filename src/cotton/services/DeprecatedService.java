@@ -1,8 +1,9 @@
 package cotton.services;
 
-import cotton.network.Origin;
+import cotton.network.ServiceConnection;
 import cotton.network.ServiceChain;
-
+import java.io.InputStream;
+import java.io.Serializable;
 
 /**
  * The <code>ServiceInstance</code> acts as the structure for services that are
@@ -12,7 +13,7 @@ import cotton.network.ServiceChain;
  * @author Magnus
  * @see ServiceFactory
  */
-public interface Service {
+public interface DeprecatedService {
 
     /**
      * Runs the service task and returns the result as a <code>Serializable</code>.
@@ -23,6 +24,6 @@ public interface Service {
      * @param to the <code>ServiceChain</code> of the connection.
      * @return the result of the task.
      */
-    public byte[] execute(CloudContext ctx, Origin origin, byte[] data, ServiceChain to);
+    public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to);
 
 }

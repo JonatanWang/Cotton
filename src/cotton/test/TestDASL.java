@@ -1,18 +1,18 @@
 package cotton.test;
 
-import cotton.services.ActiveServiceLookup;
 import cotton.services.CloudContext;
 import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceConnection;
-import cotton.services.ServiceFactory;
-import cotton.services.Service;
-import cotton.test.TestDASL.TestServiceFactory.TestService;
+//import cotton.test.TestDASL.TestServiceFactory.TestService;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Enumeration;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import cotton.services.DeprecatedService;
+import cotton.services.DeprecatedServiceFactory;
+import cotton.services.DeprecatedActiveServiceLookup;
 
 /**
  * A test class for the <code>DefaultActiveServiceLookup</code> class as well as
@@ -25,7 +25,7 @@ public class TestDASL {
     /**
      * A test service factory to generate test service instances.
      */
-    public class TestServiceFactory implements ServiceFactory {
+    public class TestServiceFactory implements DeprecatedServiceFactory {
 
         /**
          * Returns an <code>TestServiceInstance</code> for testing purposes.
@@ -34,14 +34,14 @@ public class TestDASL {
          * @see TestService
          */
         @Override
-        public Service newService() {
+        public DeprecatedService newService() {
             return new TestService();
         }
 
         /**
          * A service instance intended for testing the <code>DefaultActiveServiceLookup</code> class.
          */
-        public class TestService implements Service{
+        public class TestService implements DeprecatedService{
 
             /**
              * Retrieves the data and converts it to an <code>int</code> and multiplies it by two.
@@ -70,7 +70,7 @@ public class TestDASL {
      */
     @Test
     public void testCapacity() {
-        ActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        DeprecatedActiveServiceLookup dasl = new DefaultActiveServiceLookup();
         dasl.registerService("Coloring", null, 10);
 
         assertEquals(10, dasl.getService("Coloring").getMaxCapacity());
@@ -85,7 +85,7 @@ public class TestDASL {
      */
     @Test
     public void testWrongCapacity() {
-        ActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        DeprecatedActiveServiceLookup dasl = new DefaultActiveServiceLookup();
         dasl.registerService("Coloring", new TestServiceFactory(), 10);
         int maxCapacity = dasl.getService("Coloring").getMaxCapacity();
         assertTrue(9 != maxCapacity);
@@ -98,7 +98,7 @@ public class TestDASL {
      */
     @Test
     public void testHashMapKeys() {
-        ActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        DeprecatedActiveServiceLookup dasl = new DefaultActiveServiceLookup();
 
         String[] services = new String[3];
         services[0] = "Coloring";
@@ -127,7 +127,7 @@ public class TestDASL {
      */
     @Test
     public void testRemove() {
-        ActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        DeprecatedActiveServiceLookup dasl = new DefaultActiveServiceLookup();
 
         String[] services = new String[3];
         services[0] = "Coloring";
@@ -156,8 +156,8 @@ public class TestDASL {
      */
     @Test
     public void testFactory() throws IOException {
-        ServiceFactory sf = new TestServiceFactory();
-        TestService si = (TestService)sf.newService();
+        DeprecatedServiceFactory sf = new TestServiceFactory();
+        TestServiceFactory.TestService si = (TestServiceFactory.TestService)sf.newService();
 
         byte[] res = si.execute(null, null, ByteBuffer.allocate(4).putInt(2).array(), null);
 

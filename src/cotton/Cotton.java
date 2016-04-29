@@ -13,14 +13,14 @@ import cotton.network.DefaultNetworkHandler;
 import cotton.network.ServiceChain;
 import cotton.servicediscovery.DefaultLocalServiceDiscovery;
 import cotton.servicediscovery.GlobalDiscoveryDNS;
-import cotton.services.ActiveServiceLookup;
 import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.DummyServiceChain;
 import cotton.servicediscovery.DefaultGlobalServiceDiscovery;
-import cotton.services.ServiceHandler;
+import cotton.services.DeprecatedServiceHandler;
 import java.util.concurrent.ThreadLocalRandom;
 import cotton.network.DeprecatedNetworkHandler;
 import cotton.servicediscovery.DeprecatedServiceDiscovery;
+import cotton.services.DeprecatedActiveServiceLookup;
 /**
  *
  * @author Jonathan
@@ -28,10 +28,10 @@ import cotton.servicediscovery.DeprecatedServiceDiscovery;
  * @author Gunnlaugur
  */
 public class Cotton {
-    private ActiveServiceLookup lookup;
+    private DeprecatedActiveServiceLookup lookup;
     private DeprecatedNetworkHandler network;
     private ClientNetwork clientNetwork;
-    private ServiceHandler services;
+    private DeprecatedServiceHandler services;
     private DeprecatedServiceDiscovery discovery;
 
     public Cotton (boolean GlobalServiceDiscovery) throws java.net.UnknownHostException {
@@ -47,7 +47,7 @@ public class Cotton {
         }
         network = net;
         clientNetwork = net;
-        services = new ServiceHandler(lookup, network);
+        services = new DeprecatedServiceHandler(lookup, network);
     }
     
     public Cotton (boolean GlobalServiceDiscovery, int portNumber) throws java.net.UnknownHostException {
@@ -63,7 +63,7 @@ public class Cotton {
         }
         network = net;
         clientNetwork = net;
-        services = new ServiceHandler(lookup, network);
+        services = new DeprecatedServiceHandler(lookup, network);
     }
     
     public Cotton () throws java.net.UnknownHostException {
@@ -73,7 +73,7 @@ public class Cotton {
         DefaultNetworkHandler net = new DefaultNetworkHandler(discovery);
         network = net;
         clientNetwork = net;
-        services = new ServiceHandler(lookup, network);
+        services = new DeprecatedServiceHandler(lookup, network);
     }
 
     public void start(){
@@ -88,7 +88,7 @@ public class Cotton {
         network.stop();
     }
 
-    public ActiveServiceLookup getServiceRegistation() {
+    public DeprecatedActiveServiceLookup getServiceRegistation() {
         return lookup;
     }
 

@@ -11,7 +11,7 @@ import java.io.Serializable;
  *
  * @author Gunnlaugur Juliusson
  */
-public class MathServices implements Service{
+public class MathServices implements DeprecatedService{
 
     @Override
     public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {

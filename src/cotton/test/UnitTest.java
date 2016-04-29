@@ -15,17 +15,13 @@ import cotton.Cotton;
 import cotton.network.ClientNetwork;
 import cotton.network.DefaultNetworkHandler;
 import cotton.network.ServiceChain;
-import cotton.services.ActiveServiceLookup;
 import cotton.services.CloudContext;
 import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.DummyServiceChain;
-import cotton.services.ServiceBuffer;
 import cotton.network.ServiceConnection;
-import cotton.services.ServiceFactory;
-import cotton.services.ServiceHandler;
-import cotton.services.Service;
-import cotton.services.ServiceMetaData;
-import cotton.services.ServicePacket;
+import cotton.services.DeprecatedServiceHandler;
+import cotton.services.DeprecatedServiceMetaData;
+import cotton.services.DeprecatedServicePacket;
 import cotton.test.services.MathPow2;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -43,6 +39,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import cotton.network.DeprecatedNetworkHandler;
 import cotton.network.DeprecatedServiceRequest;
+import cotton.services.DeprecatedService;
+import cotton.services.DeprecatedServiceBuffer;
+import cotton.services.DeprecatedServiceFactory;
+import cotton.services.DeprecatedActiveServiceLookup;
 
 public class UnitTest {
     public UnitTest() {
@@ -66,15 +66,15 @@ public class UnitTest {
 
     @Test
     public void ActiveServiceLookupGetCapacity(){
-        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        DeprecatedActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("hej", null, 10);
-        ServiceMetaData service = lookup.getService("hej");
+        DeprecatedServiceMetaData service = lookup.getService("hej");
         assertEquals(10,service.getMaxCapacity());
     }
 
     @Test
     public void ActiveServiceLookupRemove(){
-        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        DeprecatedActiveServiceLookup lookup = new DefaultActiveServiceLookup();
 
         lookup.registerService("test", null, 10);
 
@@ -82,7 +82,7 @@ public class UnitTest {
         assertNull(lookup.getService("test"));
     }
 
-    private class TestService implements Service{
+    private class TestService implements DeprecatedService{
 
         @Override
         public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
@@ -98,19 +98,19 @@ public class UnitTest {
 
     }
 
-    public class TestFactory implements ServiceFactory {
+    public class TestFactory implements DeprecatedServiceFactory {
 
         @Override
-        public Service newService() {
+        public DeprecatedService newService() {
             return new TestService();
         }
 
     }
 
     private class DummyBufferStuffer{
-        private ServicePacket servicePacket;
-        ServiceBuffer serviceBuffer;
-        public DummyBufferStuffer(ServiceBuffer buffer, ServiceConnection from, byte[] data, ServiceChain to){
+        private DeprecatedServicePacket servicePacket;
+        DeprecatedServiceBuffer serviceBuffer;
+        public DummyBufferStuffer(DeprecatedServiceBuffer buffer, ServiceConnection from, byte[] data, ServiceChain to){
             this.serviceBuffer = buffer;
             //try{
                 /*
@@ -120,7 +120,7 @@ public class UnitTest {
                 objectOutStream.writeObject(data);
                 objectOutStream.close();
                 */
-                this.servicePacket = new ServicePacket(from, data, to);
+                this.servicePacket = new DeprecatedServicePacket(from, data, to);
                 /*}catch(IOException e){
                 System.out.println("io exeption");
                 e.printStackTrace();
@@ -134,8 +134,8 @@ public class UnitTest {
 
     private class Threadrun implements Runnable {
 
-        private ServiceHandler handler = null;
-        public Threadrun(ServiceHandler handler) {
+        private DeprecatedServiceHandler handler = null;
+        public Threadrun(DeprecatedServiceHandler handler) {
             this.handler = handler;
         }
         @Override
@@ -149,7 +149,7 @@ public class UnitTest {
 
     @Test
     public void ThreadPoolTest(){
-        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        DeprecatedActiveServiceLookup lookup = new DefaultActiveServiceLookup();
 
         lookup.registerService("test", new TestFactory(), 10);
         DeprecatedServiceDiscovery discovery = new DefaultLocalServiceDiscovery(lookup);
@@ -163,7 +163,7 @@ public class UnitTest {
             System.out.println("Error " + e.getMessage());
             e.printStackTrace();
         }
-        ServiceHandler handler = new ServiceHandler(lookup,net);
+        DeprecatedServiceHandler handler = new DeprecatedServiceHandler(lookup,net);
 
         ServiceChain to1 = new DummyServiceChain("test");
         to1.addService("test");
@@ -201,7 +201,7 @@ public class UnitTest {
             e.printStackTrace();
         }
 
-        ActiveServiceLookup reg = cotton.getServiceRegistation();
+        DeprecatedActiveServiceLookup reg = cotton.getServiceRegistation();
         reg.registerService("MathPow2", MathPow2.getFactory(), 8);
         cotton.start();
 
@@ -229,7 +229,7 @@ public class UnitTest {
     public void LocalServiceDiscoveryLookup() {
         System.out.println("LocalServiceDiscoveryLookup");
 
-        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        DeprecatedActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
         DeprecatedServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         ServiceConnection dest = new DefaultServiceConnection();
@@ -241,7 +241,7 @@ public class UnitTest {
     public void LocalServiceDiscoveryLookupTwoInputs() {
         System.out.println("LocalServiceDiscoveryLookupTwoInputs, only two imputs");
 
-        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        DeprecatedActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
         DeprecatedServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         ServiceConnection dest = new DefaultServiceConnection();
@@ -253,7 +253,7 @@ public class UnitTest {
     public void LocalServiceDiscoveryLookupNullCheck() {
         System.out.println("LocalServiceDiscoveryLookupNullCheck, checks serviceChain null");
 
-        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        DeprecatedActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
         DeprecatedServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         ServiceConnection dest = new DefaultServiceConnection();
@@ -265,7 +265,7 @@ public class UnitTest {
     public void LocalServiceDiscoveryLookupNullInput() {
         System.out.println("LocalServiceDiscoveryLookupNullInput, checks destinatin null");
 
-        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        DeprecatedActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
         DeprecatedServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         ServiceConnection dest = new DefaultServiceConnection();
@@ -297,7 +297,7 @@ public class UnitTest {
 
         ServiceConnection from = new DefaultServiceConnection();
 
-        ActiveServiceLookup lookup = new DefaultActiveServiceLookup();
+        DeprecatedActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("Store", new TestFactory(), 10);
         DeprecatedServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
         //local.announce();

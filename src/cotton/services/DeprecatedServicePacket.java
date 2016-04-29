@@ -1,7 +1,8 @@
 package cotton.services;
 
-import cotton.network.Origin;
+import cotton.network.ServiceConnection;
 import cotton.network.ServiceChain;
+import java.io.InputStream;
 import java.io.Serializable;
 
 /**
@@ -10,14 +11,14 @@ import java.io.Serializable;
  * @author Magnus
  * @author Tony
  */
-public class ServicePacket implements Serializable{
+public class DeprecatedServicePacket implements Serializable{
     private byte[] data;
-    private Origin origin;
+    private ServiceConnection from;
     private ServiceChain to;
 
-    public ServicePacket(Origin origin, byte[] data, ServiceChain to) {
+    public DeprecatedServicePacket(ServiceConnection from, byte[] data, ServiceChain to) {
         this.data = data;
-        this.origin = origin;
+        this.from = from;
         this.to = to;
     }
 
@@ -25,8 +26,8 @@ public class ServicePacket implements Serializable{
         return data;
     }
 
-    public Origin getOrigin() {
-        return origin;
+    public ServiceConnection getFrom() {
+        return from;
     }
 
     public ServiceChain getTo() {

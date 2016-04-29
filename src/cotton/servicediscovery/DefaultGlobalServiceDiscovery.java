@@ -4,7 +4,6 @@ import cotton.network.DefaultServiceConnection;
 import cotton.network.PathType;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceConnection;
-import cotton.services.ActiveServiceLookup;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -18,6 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import cotton.network.DeprecatedNetworkHandler;
 import cotton.network.DeprecatedServiceRequest;
+import cotton.services.DeprecatedActiveServiceLookup;
 
 /**
  *
@@ -25,7 +25,7 @@ import cotton.network.DeprecatedServiceRequest;
  */
 public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery {
 
-    private ActiveServiceLookup internalLookup;
+    private DeprecatedActiveServiceLookup internalLookup;
     private DeprecatedNetworkHandler network = null;
     private SocketAddress localAddress;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
@@ -47,7 +47,7 @@ public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery
         }
     }
 
-    public DefaultGlobalServiceDiscovery(ActiveServiceLookup internalLookup, GlobalDiscoveryDNS globalDNS) {
+    public DefaultGlobalServiceDiscovery(DeprecatedActiveServiceLookup internalLookup, GlobalDiscoveryDNS globalDNS) {
         this.internalLookup = internalLookup;
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         initGlobalDiscoveryPool(globalDNS);

@@ -1,27 +1,25 @@
 package cotton.services;
 
-import cotton.internalRouting.InternalRoutingServiceHandler;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.io.Serializable;
+import cotton.network.DeprecatedNetworkHandler;
 
-public class ServiceHandler implements Runnable{
-    private ActiveServiceLookup serviceLookup;
-    private InternalRoutingServiceHandler internalRouting;
-    private ServiceBuffer workBuffer;
+public class DeprecatedServiceHandler implements Runnable{
+    private DeprecatedActiveServiceLookup serviceLookup;
+    private DeprecatedNetworkHandler networkHandler;
     private ExecutorService threadPool;
     private volatile boolean active = true;
 
-    public ServiceHandler(ActiveServiceLookup serviceLookup, InternalRoutingServiceHandler internalRouting){
-        this.internalRouting = internalRouting;
+    public DeprecatedServiceHandler(DeprecatedActiveServiceLookup serviceLookup, DeprecatedNetworkHandler networkHandler){
+        this.networkHandler = networkHandler;
         this.serviceLookup = serviceLookup;
-        this.workBuffer = internalRouting.getServiceBuffer();
         threadPool = Executors.newCachedThreadPool();
     }
 
     public void run(){
         while(active){
-            ServicePacket packet = workBuffer.nextPacket();
+            DeprecatedServicePacket packet = networkHandler.nextPacket();
             if(packet == null){
                 try{
                     Thread.sleep(5); //change to exponential fallback strategy.
@@ -40,11 +38,11 @@ public class ServiceHandler implements Runnable{
     }
 
     private class ServiceDispatcher implements Runnable{
-        private ServiceFactory serviceFactory;
+        private DeprecatedServiceFactory serviceFactory;
         private boolean succesfulInit = true;
-        private ServicePacket servicePacket;
+        private DeprecatedServicePacket servicePacket;
         private String serviceName;
-        public ServiceDispatcher(ServicePacket servicePacket){
+        public ServiceDispatcher(DeprecatedServicePacket servicePacket){
             this.servicePacket = servicePacket;
             this.serviceName = this.servicePacket.getTo().getNextServiceName();
 
@@ -53,7 +51,7 @@ public class ServiceHandler implements Runnable{
                 return;
             }
 
-            ServiceMetaData serviceMetaData = serviceLookup.getService(serviceName);
+            DeprecatedServiceMetaData serviceMetaData = serviceLookup.getService(serviceName);
             if(serviceMetaData == null){
                 succesfulInit = false;
                 return;
@@ -72,12 +70,11 @@ public class ServiceHandler implements Runnable{
         public void run(){
             if(succesfulInit == false)
                 return;
-            Service service = serviceFactory.newService();
+            DeprecatedService service = serviceFactory.newService();
             try{
 
-                byte[] result = service.execute(null, servicePacket.getOrigin(), servicePacket.getData(),servicePacket.getTo());
-                internalRouting.forwardResult(servicePacket.getOrigin(), servicePacket.getTo(), result);
-
+                byte[] result = service.execute(null, servicePacket.getFrom(), servicePacket.getData(),servicePacket.getTo());
+                networkHandler.sendToService(result, servicePacket.getTo(), servicePacket.getFrom());
 
             }catch(Exception e){
                 e.printStackTrace();

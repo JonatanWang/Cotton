@@ -3,8 +3,6 @@ package cotton.example;
 import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceConnection;
-import cotton.services.ServiceFactory;
-import cotton.services.Service;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -21,6 +19,8 @@ import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
 import javax.imageio.ImageIO;
+import cotton.services.DeprecatedService;
+import cotton.services.DeprecatedServiceFactory;
 
 /**
  * Service that manipulates an incoming image
@@ -28,7 +28,7 @@ import javax.imageio.ImageIO;
  * @author Jonathan
  * @author Mats
  */
-public class ImageManipulationService implements Service {
+public class ImageManipulationService implements DeprecatedService {
 
     private ImageManipulationService () {
     }
@@ -92,18 +92,18 @@ public class ImageManipulationService implements Service {
         return image;
     }
 
-    public static ServiceFactory getFactory(){
+    public static DeprecatedServiceFactory getFactory(){
         return new ImageFactory();
     }
 
-    public static class ImageFactory implements ServiceFactory {
+    public static class ImageFactory implements DeprecatedServiceFactory {
 
         private ImageFactory () {
 
         }
 
         @Override
-        public Service newService() {
+        public DeprecatedService newService() {
             return new ImageManipulationService();
         }
 

@@ -1,6 +1,6 @@
 package cotton.network;
 
-import cotton.services.ServicePacket;
+import cotton.services.DeprecatedServicePacket;
 import java.io.Serializable;
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -15,7 +15,7 @@ import java.util.concurrent.CountDownLatch;
  */
 public interface DeprecatedNetworkHandler extends Runnable {
 
-    public ServicePacket nextPacket();
+    public DeprecatedServicePacket nextPacket();
 
     public void sendToService(byte[] data, ServiceChain path, ServiceConnection from) throws IOException;
 

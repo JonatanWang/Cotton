@@ -4,14 +4,13 @@ package cotton.servicediscovery;
 import cotton.network.DefaultServiceConnection;
 import cotton.network.DummyServiceChain;
 import cotton.network.ServiceChain;
-import cotton.services.ActiveServiceLookup;
 import cotton.network.ServiceConnection;
 import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
-import cotton.services.ServiceMetaData;
+import cotton.services.DeprecatedServiceMetaData;
 import java.util.UUID;
 import cotton.network.PathType;
 import java.io.ObjectInputStream;
@@ -25,13 +24,14 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import cotton.network.DeprecatedNetworkHandler;
 import cotton.network.DeprecatedServiceRequest;
+import cotton.services.DeprecatedActiveServiceLookup;
 
 /**
  *
  * @author Magnus, Mats
  */
 public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery {
-    private ActiveServiceLookup internalLookup;
+    private DeprecatedActiveServiceLookup internalLookup;
     private DeprecatedNetworkHandler network = null;
     private SocketAddress localAddress;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
@@ -47,13 +47,13 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
             globalDiscovery.addAddress(addrArr[i]);
         }
     }
-    public DefaultLocalServiceDiscovery(ActiveServiceLookup internalLookup) {
+    public DefaultLocalServiceDiscovery(DeprecatedActiveServiceLookup internalLookup) {
         this.internalLookup = internalLookup;
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         this.globalDiscovery = new AddressPool();
     }
     
-    public DefaultLocalServiceDiscovery(ActiveServiceLookup internalLookup,GlobalDiscoveryDNS globalDNS) {
+    public DefaultLocalServiceDiscovery(DeprecatedActiveServiceLookup internalLookup,GlobalDiscoveryDNS globalDNS) {
         this.internalLookup = internalLookup;
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         initGlobalDiscoveryPool(globalDNS);
@@ -186,7 +186,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
             return getReturnAddress(destination, from);
         }
 
-        ServiceMetaData serviceInfo = internalLookup.getService(serviceName);
+        DeprecatedServiceMetaData serviceInfo = internalLookup.getService(serviceName);
         if(serviceInfo != null){
             return RouteSignal.LOCALDESTINATION;
         }

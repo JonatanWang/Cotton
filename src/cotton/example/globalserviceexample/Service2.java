@@ -5,7 +5,7 @@ import cotton.Cotton;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import cotton.services.ActiveServiceLookup;
+import cotton.services.DeprecatedActiveServiceLookup;
 
 public class Service2 {
     public static void main(String[] args) {
@@ -16,7 +16,7 @@ public class Service2 {
             Logger.getLogger(GlobalDiscoveryExample.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        ActiveServiceLookup lookup = cotton.getServiceRegistation();
+        DeprecatedActiveServiceLookup lookup = cotton.getServiceRegistation();
         lookup.registerService("TransmissionService", TransmissionService.getFactory(), 10);
 
         cotton.start();

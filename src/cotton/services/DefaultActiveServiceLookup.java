@@ -9,17 +9,17 @@ import java.util.concurrent.ConcurrentHashMap.KeySetView;
  *
  * @author Magnus
  */
-public class DefaultActiveServiceLookup implements ActiveServiceLookup{
+public class DefaultActiveServiceLookup implements DeprecatedActiveServiceLookup{
 
-    private ConcurrentHashMap<String,ServiceMetaData> hashMap;
+    private ConcurrentHashMap<String,DeprecatedServiceMetaData> hashMap;
 
     public DefaultActiveServiceLookup() {
-        this.hashMap = new ConcurrentHashMap<String,ServiceMetaData>();
+        this.hashMap = new ConcurrentHashMap<String,DeprecatedServiceMetaData>();
     }
 
     @Override
-    public boolean registerService(String serviceName, ServiceFactory serviceFactory,int maxCapacity) {
-        ServiceMetaData metaData = new ServiceMetaData(serviceFactory, maxCapacity);
+    public boolean registerService(String serviceName, DeprecatedServiceFactory serviceFactory,int maxCapacity) {
+        DeprecatedServiceMetaData metaData = new DeprecatedServiceMetaData(serviceFactory, maxCapacity);
         if(hashMap.putIfAbsent(serviceName, metaData) == null) {
             return true;    // no mapping for this key
         }
@@ -27,7 +27,7 @@ public class DefaultActiveServiceLookup implements ActiveServiceLookup{
     }
 
     @Override
-    public ServiceMetaData getService(String serviceName) {
+    public DeprecatedServiceMetaData getService(String serviceName) {
         return hashMap.get(serviceName);
     }
 
@@ -37,12 +37,12 @@ public class DefaultActiveServiceLookup implements ActiveServiceLookup{
     }
 
     @Override
-    public KeySetView<String, ServiceMetaData> getKeySet() {
+    public KeySetView<String, DeprecatedServiceMetaData> getKeySet() {
         return hashMap.keySet();
     }
     
     @Override
-    public ServiceMetaData removeServiceEntry(String service) {
+    public DeprecatedServiceMetaData removeServiceEntry(String service) {
         return hashMap.remove(service);
     }
 

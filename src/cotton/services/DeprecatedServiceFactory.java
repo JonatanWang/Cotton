@@ -9,13 +9,13 @@ package cotton.services;
  * @author Magnus
  * @see DeprecatedService
  */
-public interface ServiceFactory {
+public interface DeprecatedServiceFactory {
 
     /**
      * Returns an instance of the service connected to the <code>ServiceFactory</code>.
      *
      * @return the connected service.
      */
-    public Service newService();
+    public DeprecatedService newService();
 
 }

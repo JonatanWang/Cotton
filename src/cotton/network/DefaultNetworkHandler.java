@@ -23,10 +23,10 @@ import java.util.concurrent.Executors;
 
 import cotton.servicediscovery.RouteSignal;
 import cotton.services.DefaultServiceBuffer;
-import cotton.services.ServiceBuffer;
-import cotton.services.ServicePacket;
+import cotton.services.DeprecatedServicePacket;
 import cotton.servicediscovery.DeprecatedServiceDiscovery;
 import cotton.network.DeprecatedNetworkPacket;
+import cotton.services.DeprecatedServiceBuffer;
 
 /**
  * Handles all of the packet buffering and relaying.
@@ -37,7 +37,7 @@ import cotton.network.DeprecatedNetworkPacket;
  * @author Gunnlaugur
  */
 public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNetwork {
-    private ServiceBuffer serviceBuffer;
+    private DeprecatedServiceBuffer serviceBuffer;
     private ConcurrentHashMap<UUID,DeprecatedDefaultServiceRequest> connectionTable;
     private AtomicBoolean running;
     private DeprecatedServiceDiscovery localServiceDiscovery;
@@ -356,7 +356,7 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
      * @return The next package.
      */
     @Override
-    public ServicePacket nextPacket() {
+    public DeprecatedServicePacket nextPacket() {
         return serviceBuffer.nextPacket();
     }
 
@@ -388,7 +388,7 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
     }
 
     private void sendToServiceBuffer(ServiceConnection from, byte[] data, ServiceChain path) {
-        ServicePacket servicePacket = new ServicePacket(from, data, path);
+        DeprecatedServicePacket servicePacket = new DeprecatedServicePacket(from, data, path);
         serviceBuffer.add(servicePacket);
     }
 

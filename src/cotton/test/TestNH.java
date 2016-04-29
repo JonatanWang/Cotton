@@ -3,9 +3,8 @@ package cotton.test;
 import cotton.network.DefaultNetworkHandler;
 import cotton.network.DummyServiceChain;
 import cotton.servicediscovery.DefaultLocalServiceDiscovery;
-import cotton.services.ActiveServiceLookup;
 import cotton.services.DefaultActiveServiceLookup;
-import cotton.services.ServiceHandler;
+import cotton.services.DeprecatedServiceHandler;
 import cotton.test.services.MathPow2;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -18,6 +17,7 @@ import static org.junit.Assert.*;
 import cotton.network.DeprecatedNetworkHandler;
 import cotton.servicediscovery.DeprecatedServiceDiscovery;
 import cotton.network.DeprecatedServiceRequest;
+import cotton.services.DeprecatedActiveServiceLookup;
 
 /**
  *
@@ -49,14 +49,14 @@ public class TestNH {
     public void TestTransmission() {
         Integer numberToTest = 5;
 
-        ActiveServiceLookup asl = new DefaultActiveServiceLookup();
+        DeprecatedActiveServiceLookup asl = new DefaultActiveServiceLookup();
         DeprecatedServiceDiscovery sd = new DefaultLocalServiceDiscovery(asl);
         DeprecatedNetworkHandler nh = null;
         try {
             nh = new DefaultNetworkHandler(sd);
         } catch(UnknownHostException e) {}
 
-        ServiceHandler dsh = new ServiceHandler(asl, nh);
+        DeprecatedServiceHandler dsh = new DeprecatedServiceHandler(asl, nh);
         new Thread(dsh).start();
 
         asl.registerService("MathPow2", MathPow2.getFactory(), 1);

@@ -4,8 +4,6 @@ package cotton.test.services;
 import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
 import cotton.network.ServiceConnection;
-import cotton.services.ServiceFactory;
-import cotton.services.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -14,12 +12,14 @@ import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import cotton.services.DeprecatedService;
+import cotton.services.DeprecatedServiceFactory;
 
 /**
  *
  * @author Magnus
  */
-public class MathPow2 implements Service{
+public class MathPow2 implements DeprecatedService{
     @Override
     public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
         int num = new Integer(0);
@@ -28,14 +28,14 @@ public class MathPow2 implements Service{
         return ByteBuffer.allocate(4).putInt(num).array();
     }
 
-    public static ServiceFactory getFactory() {
+    public static DeprecatedServiceFactory getFactory() {
         return new Factory();
     }
 
-    public static class Factory implements ServiceFactory {
+    public static class Factory implements DeprecatedServiceFactory {
 
         @Override
-        public Service newService() {
+        public DeprecatedService newService() {
             return new MathPow2();
         }
     }

@@ -1,6 +1,4 @@
 package cotton.example.globalserviceexample;
-import cotton.services.Service;
-import cotton.services.ServiceFactory;
 import cotton.services.CloudContext;
 import cotton.network.ServiceConnection;
 import cotton.network.ServiceChain;
@@ -13,15 +11,17 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
-import cotton.services.ActiveServiceLookup;
 import java.io.IOException;
+import cotton.services.DeprecatedService;
+import cotton.services.DeprecatedServiceFactory;
+import cotton.services.DeprecatedActiveServiceLookup;
 
 /**
  *
  * @author Tony
  * @author Gunnlaugur
  **/
-public class ServiceInstanceImageManipulation implements Service{
+public class ServiceInstanceImageManipulation implements DeprecatedService{
     public static void main(String[] args) {
         Cotton cotton = null;
         try {
@@ -29,7 +29,7 @@ public class ServiceInstanceImageManipulation implements Service{
         } catch (UnknownHostException ex) {
             Logger.getLogger(GlobalDiscoveryExample.class.getName()).log(Level.SEVERE, null, ex);
         }
-        ActiveServiceLookup reg = cotton.getServiceRegistation();
+        DeprecatedActiveServiceLookup reg = cotton.getServiceRegistation();
         reg.registerService("StringModifier",getFactory(),10);
         reg.registerService("ImageManipulation", ImageManipulationService.getFactory(), 1);
         
@@ -48,12 +48,12 @@ public class ServiceInstanceImageManipulation implements Service{
         
     }
 
-    public static ServiceFactory getFactory(){
+    public static DeprecatedServiceFactory getFactory(){
         return new Factory();
     }
-    private static class Factory implements ServiceFactory{
+    private static class Factory implements DeprecatedServiceFactory{
         @Override
-        public Service newService(){
+        public DeprecatedService newService(){
             return new ServiceInstanceImageManipulation();
         }
     }
