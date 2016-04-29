@@ -22,10 +22,9 @@ import java.util.logging.Logger;
 public class MathPow2 implements Service{
     @Override
     public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
-        Integer num = new Integer(0);
+        int num = new Integer(0);
         num = ByteBuffer.wrap(data).getInt();
-        int value = num.intValue();
-        num = new Integer(value * value);
+        num = num*num;
         return ByteBuffer.allocate(4).putInt(num).array();
     }
 
