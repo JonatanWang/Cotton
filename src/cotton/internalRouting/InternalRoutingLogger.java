@@ -7,7 +7,7 @@ package cotton.internalRouting;
 
 import cotton.network.DestinationMetaData;
 import cotton.network.ServiceChain;
-import internalRouting.ServiceRequest;
+import cotton.internalRouting.ServiceRequest;
 
 /**
  *

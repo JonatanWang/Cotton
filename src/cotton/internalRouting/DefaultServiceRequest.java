@@ -5,7 +5,7 @@
  */
 package cotton.internalRouting;
 
-import internalRouting.ServiceRequest;
+import cotton.internalRouting.ServiceRequest;
 import java.util.concurrent.CountDownLatch;
 
 /**

@@ -1,4 +1,4 @@
-package network;
+package cotton.network;
 
 import java.net.SocketAddress;
 import cotton.network.NetworkPacket;
