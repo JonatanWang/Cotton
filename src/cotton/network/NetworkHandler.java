@@ -27,7 +27,7 @@ public interface NetworkHandler extends Runnable {
 
     =======*/
     public boolean send(NetworkPacket netPacket, SocketAddress addr);
-    public SocketLatch sendKeepAlive(NetworkPacket netPacket,SocketAddress addr);
+    public boolean sendKeepAlive(NetworkPacket netPacket,SocketAddress addr);
     public SocketAddress getLocalAddress();
     public void stop();
 }
