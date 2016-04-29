@@ -21,7 +21,7 @@ public interface NetworkHandler extends Runnable {
      * @return <code>true</code> if the send was successful.
      */
     public boolean send(NetworkPacket netPacket, SocketAddress addr);
-    
+  
     /**
      * Sends a <code>NetworkPacket</code> and informs that the connection should stay alive.
      * 
@@ -29,7 +29,7 @@ public interface NetworkHandler extends Runnable {
      * @param addr defines the <code>SocketAddress</code> to send through.
      * @return the latch for the connection.
      */
-    public SocketLatch sendKeepAlive(NetworkPacket netPacket,SocketAddress addr);
+    public boolean sendKeepAlive(NetworkPacket netPacket,SocketAddress addr);
     
     /**
      * Returns the local <code>SocketAddress</code> of the running machine.

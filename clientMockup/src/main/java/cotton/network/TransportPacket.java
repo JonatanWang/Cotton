@@ -13,63 +13,57 @@ public final class TransportPacket {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>optional bool keepalive = 1;</code>
+     * <code>required bool keepalive = 1;</code>
      */
     boolean hasKeepalive();
     /**
-     * <code>optional bool keepalive = 1;</code>
+     * <code>required bool keepalive = 1;</code>
      */
     boolean getKeepalive();
 
     /**
-     * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
+     * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
      */
     boolean hasPathtype();
     /**
-     * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
+     * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
      */
     cotton.network.TransportPacket.Packet.PathType getPathtype();
 
     /**
-     * <code>optional bytes data = 3;</code>
+     * <code>required bytes data = 3;</code>
      */
     boolean hasData();
     /**
-     * <code>optional bytes data = 3;</code>
+     * <code>required bytes data = 3;</code>
      */
     com.google.protobuf.ByteString getData();
 
     /**
-     * <code>optional .cotton.network.Origin origin = 4;</code>
+     * <code>required .cotton.network.Origin origin = 4;</code>
      */
     boolean hasOrigin();
     /**
-     * <code>optional .cotton.network.Origin origin = 4;</code>
+     * <code>required .cotton.network.Origin origin = 4;</code>
      */
     cotton.network.TransportPacket.Origin getOrigin();
     /**
-     * <code>optional .cotton.network.Origin origin = 4;</code>
+     * <code>required .cotton.network.Origin origin = 4;</code>
      */
     cotton.network.TransportPacket.OriginOrBuilder getOriginOrBuilder();
 
     /**
-     * <code>repeated string path = 6;</code>
+     * <code>required .cotton.network.Path path = 5;</code>
      */
-    com.google.protobuf.ProtocolStringList
-        getPathList();
+    boolean hasPath();
     /**
-     * <code>repeated string path = 6;</code>
+     * <code>required .cotton.network.Path path = 5;</code>
      */
-    int getPathCount();
+    cotton.network.TransportPacket.Path getPath();
     /**
-     * <code>repeated string path = 6;</code>
+     * <code>required .cotton.network.Path path = 5;</code>
      */
-    java.lang.String getPath(int index);
-    /**
-     * <code>repeated string path = 6;</code>
-     */
-    com.google.protobuf.ByteString
-        getPathBytes(int index);
+    cotton.network.TransportPacket.PathOrBuilder getPathOrBuilder();
   }
   /**
    * Protobuf type {@code cotton.network.Packet}
@@ -157,13 +151,17 @@ public final class TransportPacket {
               bitField0_ |= 0x00000008;
               break;
             }
-            case 50: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
-                path_ = new com.google.protobuf.LazyStringArrayList();
-                mutable_bitField0_ |= 0x00000010;
+            case 42: {
+              cotton.network.TransportPacket.Path.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000010) == 0x00000010)) {
+                subBuilder = path_.toBuilder();
               }
-              path_.add(bs);
+              path_ = input.readMessage(cotton.network.TransportPacket.Path.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(path_);
+                path_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000010;
               break;
             }
           }
@@ -174,9 +172,6 @@ public final class TransportPacket {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e.getMessage()).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
-          path_ = path_.getUnmodifiableView();
-        }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
@@ -229,10 +224,6 @@ public final class TransportPacket {
        * <code>UNKNOWN = 3;</code>
        */
       UNKNOWN(3, 3),
-      /**
-       * <code>NOTFOUND = 4;</code>
-       */
-      NOTFOUND(4, 4),
       ;
 
       /**
@@ -251,10 +242,6 @@ public final class TransportPacket {
        * <code>UNKNOWN = 3;</code>
        */
       public static final int UNKNOWN_VALUE = 3;
-      /**
-       * <code>NOTFOUND = 4;</code>
-       */
-      public static final int NOTFOUND_VALUE = 4;
 
 
       public final int getNumber() { return value; }
@@ -265,7 +252,6 @@ public final class TransportPacket {
           case 1: return DISCOVERY;
           case 2: return SERVICE;
           case 3: return UNKNOWN;
-          case 4: return NOTFOUND;
           default: return null;
         }
       }
@@ -321,13 +307,13 @@ public final class TransportPacket {
     public static final int KEEPALIVE_FIELD_NUMBER = 1;
     private boolean keepalive_;
     /**
-     * <code>optional bool keepalive = 1;</code>
+     * <code>required bool keepalive = 1;</code>
      */
     public boolean hasKeepalive() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <code>optional bool keepalive = 1;</code>
+     * <code>required bool keepalive = 1;</code>
      */
     public boolean getKeepalive() {
       return keepalive_;
@@ -336,13 +322,13 @@ public final class TransportPacket {
     public static final int PATHTYPE_FIELD_NUMBER = 2;
     private cotton.network.TransportPacket.Packet.PathType pathtype_;
     /**
-     * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
+     * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
      */
     public boolean hasPathtype() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
+     * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
      */
     public cotton.network.TransportPacket.Packet.PathType getPathtype() {
       return pathtype_;
@@ -351,13 +337,13 @@ public final class TransportPacket {
     public static final int DATA_FIELD_NUMBER = 3;
     private com.google.protobuf.ByteString data_;
     /**
-     * <code>optional bytes data = 3;</code>
+     * <code>required bytes data = 3;</code>
      */
     public boolean hasData() {
       return ((bitField0_ & 0x00000004) == 0x00000004);
     }
     /**
-     * <code>optional bytes data = 3;</code>
+     * <code>required bytes data = 3;</code>
      */
     public com.google.protobuf.ByteString getData() {
       return data_;
@@ -366,51 +352,43 @@ public final class TransportPacket {
     public static final int ORIGIN_FIELD_NUMBER = 4;
     private cotton.network.TransportPacket.Origin origin_;
     /**
-     * <code>optional .cotton.network.Origin origin = 4;</code>
+     * <code>required .cotton.network.Origin origin = 4;</code>
      */
     public boolean hasOrigin() {
       return ((bitField0_ & 0x00000008) == 0x00000008);
     }
     /**
-     * <code>optional .cotton.network.Origin origin = 4;</code>
+     * <code>required .cotton.network.Origin origin = 4;</code>
      */
     public cotton.network.TransportPacket.Origin getOrigin() {
       return origin_;
     }
     /**
-     * <code>optional .cotton.network.Origin origin = 4;</code>
+     * <code>required .cotton.network.Origin origin = 4;</code>
      */
     public cotton.network.TransportPacket.OriginOrBuilder getOriginOrBuilder() {
       return origin_;
     }
 
-    public static final int PATH_FIELD_NUMBER = 6;
-    private com.google.protobuf.LazyStringList path_;
+    public static final int PATH_FIELD_NUMBER = 5;
+    private cotton.network.TransportPacket.Path path_;
     /**
-     * <code>repeated string path = 6;</code>
+     * <code>required .cotton.network.Path path = 5;</code>
      */
-    public com.google.protobuf.ProtocolStringList
-        getPathList() {
+    public boolean hasPath() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>required .cotton.network.Path path = 5;</code>
+     */
+    public cotton.network.TransportPacket.Path getPath() {
       return path_;
     }
     /**
-     * <code>repeated string path = 6;</code>
+     * <code>required .cotton.network.Path path = 5;</code>
      */
-    public int getPathCount() {
-      return path_.size();
-    }
-    /**
-     * <code>repeated string path = 6;</code>
-     */
-    public java.lang.String getPath(int index) {
-      return path_.get(index);
-    }
-    /**
-     * <code>repeated string path = 6;</code>
-     */
-    public com.google.protobuf.ByteString
-        getPathBytes(int index) {
-      return path_.getByteString(index);
+    public cotton.network.TransportPacket.PathOrBuilder getPathOrBuilder() {
+      return path_;
     }
 
     private void initFields() {
@@ -418,7 +396,7 @@ public final class TransportPacket {
       pathtype_ = cotton.network.TransportPacket.Packet.PathType.RELAY;
       data_ = com.google.protobuf.ByteString.EMPTY;
       origin_ = cotton.network.TransportPacket.Origin.getDefaultInstance();
-      path_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      path_ = cotton.network.TransportPacket.Path.getDefaultInstance();
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -426,6 +404,34 @@ public final class TransportPacket {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
+      if (!hasKeepalive()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasPathtype()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasData()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasOrigin()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasPath()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getOrigin().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getPath().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -445,8 +451,8 @@ public final class TransportPacket {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         output.writeMessage(4, origin_);
       }
-      for (int i = 0; i < path_.size(); i++) {
-        output.writeBytes(6, path_.getByteString(i));
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeMessage(5, path_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -473,14 +479,9 @@ public final class TransportPacket {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(4, origin_);
       }
-      {
-        int dataSize = 0;
-        for (int i = 0; i < path_.size(); i++) {
-          dataSize += com.google.protobuf.CodedOutputStream
-            .computeBytesSizeNoTag(path_.getByteString(i));
-        }
-        size += dataSize;
-        size += 1 * getPathList().size();
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(5, path_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -592,6 +593,7 @@ public final class TransportPacket {
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
           getOriginFieldBuilder();
+          getPathFieldBuilder();
         }
       }
       private static Builder create() {
@@ -612,7 +614,11 @@ public final class TransportPacket {
           originBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000008);
-        path_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        if (pathBuilder_ == null) {
+          path_ = cotton.network.TransportPacket.Path.getDefaultInstance();
+        } else {
+          pathBuilder_.clear();
+        }
         bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
@@ -662,11 +668,14 @@ public final class TransportPacket {
         } else {
           result.origin_ = originBuilder_.build();
         }
-        if (((bitField0_ & 0x00000010) == 0x00000010)) {
-          path_ = path_.getUnmodifiableView();
-          bitField0_ = (bitField0_ & ~0x00000010);
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
         }
-        result.path_ = path_;
+        if (pathBuilder_ == null) {
+          result.path_ = path_;
+        } else {
+          result.path_ = pathBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -695,21 +704,42 @@ public final class TransportPacket {
         if (other.hasOrigin()) {
           mergeOrigin(other.getOrigin());
         }
-        if (!other.path_.isEmpty()) {
-          if (path_.isEmpty()) {
-            path_ = other.path_;
-            bitField0_ = (bitField0_ & ~0x00000010);
-          } else {
-            ensurePathIsMutable();
-            path_.addAll(other.path_);
-          }
-          onChanged();
+        if (other.hasPath()) {
+          mergePath(other.getPath());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
 
       public final boolean isInitialized() {
+        if (!hasKeepalive()) {
+          
+          return false;
+        }
+        if (!hasPathtype()) {
+          
+          return false;
+        }
+        if (!hasData()) {
+          
+          return false;
+        }
+        if (!hasOrigin()) {
+          
+          return false;
+        }
+        if (!hasPath()) {
+          
+          return false;
+        }
+        if (!getOrigin().isInitialized()) {
+          
+          return false;
+        }
+        if (!getPath().isInitialized()) {
+          
+          return false;
+        }
         return true;
       }
 
@@ -734,19 +764,19 @@ public final class TransportPacket {
 
       private boolean keepalive_ ;
       /**
-       * <code>optional bool keepalive = 1;</code>
+       * <code>required bool keepalive = 1;</code>
        */
       public boolean hasKeepalive() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <code>optional bool keepalive = 1;</code>
+       * <code>required bool keepalive = 1;</code>
        */
       public boolean getKeepalive() {
         return keepalive_;
       }
       /**
-       * <code>optional bool keepalive = 1;</code>
+       * <code>required bool keepalive = 1;</code>
        */
       public Builder setKeepalive(boolean value) {
         bitField0_ |= 0x00000001;
@@ -755,7 +785,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>optional bool keepalive = 1;</code>
+       * <code>required bool keepalive = 1;</code>
        */
       public Builder clearKeepalive() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -766,19 +796,19 @@ public final class TransportPacket {
 
       private cotton.network.TransportPacket.Packet.PathType pathtype_ = cotton.network.TransportPacket.Packet.PathType.RELAY;
       /**
-       * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
+       * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
        */
       public boolean hasPathtype() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
+       * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
        */
       public cotton.network.TransportPacket.Packet.PathType getPathtype() {
         return pathtype_;
       }
       /**
-       * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
+       * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
        */
       public Builder setPathtype(cotton.network.TransportPacket.Packet.PathType value) {
         if (value == null) {
@@ -790,7 +820,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
+       * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
        */
       public Builder clearPathtype() {
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -801,19 +831,19 @@ public final class TransportPacket {
 
       private com.google.protobuf.ByteString data_ = com.google.protobuf.ByteString.EMPTY;
       /**
-       * <code>optional bytes data = 3;</code>
+       * <code>required bytes data = 3;</code>
        */
       public boolean hasData() {
         return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       /**
-       * <code>optional bytes data = 3;</code>
+       * <code>required bytes data = 3;</code>
        */
       public com.google.protobuf.ByteString getData() {
         return data_;
       }
       /**
-       * <code>optional bytes data = 3;</code>
+       * <code>required bytes data = 3;</code>
        */
       public Builder setData(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -825,7 +855,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>optional bytes data = 3;</code>
+       * <code>required bytes data = 3;</code>
        */
       public Builder clearData() {
         bitField0_ = (bitField0_ & ~0x00000004);
@@ -838,13 +868,13 @@ public final class TransportPacket {
       private com.google.protobuf.SingleFieldBuilder<
           cotton.network.TransportPacket.Origin, cotton.network.TransportPacket.Origin.Builder, cotton.network.TransportPacket.OriginOrBuilder> originBuilder_;
       /**
-       * <code>optional .cotton.network.Origin origin = 4;</code>
+       * <code>required .cotton.network.Origin origin = 4;</code>
        */
       public boolean hasOrigin() {
         return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
-       * <code>optional .cotton.network.Origin origin = 4;</code>
+       * <code>required .cotton.network.Origin origin = 4;</code>
        */
       public cotton.network.TransportPacket.Origin getOrigin() {
         if (originBuilder_ == null) {
@@ -854,7 +884,7 @@ public final class TransportPacket {
         }
       }
       /**
-       * <code>optional .cotton.network.Origin origin = 4;</code>
+       * <code>required .cotton.network.Origin origin = 4;</code>
        */
       public Builder setOrigin(cotton.network.TransportPacket.Origin value) {
         if (originBuilder_ == null) {
@@ -870,7 +900,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>optional .cotton.network.Origin origin = 4;</code>
+       * <code>required .cotton.network.Origin origin = 4;</code>
        */
       public Builder setOrigin(
           cotton.network.TransportPacket.Origin.Builder builderForValue) {
@@ -884,7 +914,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>optional .cotton.network.Origin origin = 4;</code>
+       * <code>required .cotton.network.Origin origin = 4;</code>
        */
       public Builder mergeOrigin(cotton.network.TransportPacket.Origin value) {
         if (originBuilder_ == null) {
@@ -903,7 +933,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>optional .cotton.network.Origin origin = 4;</code>
+       * <code>required .cotton.network.Origin origin = 4;</code>
        */
       public Builder clearOrigin() {
         if (originBuilder_ == null) {
@@ -916,7 +946,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>optional .cotton.network.Origin origin = 4;</code>
+       * <code>required .cotton.network.Origin origin = 4;</code>
        */
       public cotton.network.TransportPacket.Origin.Builder getOriginBuilder() {
         bitField0_ |= 0x00000008;
@@ -924,7 +954,7 @@ public final class TransportPacket {
         return getOriginFieldBuilder().getBuilder();
       }
       /**
-       * <code>optional .cotton.network.Origin origin = 4;</code>
+       * <code>required .cotton.network.Origin origin = 4;</code>
        */
       public cotton.network.TransportPacket.OriginOrBuilder getOriginOrBuilder() {
         if (originBuilder_ != null) {
@@ -934,7 +964,7 @@ public final class TransportPacket {
         }
       }
       /**
-       * <code>optional .cotton.network.Origin origin = 4;</code>
+       * <code>required .cotton.network.Origin origin = 4;</code>
        */
       private com.google.protobuf.SingleFieldBuilder<
           cotton.network.TransportPacket.Origin, cotton.network.TransportPacket.Origin.Builder, cotton.network.TransportPacket.OriginOrBuilder> 
@@ -950,97 +980,120 @@ public final class TransportPacket {
         return originBuilder_;
       }
 
-      private com.google.protobuf.LazyStringList path_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      private void ensurePathIsMutable() {
-        if (!((bitField0_ & 0x00000010) == 0x00000010)) {
-          path_ = new com.google.protobuf.LazyStringArrayList(path_);
-          bitField0_ |= 0x00000010;
-         }
-      }
+      private cotton.network.TransportPacket.Path path_ = cotton.network.TransportPacket.Path.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          cotton.network.TransportPacket.Path, cotton.network.TransportPacket.Path.Builder, cotton.network.TransportPacket.PathOrBuilder> pathBuilder_;
       /**
-       * <code>repeated string path = 6;</code>
+       * <code>required .cotton.network.Path path = 5;</code>
        */
-      public com.google.protobuf.ProtocolStringList
-          getPathList() {
-        return path_.getUnmodifiableView();
+      public boolean hasPath() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
       }
       /**
-       * <code>repeated string path = 6;</code>
+       * <code>required .cotton.network.Path path = 5;</code>
        */
-      public int getPathCount() {
-        return path_.size();
+      public cotton.network.TransportPacket.Path getPath() {
+        if (pathBuilder_ == null) {
+          return path_;
+        } else {
+          return pathBuilder_.getMessage();
+        }
       }
       /**
-       * <code>repeated string path = 6;</code>
+       * <code>required .cotton.network.Path path = 5;</code>
        */
-      public java.lang.String getPath(int index) {
-        return path_.get(index);
+      public Builder setPath(cotton.network.TransportPacket.Path value) {
+        if (pathBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          path_ = value;
+          onChanged();
+        } else {
+          pathBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000010;
+        return this;
       }
       /**
-       * <code>repeated string path = 6;</code>
-       */
-      public com.google.protobuf.ByteString
-          getPathBytes(int index) {
-        return path_.getByteString(index);
-      }
-      /**
-       * <code>repeated string path = 6;</code>
+       * <code>required .cotton.network.Path path = 5;</code>
        */
       public Builder setPath(
-          int index, java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensurePathIsMutable();
-        path_.set(index, value);
-        onChanged();
+          cotton.network.TransportPacket.Path.Builder builderForValue) {
+        if (pathBuilder_ == null) {
+          path_ = builderForValue.build();
+          onChanged();
+        } else {
+          pathBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000010;
         return this;
       }
       /**
-       * <code>repeated string path = 6;</code>
+       * <code>required .cotton.network.Path path = 5;</code>
        */
-      public Builder addPath(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensurePathIsMutable();
-        path_.add(value);
-        onChanged();
+      public Builder mergePath(cotton.network.TransportPacket.Path value) {
+        if (pathBuilder_ == null) {
+          if (((bitField0_ & 0x00000010) == 0x00000010) &&
+              path_ != cotton.network.TransportPacket.Path.getDefaultInstance()) {
+            path_ =
+              cotton.network.TransportPacket.Path.newBuilder(path_).mergeFrom(value).buildPartial();
+          } else {
+            path_ = value;
+          }
+          onChanged();
+        } else {
+          pathBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000010;
         return this;
       }
       /**
-       * <code>repeated string path = 6;</code>
-       */
-      public Builder addAllPath(
-          java.lang.Iterable<java.lang.String> values) {
-        ensurePathIsMutable();
-        com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, path_);
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>repeated string path = 6;</code>
+       * <code>required .cotton.network.Path path = 5;</code>
        */
       public Builder clearPath() {
-        path_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        if (pathBuilder_ == null) {
+          path_ = cotton.network.TransportPacket.Path.getDefaultInstance();
+          onChanged();
+        } else {
+          pathBuilder_.clear();
+        }
         bitField0_ = (bitField0_ & ~0x00000010);
-        onChanged();
         return this;
       }
       /**
-       * <code>repeated string path = 6;</code>
+       * <code>required .cotton.network.Path path = 5;</code>
        */
-      public Builder addPathBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  ensurePathIsMutable();
-        path_.add(value);
+      public cotton.network.TransportPacket.Path.Builder getPathBuilder() {
+        bitField0_ |= 0x00000010;
         onChanged();
-        return this;
+        return getPathFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>required .cotton.network.Path path = 5;</code>
+       */
+      public cotton.network.TransportPacket.PathOrBuilder getPathOrBuilder() {
+        if (pathBuilder_ != null) {
+          return pathBuilder_.getMessageOrBuilder();
+        } else {
+          return path_;
+        }
+      }
+      /**
+       * <code>required .cotton.network.Path path = 5;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          cotton.network.TransportPacket.Path, cotton.network.TransportPacket.Path.Builder, cotton.network.TransportPacket.PathOrBuilder> 
+          getPathFieldBuilder() {
+        if (pathBuilder_ == null) {
+          pathBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              cotton.network.TransportPacket.Path, cotton.network.TransportPacket.Path.Builder, cotton.network.TransportPacket.PathOrBuilder>(
+                  getPath(),
+                  getParentForChildren(),
+                  isClean());
+          path_ = null;
+        }
+        return pathBuilder_;
       }
 
       // @@protoc_insertion_point(builder_scope:cotton.network.Packet)
@@ -1059,39 +1112,53 @@ public final class TransportPacket {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>optional string uuid = 1;</code>
+     * <code>required string uuid = 1;</code>
      */
     boolean hasUuid();
     /**
-     * <code>optional string uuid = 1;</code>
+     * <code>required string uuid = 1;</code>
      */
     java.lang.String getUuid();
     /**
-     * <code>optional string uuid = 1;</code>
+     * <code>required string uuid = 1;</code>
      */
     com.google.protobuf.ByteString
         getUuidBytes();
 
     /**
-     * <code>optional string ip = 2;</code>
+     * <code>required string name = 2;</code>
+     */
+    boolean hasName();
+    /**
+     * <code>required string name = 2;</code>
+     */
+    java.lang.String getName();
+    /**
+     * <code>required string name = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getNameBytes();
+
+    /**
+     * <code>required string ip = 3;</code>
      */
     boolean hasIp();
     /**
-     * <code>optional string ip = 2;</code>
+     * <code>required string ip = 3;</code>
      */
     java.lang.String getIp();
     /**
-     * <code>optional string ip = 2;</code>
+     * <code>required string ip = 3;</code>
      */
     com.google.protobuf.ByteString
         getIpBytes();
 
     /**
-     * <code>optional int32 port = 3;</code>
+     * <code>required int32 port = 4;</code>
      */
     boolean hasPort();
     /**
-     * <code>optional int32 port = 3;</code>
+     * <code>required int32 port = 4;</code>
      */
     int getPort();
   }
@@ -1156,11 +1223,17 @@ public final class TransportPacket {
             case 18: {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000002;
+              name_ = bs;
+              break;
+            }
+            case 26: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000004;
               ip_ = bs;
               break;
             }
-            case 24: {
-              bitField0_ |= 0x00000004;
+            case 32: {
+              bitField0_ |= 0x00000008;
               port_ = input.readInt32();
               break;
             }
@@ -1207,13 +1280,13 @@ public final class TransportPacket {
     public static final int UUID_FIELD_NUMBER = 1;
     private java.lang.Object uuid_;
     /**
-     * <code>optional string uuid = 1;</code>
+     * <code>required string uuid = 1;</code>
      */
     public boolean hasUuid() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <code>optional string uuid = 1;</code>
+     * <code>required string uuid = 1;</code>
      */
     public java.lang.String getUuid() {
       java.lang.Object ref = uuid_;
@@ -1230,7 +1303,7 @@ public final class TransportPacket {
       }
     }
     /**
-     * <code>optional string uuid = 1;</code>
+     * <code>required string uuid = 1;</code>
      */
     public com.google.protobuf.ByteString
         getUuidBytes() {
@@ -1246,16 +1319,58 @@ public final class TransportPacket {
       }
     }
 
-    public static final int IP_FIELD_NUMBER = 2;
-    private java.lang.Object ip_;
+    public static final int NAME_FIELD_NUMBER = 2;
+    private java.lang.Object name_;
     /**
-     * <code>optional string ip = 2;</code>
+     * <code>required string name = 2;</code>
      */
-    public boolean hasIp() {
+    public boolean hasName() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>optional string ip = 2;</code>
+     * <code>required string name = 2;</code>
+     */
+    public java.lang.String getName() {
+      java.lang.Object ref = name_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          name_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string name = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getNameBytes() {
+      java.lang.Object ref = name_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        name_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int IP_FIELD_NUMBER = 3;
+    private java.lang.Object ip_;
+    /**
+     * <code>required string ip = 3;</code>
+     */
+    public boolean hasIp() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>required string ip = 3;</code>
      */
     public java.lang.String getIp() {
       java.lang.Object ref = ip_;
@@ -1272,7 +1387,7 @@ public final class TransportPacket {
       }
     }
     /**
-     * <code>optional string ip = 2;</code>
+     * <code>required string ip = 3;</code>
      */
     public com.google.protobuf.ByteString
         getIpBytes() {
@@ -1288,16 +1403,16 @@ public final class TransportPacket {
       }
     }
 
-    public static final int PORT_FIELD_NUMBER = 3;
+    public static final int PORT_FIELD_NUMBER = 4;
     private int port_;
     /**
-     * <code>optional int32 port = 3;</code>
+     * <code>required int32 port = 4;</code>
      */
     public boolean hasPort() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+      return ((bitField0_ & 0x00000008) == 0x00000008);
     }
     /**
-     * <code>optional int32 port = 3;</code>
+     * <code>required int32 port = 4;</code>
      */
     public int getPort() {
       return port_;
@@ -1305,6 +1420,7 @@ public final class TransportPacket {
 
     private void initFields() {
       uuid_ = "";
+      name_ = "";
       ip_ = "";
       port_ = 0;
     }
@@ -1314,6 +1430,22 @@ public final class TransportPacket {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
+      if (!hasUuid()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasIp()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasPort()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -1325,10 +1457,13 @@ public final class TransportPacket {
         output.writeBytes(1, getUuidBytes());
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeBytes(2, getIpBytes());
+        output.writeBytes(2, getNameBytes());
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeInt32(3, port_);
+        output.writeBytes(3, getIpBytes());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeInt32(4, port_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -1345,11 +1480,15 @@ public final class TransportPacket {
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, getIpBytes());
+          .computeBytesSize(2, getNameBytes());
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(3, port_);
+          .computeBytesSize(3, getIpBytes());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(4, port_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -1470,10 +1609,12 @@ public final class TransportPacket {
         super.clear();
         uuid_ = "";
         bitField0_ = (bitField0_ & ~0x00000001);
-        ip_ = "";
+        name_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
-        port_ = 0;
+        ip_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
+        port_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -1509,9 +1650,13 @@ public final class TransportPacket {
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.ip_ = ip_;
+        result.name_ = name_;
         if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
           to_bitField0_ |= 0x00000004;
+        }
+        result.ip_ = ip_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
         }
         result.port_ = port_;
         result.bitField0_ = to_bitField0_;
@@ -1535,8 +1680,13 @@ public final class TransportPacket {
           uuid_ = other.uuid_;
           onChanged();
         }
-        if (other.hasIp()) {
+        if (other.hasName()) {
           bitField0_ |= 0x00000002;
+          name_ = other.name_;
+          onChanged();
+        }
+        if (other.hasIp()) {
+          bitField0_ |= 0x00000004;
           ip_ = other.ip_;
           onChanged();
         }
@@ -1548,6 +1698,22 @@ public final class TransportPacket {
       }
 
       public final boolean isInitialized() {
+        if (!hasUuid()) {
+          
+          return false;
+        }
+        if (!hasName()) {
+          
+          return false;
+        }
+        if (!hasIp()) {
+          
+          return false;
+        }
+        if (!hasPort()) {
+          
+          return false;
+        }
         return true;
       }
 
@@ -1572,13 +1738,13 @@ public final class TransportPacket {
 
       private java.lang.Object uuid_ = "";
       /**
-       * <code>optional string uuid = 1;</code>
+       * <code>required string uuid = 1;</code>
        */
       public boolean hasUuid() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <code>optional string uuid = 1;</code>
+       * <code>required string uuid = 1;</code>
        */
       public java.lang.String getUuid() {
         java.lang.Object ref = uuid_;
@@ -1595,7 +1761,7 @@ public final class TransportPacket {
         }
       }
       /**
-       * <code>optional string uuid = 1;</code>
+       * <code>required string uuid = 1;</code>
        */
       public com.google.protobuf.ByteString
           getUuidBytes() {
@@ -1611,7 +1777,7 @@ public final class TransportPacket {
         }
       }
       /**
-       * <code>optional string uuid = 1;</code>
+       * <code>required string uuid = 1;</code>
        */
       public Builder setUuid(
           java.lang.String value) {
@@ -1624,7 +1790,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>optional string uuid = 1;</code>
+       * <code>required string uuid = 1;</code>
        */
       public Builder clearUuid() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -1633,7 +1799,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>optional string uuid = 1;</code>
+       * <code>required string uuid = 1;</code>
        */
       public Builder setUuidBytes(
           com.google.protobuf.ByteString value) {
@@ -1646,15 +1812,91 @@ public final class TransportPacket {
         return this;
       }
 
-      private java.lang.Object ip_ = "";
+      private java.lang.Object name_ = "";
       /**
-       * <code>optional string ip = 2;</code>
+       * <code>required string name = 2;</code>
        */
-      public boolean hasIp() {
+      public boolean hasName() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>optional string ip = 2;</code>
+       * <code>required string name = 2;</code>
+       */
+      public java.lang.String getName() {
+        java.lang.Object ref = name_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            name_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string name = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getNameBytes() {
+        java.lang.Object ref = name_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          name_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string name = 2;</code>
+       */
+      public Builder setName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        name_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string name = 2;</code>
+       */
+      public Builder clearName() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        name_ = getDefaultInstance().getName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string name = 2;</code>
+       */
+      public Builder setNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        name_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object ip_ = "";
+      /**
+       * <code>required string ip = 3;</code>
+       */
+      public boolean hasIp() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required string ip = 3;</code>
        */
       public java.lang.String getIp() {
         java.lang.Object ref = ip_;
@@ -1671,7 +1913,7 @@ public final class TransportPacket {
         }
       }
       /**
-       * <code>optional string ip = 2;</code>
+       * <code>required string ip = 3;</code>
        */
       public com.google.protobuf.ByteString
           getIpBytes() {
@@ -1687,36 +1929,36 @@ public final class TransportPacket {
         }
       }
       /**
-       * <code>optional string ip = 2;</code>
+       * <code>required string ip = 3;</code>
        */
       public Builder setIp(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000002;
+  bitField0_ |= 0x00000004;
         ip_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional string ip = 2;</code>
+       * <code>required string ip = 3;</code>
        */
       public Builder clearIp() {
-        bitField0_ = (bitField0_ & ~0x00000002);
+        bitField0_ = (bitField0_ & ~0x00000004);
         ip_ = getDefaultInstance().getIp();
         onChanged();
         return this;
       }
       /**
-       * <code>optional string ip = 2;</code>
+       * <code>required string ip = 3;</code>
        */
       public Builder setIpBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000002;
+  bitField0_ |= 0x00000004;
         ip_ = value;
         onChanged();
         return this;
@@ -1724,31 +1966,31 @@ public final class TransportPacket {
 
       private int port_ ;
       /**
-       * <code>optional int32 port = 3;</code>
+       * <code>required int32 port = 4;</code>
        */
       public boolean hasPort() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
-       * <code>optional int32 port = 3;</code>
+       * <code>required int32 port = 4;</code>
        */
       public int getPort() {
         return port_;
       }
       /**
-       * <code>optional int32 port = 3;</code>
+       * <code>required int32 port = 4;</code>
        */
       public Builder setPort(int value) {
-        bitField0_ |= 0x00000004;
+        bitField0_ |= 0x00000008;
         port_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional int32 port = 3;</code>
+       * <code>required int32 port = 4;</code>
        */
       public Builder clearPort() {
-        bitField0_ = (bitField0_ & ~0x00000004);
+        bitField0_ = (bitField0_ & ~0x00000008);
         port_ = 0;
         onChanged();
         return this;
@@ -1765,6 +2007,594 @@ public final class TransportPacket {
     // @@protoc_insertion_point(class_scope:cotton.network.Origin)
   }
 
+  public interface PathOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:cotton.network.Path)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>repeated string path = 1;</code>
+     */
+    com.google.protobuf.ProtocolStringList
+        getPathList();
+    /**
+     * <code>repeated string path = 1;</code>
+     */
+    int getPathCount();
+    /**
+     * <code>repeated string path = 1;</code>
+     */
+    java.lang.String getPath(int index);
+    /**
+     * <code>repeated string path = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getPathBytes(int index);
+
+    /**
+     * <code>required int32 pos = 2;</code>
+     */
+    boolean hasPos();
+    /**
+     * <code>required int32 pos = 2;</code>
+     */
+    int getPos();
+  }
+  /**
+   * Protobuf type {@code cotton.network.Path}
+   */
+  public static final class Path extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:cotton.network.Path)
+      PathOrBuilder {
+    // Use Path.newBuilder() to construct.
+    private Path(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private Path(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final Path defaultInstance;
+    public static Path getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public Path getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private Path(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              if (!((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
+                path_ = new com.google.protobuf.LazyStringArrayList();
+                mutable_bitField0_ |= 0x00000001;
+              }
+              path_.add(bs);
+              break;
+            }
+            case 16: {
+              bitField0_ |= 0x00000001;
+              pos_ = input.readInt32();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        if (((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
+          path_ = path_.getUnmodifiableView();
+        }
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return cotton.network.TransportPacket.internal_static_cotton_network_Path_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return cotton.network.TransportPacket.internal_static_cotton_network_Path_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              cotton.network.TransportPacket.Path.class, cotton.network.TransportPacket.Path.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<Path> PARSER =
+        new com.google.protobuf.AbstractParser<Path>() {
+      public Path parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new Path(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<Path> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    public static final int PATH_FIELD_NUMBER = 1;
+    private com.google.protobuf.LazyStringList path_;
+    /**
+     * <code>repeated string path = 1;</code>
+     */
+    public com.google.protobuf.ProtocolStringList
+        getPathList() {
+      return path_;
+    }
+    /**
+     * <code>repeated string path = 1;</code>
+     */
+    public int getPathCount() {
+      return path_.size();
+    }
+    /**
+     * <code>repeated string path = 1;</code>
+     */
+    public java.lang.String getPath(int index) {
+      return path_.get(index);
+    }
+    /**
+     * <code>repeated string path = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getPathBytes(int index) {
+      return path_.getByteString(index);
+    }
+
+    public static final int POS_FIELD_NUMBER = 2;
+    private int pos_;
+    /**
+     * <code>required int32 pos = 2;</code>
+     */
+    public boolean hasPos() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required int32 pos = 2;</code>
+     */
+    public int getPos() {
+      return pos_;
+    }
+
+    private void initFields() {
+      path_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      pos_ = 0;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      if (!hasPos()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      for (int i = 0; i < path_.size(); i++) {
+        output.writeBytes(1, path_.getByteString(i));
+      }
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeInt32(2, pos_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      {
+        int dataSize = 0;
+        for (int i = 0; i < path_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeBytesSizeNoTag(path_.getByteString(i));
+        }
+        size += dataSize;
+        size += 1 * getPathList().size();
+      }
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(2, pos_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static cotton.network.TransportPacket.Path parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static cotton.network.TransportPacket.Path parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static cotton.network.TransportPacket.Path parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static cotton.network.TransportPacket.Path parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static cotton.network.TransportPacket.Path parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static cotton.network.TransportPacket.Path parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static cotton.network.TransportPacket.Path parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static cotton.network.TransportPacket.Path parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static cotton.network.TransportPacket.Path parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static cotton.network.TransportPacket.Path parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(cotton.network.TransportPacket.Path prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code cotton.network.Path}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:cotton.network.Path)
+        cotton.network.TransportPacket.PathOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return cotton.network.TransportPacket.internal_static_cotton_network_Path_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return cotton.network.TransportPacket.internal_static_cotton_network_Path_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                cotton.network.TransportPacket.Path.class, cotton.network.TransportPacket.Path.Builder.class);
+      }
+
+      // Construct using cotton.network.TransportPacket.Path.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        path_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        pos_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return cotton.network.TransportPacket.internal_static_cotton_network_Path_descriptor;
+      }
+
+      public cotton.network.TransportPacket.Path getDefaultInstanceForType() {
+        return cotton.network.TransportPacket.Path.getDefaultInstance();
+      }
+
+      public cotton.network.TransportPacket.Path build() {
+        cotton.network.TransportPacket.Path result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public cotton.network.TransportPacket.Path buildPartial() {
+        cotton.network.TransportPacket.Path result = new cotton.network.TransportPacket.Path(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          path_ = path_.getUnmodifiableView();
+          bitField0_ = (bitField0_ & ~0x00000001);
+        }
+        result.path_ = path_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.pos_ = pos_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof cotton.network.TransportPacket.Path) {
+          return mergeFrom((cotton.network.TransportPacket.Path)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(cotton.network.TransportPacket.Path other) {
+        if (other == cotton.network.TransportPacket.Path.getDefaultInstance()) return this;
+        if (!other.path_.isEmpty()) {
+          if (path_.isEmpty()) {
+            path_ = other.path_;
+            bitField0_ = (bitField0_ & ~0x00000001);
+          } else {
+            ensurePathIsMutable();
+            path_.addAll(other.path_);
+          }
+          onChanged();
+        }
+        if (other.hasPos()) {
+          setPos(other.getPos());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasPos()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        cotton.network.TransportPacket.Path parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (cotton.network.TransportPacket.Path) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      private com.google.protobuf.LazyStringList path_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensurePathIsMutable() {
+        if (!((bitField0_ & 0x00000001) == 0x00000001)) {
+          path_ = new com.google.protobuf.LazyStringArrayList(path_);
+          bitField0_ |= 0x00000001;
+         }
+      }
+      /**
+       * <code>repeated string path = 1;</code>
+       */
+      public com.google.protobuf.ProtocolStringList
+          getPathList() {
+        return path_.getUnmodifiableView();
+      }
+      /**
+       * <code>repeated string path = 1;</code>
+       */
+      public int getPathCount() {
+        return path_.size();
+      }
+      /**
+       * <code>repeated string path = 1;</code>
+       */
+      public java.lang.String getPath(int index) {
+        return path_.get(index);
+      }
+      /**
+       * <code>repeated string path = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getPathBytes(int index) {
+        return path_.getByteString(index);
+      }
+      /**
+       * <code>repeated string path = 1;</code>
+       */
+      public Builder setPath(
+          int index, java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensurePathIsMutable();
+        path_.set(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string path = 1;</code>
+       */
+      public Builder addPath(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensurePathIsMutable();
+        path_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string path = 1;</code>
+       */
+      public Builder addAllPath(
+          java.lang.Iterable<java.lang.String> values) {
+        ensurePathIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, path_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string path = 1;</code>
+       */
+      public Builder clearPath() {
+        path_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string path = 1;</code>
+       */
+      public Builder addPathBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensurePathIsMutable();
+        path_.add(value);
+        onChanged();
+        return this;
+      }
+
+      private int pos_ ;
+      /**
+       * <code>required int32 pos = 2;</code>
+       */
+      public boolean hasPos() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required int32 pos = 2;</code>
+       */
+      public int getPos() {
+        return pos_;
+      }
+      /**
+       * <code>required int32 pos = 2;</code>
+       */
+      public Builder setPos(int value) {
+        bitField0_ |= 0x00000002;
+        pos_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required int32 pos = 2;</code>
+       */
+      public Builder clearPos() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        pos_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:cotton.network.Path)
+    }
+
+    static {
+      defaultInstance = new Path(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:cotton.network.Path)
+  }
+
   private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_cotton_network_Packet_descriptor;
   private static
@@ -1775,6 +2605,11 @@ public final class TransportPacket {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_cotton_network_Origin_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_cotton_network_Path_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_cotton_network_Path_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -1785,14 +2620,15 @@ public final class TransportPacket {
   static {
     java.lang.String[] descriptorData = {
       "\n\025TransportPacket.proto\022\016cotton.network\"" +
-      "\340\001\n\006Packet\022\021\n\tkeepalive\030\001 \001(\010\0221\n\010pathtyp" +
-      "e\030\002 \001(\0162\037.cotton.network.Packet.PathType" +
-      "\022\014\n\004data\030\003 \001(\014\022&\n\006origin\030\004 \001(\0132\026.cotton." +
-      "network.Origin\022\014\n\004path\030\006 \003(\t\"L\n\010PathType" +
-      "\022\t\n\005RELAY\020\000\022\r\n\tDISCOVERY\020\001\022\013\n\007SERVICE\020\002\022" +
-      "\013\n\007UNKNOWN\020\003\022\014\n\010NOTFOUND\020\004\"0\n\006Origin\022\014\n\004" +
-      "uuid\030\001 \001(\t\022\n\n\002ip\030\002 \001(\t\022\014\n\004port\030\003 \001(\005B\021B\017" +
-      "TransportPacket"
+      "\350\001\n\006Packet\022\021\n\tkeepalive\030\001 \002(\010\0221\n\010pathtyp" +
+      "e\030\002 \002(\0162\037.cotton.network.Packet.PathType" +
+      "\022\014\n\004data\030\003 \002(\014\022&\n\006origin\030\004 \002(\0132\026.cotton." +
+      "network.Origin\022\"\n\004path\030\005 \002(\0132\024.cotton.ne" +
+      "twork.Path\">\n\010PathType\022\t\n\005RELAY\020\000\022\r\n\tDIS" +
+      "COVERY\020\001\022\013\n\007SERVICE\020\002\022\013\n\007UNKNOWN\020\003\">\n\006Or" +
+      "igin\022\014\n\004uuid\030\001 \002(\t\022\014\n\004name\030\002 \002(\t\022\n\n\002ip\030\003" +
+      " \002(\t\022\014\n\004port\030\004 \002(\005\"!\n\004Path\022\014\n\004path\030\001 \003(\t" +
+      "\022\013\n\003pos\030\002 \002(\005B\021B\017TransportPacket"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1817,7 +2653,13 @@ public final class TransportPacket {
     internal_static_cotton_network_Origin_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_cotton_network_Origin_descriptor,
-        new java.lang.String[] { "Uuid", "Ip", "Port", });
+        new java.lang.String[] { "Uuid", "Name", "Ip", "Port", });
+    internal_static_cotton_network_Path_descriptor =
+      getDescriptor().getMessageTypes().get(2);
+    internal_static_cotton_network_Path_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_cotton_network_Path_descriptor,
+        new java.lang.String[] { "Path", "Pos", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
