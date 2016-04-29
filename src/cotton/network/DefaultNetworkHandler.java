@@ -497,15 +497,15 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
 
     private ServiceChain parsePath(TransportPacket.Packet input){
         DummyServiceChain path = new DummyServiceChain();
-        for (int i = 0; i < input.getPath().getPathCount(); i++)
-            path.addService(input.getPath().getPath(i));
+        for (int i = 0; i < input.getPathCount(); i++)
+            path.addService(input.getPath(i));
         return path;
     }
 
     private NetworkPacket parseTransportPacket(TransportPacket.Packet input) throws java.net.UnknownHostException{
         DummyServiceChain path = new DummyServiceChain();
-        for (int i = 0; i < input.getPath().getPathCount(); i++)
-            path.addService(input.getPath().getPath(i));
+        for (int i = 0; i < input.getPathCount(); i++)
+            path.addService(input.getPath(i));
 
         Origin from = new Origin(new InetSocketAddress(Inet4Address.getByName(input.getOrigin().getIp()), input.getOrigin().getPort()), UUID.fromString(input.getOrigin().getUuid()));
 
@@ -517,13 +517,9 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
     public TransportPacket.Packet buildTransportPacket(NetworkPacket input) throws IOException{
         TransportPacket.Packet.Builder builder = TransportPacket.Packet.newBuilder();
 
-        TransportPacket.Path.Builder pathBuilder = TransportPacket.Path.newBuilder();
         while (input.getPath().peekNextServiceName() != null) {
-            pathBuilder.addPath(input.getPath().getNextServiceName());
+            builder.addPath(input.getPath().getNextServiceName());
         }
-        pathBuilder.setPos(0);
-
-        builder.setPath(pathBuilder);
 
         InetSocketAddress address = (InetSocketAddress)input.getOrigin().getAddress();
         TransportPacket.Origin origin = TransportPacket.Origin.newBuilder()
@@ -548,19 +544,14 @@ public class DefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNet
     public TransportPacket.Packet buildTransportPacket(byte[] data, ServiceChain path, ServiceConnection origin, PathType type){
         TransportPacket.Packet.Builder builder = TransportPacket.Packet.newBuilder();
 
-        TransportPacket.Path.Builder pathBuilder = TransportPacket.Path.newBuilder();
         while (path.peekNextServiceName() != null) {
-            pathBuilder.addPath(path.getNextServiceName());
+            builder.addPath(path.getNextServiceName());
         }
-        pathBuilder.setPos(0);
-
-        builder.setPath(pathBuilder);
 
         InetSocketAddress address = (InetSocketAddress)origin.getAddress();
         TransportPacket.Origin originInfo = TransportPacket.Origin.newBuilder()
             .setIp(address.getAddress().getHostAddress())
             .setUuid(origin.getUserConnectionId().toString())
-            .setName(origin.getServiceName())
             .setPort(address.getPort())
             .build();
         builder.setOrigin(originInfo);
