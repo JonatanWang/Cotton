@@ -56,7 +56,7 @@ public class Origin {
     /**
      * Sets new value of address
      *
-     * @param
+     * @param address
      */
     public void setAddress(SocketAddress address) {
         this.address = address;
@@ -72,7 +72,7 @@ public class Origin {
     /**
      * Sets new value of socketLatchID
      *
-     * @param
+     * @param socketLatchID
      */
     public void setSocketLatchID(UUID socketLatchID) {
         this.socketLatchID = socketLatchID;

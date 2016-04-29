@@ -9,17 +9,8 @@ import cotton.services.ServiceFactory;
 import cotton.services.Service;
 import cotton.test.TestDASL.TestServiceFactory.TestService;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ObjectOutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Enumeration;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -40,7 +31,7 @@ public class TestDASL {
          * Returns an <code>TestServiceInstance</code> for testing purposes.
          * 
          * @return an TestServiceInstance.
-         * @see TestServiceInstance
+         * @see TestService
          */
         @Override
         public Service newService() {
