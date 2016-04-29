@@ -53,7 +53,7 @@ public class NetworkPacket implements Serializable{
         return pt;
     }
 
-    public Serializable getData() {
+    public byte[] getData() {
         return data;
     }
 
