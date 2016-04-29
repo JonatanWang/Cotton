@@ -22,20 +22,20 @@ public final class TransportPacket {
     boolean getKeepalive();
 
     /**
-     * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
+     * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
      */
     boolean hasPathtype();
     /**
-     * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
+     * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
      */
     cotton.network.TransportPacket.Packet.PathType getPathtype();
 
     /**
-     * <code>required bytes data = 3;</code>
+     * <code>optional bytes data = 3;</code>
      */
     boolean hasData();
     /**
-     * <code>required bytes data = 3;</code>
+     * <code>optional bytes data = 3;</code>
      */
     com.google.protobuf.ByteString getData();
 
@@ -336,13 +336,13 @@ public final class TransportPacket {
     public static final int PATHTYPE_FIELD_NUMBER = 2;
     private cotton.network.TransportPacket.Packet.PathType pathtype_;
     /**
-     * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
+     * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
      */
     public boolean hasPathtype() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
+     * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
      */
     public cotton.network.TransportPacket.Packet.PathType getPathtype() {
       return pathtype_;
@@ -351,13 +351,13 @@ public final class TransportPacket {
     public static final int DATA_FIELD_NUMBER = 3;
     private com.google.protobuf.ByteString data_;
     /**
-     * <code>required bytes data = 3;</code>
+     * <code>optional bytes data = 3;</code>
      */
     public boolean hasData() {
       return ((bitField0_ & 0x00000004) == 0x00000004);
     }
     /**
-     * <code>required bytes data = 3;</code>
+     * <code>optional bytes data = 3;</code>
      */
     public com.google.protobuf.ByteString getData() {
       return data_;
@@ -426,20 +426,6 @@ public final class TransportPacket {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
-      if (!hasPathtype()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasData()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (hasOrigin()) {
-        if (!getOrigin().isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -724,20 +710,6 @@ public final class TransportPacket {
       }
 
       public final boolean isInitialized() {
-        if (!hasPathtype()) {
-          
-          return false;
-        }
-        if (!hasData()) {
-          
-          return false;
-        }
-        if (hasOrigin()) {
-          if (!getOrigin().isInitialized()) {
-            
-            return false;
-          }
-        }
         return true;
       }
 
@@ -794,19 +766,19 @@ public final class TransportPacket {
 
       private cotton.network.TransportPacket.Packet.PathType pathtype_ = cotton.network.TransportPacket.Packet.PathType.RELAY;
       /**
-       * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
+       * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
        */
       public boolean hasPathtype() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
+       * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
        */
       public cotton.network.TransportPacket.Packet.PathType getPathtype() {
         return pathtype_;
       }
       /**
-       * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
+       * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
        */
       public Builder setPathtype(cotton.network.TransportPacket.Packet.PathType value) {
         if (value == null) {
@@ -818,7 +790,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>required .cotton.network.Packet.PathType pathtype = 2;</code>
+       * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
        */
       public Builder clearPathtype() {
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -829,19 +801,19 @@ public final class TransportPacket {
 
       private com.google.protobuf.ByteString data_ = com.google.protobuf.ByteString.EMPTY;
       /**
-       * <code>required bytes data = 3;</code>
+       * <code>optional bytes data = 3;</code>
        */
       public boolean hasData() {
         return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       /**
-       * <code>required bytes data = 3;</code>
+       * <code>optional bytes data = 3;</code>
        */
       public com.google.protobuf.ByteString getData() {
         return data_;
       }
       /**
-       * <code>required bytes data = 3;</code>
+       * <code>optional bytes data = 3;</code>
        */
       public Builder setData(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -853,7 +825,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>required bytes data = 3;</code>
+       * <code>optional bytes data = 3;</code>
        */
       public Builder clearData() {
         bitField0_ = (bitField0_ & ~0x00000004);
@@ -1087,39 +1059,39 @@ public final class TransportPacket {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>required string uuid = 1;</code>
+     * <code>optional string uuid = 1;</code>
      */
     boolean hasUuid();
     /**
-     * <code>required string uuid = 1;</code>
+     * <code>optional string uuid = 1;</code>
      */
     java.lang.String getUuid();
     /**
-     * <code>required string uuid = 1;</code>
+     * <code>optional string uuid = 1;</code>
      */
     com.google.protobuf.ByteString
         getUuidBytes();
 
     /**
-     * <code>required string ip = 2;</code>
+     * <code>optional string ip = 2;</code>
      */
     boolean hasIp();
     /**
-     * <code>required string ip = 2;</code>
+     * <code>optional string ip = 2;</code>
      */
     java.lang.String getIp();
     /**
-     * <code>required string ip = 2;</code>
+     * <code>optional string ip = 2;</code>
      */
     com.google.protobuf.ByteString
         getIpBytes();
 
     /**
-     * <code>required int32 port = 3;</code>
+     * <code>optional int32 port = 3;</code>
      */
     boolean hasPort();
     /**
-     * <code>required int32 port = 3;</code>
+     * <code>optional int32 port = 3;</code>
      */
     int getPort();
   }
@@ -1235,13 +1207,13 @@ public final class TransportPacket {
     public static final int UUID_FIELD_NUMBER = 1;
     private java.lang.Object uuid_;
     /**
-     * <code>required string uuid = 1;</code>
+     * <code>optional string uuid = 1;</code>
      */
     public boolean hasUuid() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <code>required string uuid = 1;</code>
+     * <code>optional string uuid = 1;</code>
      */
     public java.lang.String getUuid() {
       java.lang.Object ref = uuid_;
@@ -1258,7 +1230,7 @@ public final class TransportPacket {
       }
     }
     /**
-     * <code>required string uuid = 1;</code>
+     * <code>optional string uuid = 1;</code>
      */
     public com.google.protobuf.ByteString
         getUuidBytes() {
@@ -1277,13 +1249,13 @@ public final class TransportPacket {
     public static final int IP_FIELD_NUMBER = 2;
     private java.lang.Object ip_;
     /**
-     * <code>required string ip = 2;</code>
+     * <code>optional string ip = 2;</code>
      */
     public boolean hasIp() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>required string ip = 2;</code>
+     * <code>optional string ip = 2;</code>
      */
     public java.lang.String getIp() {
       java.lang.Object ref = ip_;
@@ -1300,7 +1272,7 @@ public final class TransportPacket {
       }
     }
     /**
-     * <code>required string ip = 2;</code>
+     * <code>optional string ip = 2;</code>
      */
     public com.google.protobuf.ByteString
         getIpBytes() {
@@ -1319,13 +1291,13 @@ public final class TransportPacket {
     public static final int PORT_FIELD_NUMBER = 3;
     private int port_;
     /**
-     * <code>required int32 port = 3;</code>
+     * <code>optional int32 port = 3;</code>
      */
     public boolean hasPort() {
       return ((bitField0_ & 0x00000004) == 0x00000004);
     }
     /**
-     * <code>required int32 port = 3;</code>
+     * <code>optional int32 port = 3;</code>
      */
     public int getPort() {
       return port_;
@@ -1342,18 +1314,6 @@ public final class TransportPacket {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
-      if (!hasUuid()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasIp()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasPort()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -1588,18 +1548,6 @@ public final class TransportPacket {
       }
 
       public final boolean isInitialized() {
-        if (!hasUuid()) {
-          
-          return false;
-        }
-        if (!hasIp()) {
-          
-          return false;
-        }
-        if (!hasPort()) {
-          
-          return false;
-        }
         return true;
       }
 
@@ -1624,13 +1572,13 @@ public final class TransportPacket {
 
       private java.lang.Object uuid_ = "";
       /**
-       * <code>required string uuid = 1;</code>
+       * <code>optional string uuid = 1;</code>
        */
       public boolean hasUuid() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <code>required string uuid = 1;</code>
+       * <code>optional string uuid = 1;</code>
        */
       public java.lang.String getUuid() {
         java.lang.Object ref = uuid_;
@@ -1647,7 +1595,7 @@ public final class TransportPacket {
         }
       }
       /**
-       * <code>required string uuid = 1;</code>
+       * <code>optional string uuid = 1;</code>
        */
       public com.google.protobuf.ByteString
           getUuidBytes() {
@@ -1663,7 +1611,7 @@ public final class TransportPacket {
         }
       }
       /**
-       * <code>required string uuid = 1;</code>
+       * <code>optional string uuid = 1;</code>
        */
       public Builder setUuid(
           java.lang.String value) {
@@ -1676,7 +1624,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>required string uuid = 1;</code>
+       * <code>optional string uuid = 1;</code>
        */
       public Builder clearUuid() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -1685,7 +1633,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>required string uuid = 1;</code>
+       * <code>optional string uuid = 1;</code>
        */
       public Builder setUuidBytes(
           com.google.protobuf.ByteString value) {
@@ -1700,13 +1648,13 @@ public final class TransportPacket {
 
       private java.lang.Object ip_ = "";
       /**
-       * <code>required string ip = 2;</code>
+       * <code>optional string ip = 2;</code>
        */
       public boolean hasIp() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>required string ip = 2;</code>
+       * <code>optional string ip = 2;</code>
        */
       public java.lang.String getIp() {
         java.lang.Object ref = ip_;
@@ -1723,7 +1671,7 @@ public final class TransportPacket {
         }
       }
       /**
-       * <code>required string ip = 2;</code>
+       * <code>optional string ip = 2;</code>
        */
       public com.google.protobuf.ByteString
           getIpBytes() {
@@ -1739,7 +1687,7 @@ public final class TransportPacket {
         }
       }
       /**
-       * <code>required string ip = 2;</code>
+       * <code>optional string ip = 2;</code>
        */
       public Builder setIp(
           java.lang.String value) {
@@ -1752,7 +1700,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>required string ip = 2;</code>
+       * <code>optional string ip = 2;</code>
        */
       public Builder clearIp() {
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -1761,7 +1709,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>required string ip = 2;</code>
+       * <code>optional string ip = 2;</code>
        */
       public Builder setIpBytes(
           com.google.protobuf.ByteString value) {
@@ -1776,19 +1724,19 @@ public final class TransportPacket {
 
       private int port_ ;
       /**
-       * <code>required int32 port = 3;</code>
+       * <code>optional int32 port = 3;</code>
        */
       public boolean hasPort() {
         return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       /**
-       * <code>required int32 port = 3;</code>
+       * <code>optional int32 port = 3;</code>
        */
       public int getPort() {
         return port_;
       }
       /**
-       * <code>required int32 port = 3;</code>
+       * <code>optional int32 port = 3;</code>
        */
       public Builder setPort(int value) {
         bitField0_ |= 0x00000004;
@@ -1797,7 +1745,7 @@ public final class TransportPacket {
         return this;
       }
       /**
-       * <code>required int32 port = 3;</code>
+       * <code>optional int32 port = 3;</code>
        */
       public Builder clearPort() {
         bitField0_ = (bitField0_ & ~0x00000004);
@@ -1838,12 +1786,12 @@ public final class TransportPacket {
     java.lang.String[] descriptorData = {
       "\n\025TransportPacket.proto\022\016cotton.network\"" +
       "\340\001\n\006Packet\022\021\n\tkeepalive\030\001 \001(\010\0221\n\010pathtyp" +
-      "e\030\002 \002(\0162\037.cotton.network.Packet.PathType" +
-      "\022\014\n\004data\030\003 \002(\014\022&\n\006origin\030\004 \001(\0132\026.cotton." +
+      "e\030\002 \001(\0162\037.cotton.network.Packet.PathType" +
+      "\022\014\n\004data\030\003 \001(\014\022&\n\006origin\030\004 \001(\0132\026.cotton." +
       "network.Origin\022\014\n\004path\030\006 \003(\t\"L\n\010PathType" +
       "\022\t\n\005RELAY\020\000\022\r\n\tDISCOVERY\020\001\022\013\n\007SERVICE\020\002\022" +
       "\013\n\007UNKNOWN\020\003\022\014\n\010NOTFOUND\020\004\"0\n\006Origin\022\014\n\004" +
-      "uuid\030\001 \002(\t\022\n\n\002ip\030\002 \002(\t\022\014\n\004port\030\003 \002(\005B\021B\017" +
+      "uuid\030\001 \001(\t\022\n\n\002ip\030\002 \001(\t\022\014\n\004port\030\003 \001(\005B\021B\017" +
       "TransportPacket"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
