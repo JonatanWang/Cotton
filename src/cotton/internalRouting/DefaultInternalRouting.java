@@ -13,7 +13,7 @@ import internalRouting.InternalRoutingServiceHandler;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import network.NetworkHandler;
+import cotton.network.NetworkHandler;
 import internalRouting.ServiceRequest;
 import cotton.network.NetworkPacket;
 

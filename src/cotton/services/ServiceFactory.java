@@ -7,7 +7,7 @@ package cotton.services;
  *
  * @author Tony
  * @author Magnus
- * @see ServiceInstance
+ * @see Service
  */
 public interface ServiceFactory {
 
