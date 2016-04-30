@@ -362,8 +362,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         }
 
         /**
-         * Routing internal incomming network packet to their final destinations.
-         * @param packet The networkpacket from the received from the routing Queue 
+         * Routing internal incoming network packet to their final destinations.
+         * @param packet The networkpacket from the routing Queue 
          */
         private void processPacket(NetworkPacket packet) {
             RouteSignal signal = discovery.getLocalInterface(packet.getOrigin(), packet.getPath());

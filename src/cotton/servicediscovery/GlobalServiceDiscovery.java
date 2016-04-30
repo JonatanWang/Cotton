@@ -62,15 +62,8 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         }
 
         InetSocketAddress address = (InetSocketAddress) origin.getAddress();
-        // when Origin address is null and ServiceRequestID exist we just past
-        if (address == null) {
-            if (origin.getServiceRequestID() != null) {
-                return RouteSignal.ENDPOINT;
-            }
-            return RouteSignal.LOCALDESTINATION;    // assums that its a oneway msg
-        }
         
-        if (address.equals((InetSocketAddress) localAddress)) {
+        if (address == null || address.equals((InetSocketAddress) localAddress)) {
             return resolveLocalEndpoint(origin);
         }
         return RouteSignal.RETURNTOORIGIN;
@@ -84,8 +77,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
      */
     @Override
     public RouteSignal getLocalInterface(Origin origin, ServiceChain to) {
-        String nextService = to.peekNextServiceName();
-        if (nextService == null) {
+        if (to == null || to.peekNextServiceName() == null) {
             return resolveOriginRoute(origin);
         }
         // TODO: add check for internal active services on this machine
