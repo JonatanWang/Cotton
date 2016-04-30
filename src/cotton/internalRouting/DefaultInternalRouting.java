@@ -41,6 +41,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         this.networkHandler = networkHandler;
         this.localAddress = networkHandler.getLocalAddress();
         this.discovery = discovery;
+        this.discovery.setNetwork(this, localAddress);
         this.keepAliveTable = new ConcurrentHashMap<>();
         this.routingQueue = new ConcurrentLinkedQueue<>();
         this.serviceHandlerBridge = new BridgeServiceBuffer();
