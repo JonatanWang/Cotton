@@ -27,9 +27,9 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     private AddressPool discoveryCache;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
     private ActiveServiceLookup localServiceTable = null;
-    
+
     /**
-     * Fills in a list of all pre set globalServiceDiscovery addresses  
+     * Fills in a list of all pre set globalServiceDiscovery addresses
      * @param globalDNS information from the config file
      */
     private void initGlobalDiscoveryPool(GlobalDiscoveryDNS globalDNS) {
@@ -57,7 +57,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         this.internalRouting = network;
         this.localAddress = localAddress;
     }
-    
+
     /**
      * If this machine runs local services set the lookup table
      * @param serviceTable a table with all the local services that can be run on this machine
@@ -71,7 +71,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
      * Search globaly for a destination with a service named serviceName
      * @param destination in/out gets filled in with the address and pathtype
      * @param serviceName name of the service to search for.
-     * @return 
+     * @return
      */
     private RouteSignal searchForService(DestinationMetaData destination, String serviceName) {
         RouteSignal signal = RouteSignal.NOTFOUND;
@@ -103,9 +103,10 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         // TODO: check load factors and so on..
         if(this.localServiceTable != null && localServiceTable.getService(serviceName) != null) {
             signal = RouteSignal.LOCALDESTINATION;
+            destination.setPathType(PathType.SERVICE);
             return signal;
         }
-        // this is a GlobalServiceDiscovery so check cache first 
+        // this is a GlobalServiceDiscovery so check cache first
         AddressPool pool = this.serviceCache.get(serviceName);
         if (pool == null) {
             return searchForService(destination, serviceName);
@@ -182,7 +183,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     @Override
     public void stop() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override

@@ -41,8 +41,10 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         this.networkHandler = networkHandler;
         this.localAddress = networkHandler.getLocalAddress();
         this.discovery = discovery;
+        this.networkHandler.setInternalRouting(this);
         this.discovery.setNetwork(this, localAddress);
         this.keepAliveTable = new ConcurrentHashMap<>();
+        this.connectionTable = new ConcurrentHashMap<>();
         this.routingQueue = new ConcurrentLinkedQueue<>();
         this.serviceHandlerBridge = new BridgeServiceBuffer();
     }
@@ -275,6 +277,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
             case LOCALDESTINATION:
                 packet = prepareForTransmission(origin, serviceChain, data, dest.getPathType());
                 routingQueue.add(packet);
+                success = true;
                 break;
             case NETWORKDESTINATION:
                 packet = prepareForTransmission(origin, serviceChain, data, dest.getPathType());
@@ -292,6 +295,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                     //TODO: log error
                 } else {
                     socketLatch.setData(packet);
+                    success = true;
                 }
                 break;
             case RETURNTOORIGIN:
@@ -302,7 +306,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 DefaultServiceRequest request = (DefaultServiceRequest) removeServiceRequest(origin);
                 if (request != null) {
                     request.setData(data);
-
+                    success = true;
                 }
                 break;
             case NOTFOUND:
@@ -382,7 +386,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 SocketLatch latch = keepAliveTable.get(latchID);
                 if(latch != null) {
                     latch.setData(packet);
-                }                
+                }
                 return;
             }
 

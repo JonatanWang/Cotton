@@ -18,6 +18,18 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import cotton.services.ActiveServiceLookup;
+import cotton.services.ServiceLookup;
+import cotton.test.services.MathPowV2;
+import cotton.network.NetworkHandler;
+import cotton.servicediscovery.ServiceDiscovery;
+import cotton.internalRouting.ServiceRequest;
+import java.nio.ByteBuffer;
+import cotton.internalRouting.DefaultInternalRouting;
+import cotton.internalRouting.InternalRoutingClient;
+import cotton.services.Service;
+import cotton.services.ServiceFactory;
+import cotton.services.ServiceHandler;
 
 /**
  *
@@ -85,7 +97,7 @@ public class TestServiceDiscovery {
     }
 
     /**
-     * Checking: ip1 null , socketLatch null ,serviceRequest exist 
+     * Checking: ip1 null , socketLatch null ,serviceRequest exist
      */
     @Test
     public void GetLocalInterface02() {
@@ -110,7 +122,7 @@ public class TestServiceDiscovery {
     }
 
     /**
-     * Checking: ip1 != ip2 , port1 == port2 
+     * Checking: ip1 != ip2 , port1 == port2
      */
     @Test
     public void GetLocalInterface04() {
@@ -123,7 +135,7 @@ public class TestServiceDiscovery {
     }
 
     /**
-     * Checking: same ip1 == ip2 , port1 != port2 
+     * Checking: same ip1 == ip2 , port1 != port2
      */
     @Test
     public void GetLocalInterface05() {
@@ -147,7 +159,7 @@ public class TestServiceDiscovery {
         ServiceChain to = new DummyServiceChain();
         localInterfaceSigTest(RouteSignal.BRIDGELATCH, gd, origin, to);
     }
-    
+
     /**
      * Checking: ip1 == ip2, socketLatch null,ServiceRequest null
      * RouteSignal == LOCALDESTINATION
@@ -161,7 +173,7 @@ public class TestServiceDiscovery {
         ServiceChain to = new DummyServiceChain();
         localInterfaceSigTest(RouteSignal.LOCALDESTINATION, gd, origin, to);
     }
-    
+
     /**
      * Checking: ip1 == ip2, socketLatch null,ServiceRequest exist
      * RouteSignal == ENDPOINT
@@ -175,7 +187,7 @@ public class TestServiceDiscovery {
         ServiceChain to = new DummyServiceChain();
         localInterfaceSigTest(RouteSignal.ENDPOINT, gd, origin, to);
     }
-    
+
     /**
      * Checking: origin == null
      * RouteSignal == NOTFOUND
@@ -187,7 +199,7 @@ public class TestServiceDiscovery {
         ServiceChain to = new DummyServiceChain();
         localInterfaceSigTest(RouteSignal.NOTFOUND, gd, null, to);
     }
-    
+
     /**
      * Checking: to == null and origin == null
      * RouteSignal == NOTFOUND
@@ -199,7 +211,7 @@ public class TestServiceDiscovery {
         ServiceChain to = new DummyServiceChain();
         localInterfaceSigTest(RouteSignal.NOTFOUND, gd, null, null);
     }
-    
+
     /**
      * Checking: serviceChain have links
      */
@@ -211,5 +223,40 @@ public class TestServiceDiscovery {
         ServiceChain to = new DummyServiceChain().into("test");
         localInterfaceSigTest(RouteSignal.LOCALDESTINATION, gd, origin, to);
     }
+
+    /**
+    * Checking: whether services can be chained.
+    */
+   @Test
+   public void ServiceChainTest(){
+
+       System.out.println("ServiceChainTest: Checking: Mathpow test");
+       InetSocketAddress addr = new InetSocketAddress("127.0.0.1",3333);
+       ActiveServiceLookup lookup = new ServiceLookup();
+       lookup.registerService("mathpow2", MathPowV2.getFactory(),10);
+       NetworkHandler net = new NetworkHandlerStub(addr);
+       ServiceDiscovery global = new GlobalServiceDiscovery(null);
+       global.setLocalServiceTable(lookup);
+       DefaultInternalRouting internal = new DefaultInternalRouting(net,global);
+       ServiceHandler serviceHandler = new ServiceHandler(lookup,internal);
+       internal.start();
+       new Thread(serviceHandler).start();
+       InternalRoutingClient client = internal;
+       ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow2").into("mathpow2");
+       int num = 2;
+       byte[] data = ByteBuffer.allocate(4).putInt(num).array();
+       ServiceRequest req = client.sendWithResponse(data,chain);
+
+       byte[] data2 = req.getData();
+       System.out.println(data2);
+       int num2 = ByteBuffer.wrap(data2).getInt();
+       System.out.println("result" + num2);
+       internal.stop();
+       net.stop();
+       serviceHandler.stop();
+       global.stop();
+       assertTrue(num2 == 256);
+
+   }
 
 }
