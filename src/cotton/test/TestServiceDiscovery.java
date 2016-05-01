@@ -50,7 +50,7 @@ public class TestServiceDiscovery {
     }
 
     private GlobalServiceDiscovery globalServiceDiscoverySetup() {
-        GlobalServiceDiscovery gd = new GlobalServiceDiscovery();
+        GlobalServiceDiscovery gd = new GlobalServiceDiscovery(null);
         InetSocketAddress local = new InetSocketAddress("127.0.0.1", 3333);
         gd.setNetwork(null, local);
         return gd;
@@ -106,7 +106,7 @@ public class TestServiceDiscovery {
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", 3333);
         Origin origin = originSetup(null, UUID.randomUUID(), null);
         ServiceChain to = new DummyServiceChain();
-        localInterfaceSigTest(RouteSignal.NETWORKDESTINATION, gd, origin, to);
+        localInterfaceSigTest(RouteSignal.BRIDGELATCH, gd, origin, to);
     }
 
     /**
@@ -145,7 +145,7 @@ public class TestServiceDiscovery {
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", 3333);
         Origin origin = originSetup(addr, UUID.randomUUID(), null);
         ServiceChain to = new DummyServiceChain();
-        localInterfaceSigTest(RouteSignal.NETWORKDESTINATION, gd, origin, to);
+        localInterfaceSigTest(RouteSignal.BRIDGELATCH, gd, origin, to);
     }
     
     /**

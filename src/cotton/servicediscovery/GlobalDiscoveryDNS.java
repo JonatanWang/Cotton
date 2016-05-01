@@ -17,6 +17,7 @@ public class GlobalDiscoveryDNS {
     public SocketAddress[] addressArray = null;
     
     public GlobalDiscoveryDNS()throws SecurityException{
+        this.addressArray = new SocketAddress[0];
         BufferedReader bufferedReader = null;
         try{
             FileReader fileReader = new FileReader("dnsconfig");

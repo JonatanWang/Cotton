@@ -284,17 +284,18 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                     success = this.networkHandler.send(packet, dest.getSocketAddress());
                 }
                 break;
+            case BRIDGELATCH:
+                packet = prepareForTransmission(origin, serviceChain, data, dest.getPathType());
+                SocketLatch socketLatch = keepAliveTable.get(origin.getSocketLatchID());
+                if (socketLatch == null) {
+                    System.out.println("SocketLatch not found");
+                    //TODO: log error
+                } else {
+                    socketLatch.setData(packet);
+                }
+                break;
             case RETURNTOORIGIN:
                 packet = prepareForTransmission(origin, serviceChain, data, dest.getPathType());
-                if (dest.getSocketAddress() == null) {
-                    SocketLatch socketLatch = keepAliveTable.get(origin.getSocketLatchID());
-                    if (socketLatch == null) {
-                        System.out.println("SocketLatch not found");
-                        //TODO: log error
-                    } else {
-                        socketLatch.setData(packet);
-                    }
-                }
                 success = this.networkHandler.send(packet, origin.getAddress());
                 break;
             case ENDPOINT:
@@ -314,10 +315,10 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         }
         return success;
     }
-    
+
     /**
-    * starts a routing dispatcher thread. 
-    */
+     * starts a routing dispatcher thread.
+     */
     public void start() {
         this.dispatcher = new RouteDispatcher();
         new Thread(this.dispatcher).start();
@@ -333,6 +334,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     private class RouteDispatcher implements Runnable {
 
         private volatile boolean running = false;
+
         /**
          * starts the thread and dispatches networkpackets in the queue.
          */
@@ -352,39 +354,39 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 }
             }
         }
-        
+
         /**
          * Stops the current thread.
          */
-        
         public void stop() {
             running = false;
         }
 
         /**
          * Routing internal incoming network packet to their final destinations.
-         * @param packet The networkpacket from the routing Queue 
+         *
+         * @param packet The networkpacket from the routing Queue
          */
         private void processPacket(NetworkPacket packet) {
             RouteSignal signal = discovery.getLocalInterface(packet.getOrigin(), packet.getPath());
-            
-            if(signal == RouteSignal.ENDPOINT){
-                DefaultServiceRequest request = (DefaultServiceRequest)removeServiceRequest(packet.getOrigin());
+
+            if (signal == RouteSignal.ENDPOINT) {
+                DefaultServiceRequest request = (DefaultServiceRequest) removeServiceRequest(packet.getOrigin());
                 request.setData(packet.getData());
                 return;
-            }else if(signal == RouteSignal.NETWORKDESTINATION){
-                forwardResult(packet.getOrigin(),packet.getPath(),packet.getData());
+            } else if (signal == RouteSignal.NETWORKDESTINATION) {
+                forwardResult(packet.getOrigin(), packet.getPath(), packet.getData());
                 return;
             }
-            
+
             switch (packet.getType()) {
                 case RELAY:
-                    break;      
+                    break;
                 case DISCOVERY:
                     discovery.discoveryUpdate(packet.getOrigin(), packet.getData());
                     break;
                 case SERVICE:
-                    ServicePacket servicePacket = new ServicePacket(packet.getOrigin(),packet.getData(),packet.getPath());
+                    ServicePacket servicePacket = new ServicePacket(packet.getOrigin(), packet.getData(), packet.getPath());
                     serviceHandlerBridge.add(servicePacket);
                     break;
                 case UNKNOWN:

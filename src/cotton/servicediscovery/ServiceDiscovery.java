@@ -4,6 +4,7 @@ import cotton.internalRouting.InternalRoutingServiceDiscovery;
 import cotton.network.DestinationMetaData;
 import cotton.network.Origin;
 import cotton.network.ServiceChain;
+import cotton.services.ActiveServiceLookup;
 import java.net.SocketAddress;
 
 /**
@@ -12,6 +13,7 @@ import java.net.SocketAddress;
  */
 public interface ServiceDiscovery {
     public void setNetwork(InternalRoutingServiceDiscovery network, SocketAddress localAddress);
+    public void setLocalServiceTable(ActiveServiceLookup serviceTable);
     public RouteSignal getDestination(DestinationMetaData destination, Origin origin, ServiceChain to); // outgoinging package
     public RouteSignal getLocalInterface(Origin origin, ServiceChain to); // incoming packaged
     public boolean announce();
