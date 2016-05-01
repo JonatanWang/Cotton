@@ -377,6 +377,13 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
             } else if (signal == RouteSignal.NETWORKDESTINATION) {
                 forwardResult(packet.getOrigin(), packet.getPath(), packet.getData());
                 return;
+            } else if (signal == RouteSignal.BRIDGELATCH) {
+                UUID latchID = packet.getOrigin().getSocketLatchID();
+                SocketLatch latch = keepAliveTable.get(latchID);
+                if(latch != null) {
+                    latch.setData(packet);
+                }                
+                return;
             }
 
             switch (packet.getType()) {

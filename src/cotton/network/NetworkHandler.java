@@ -1,5 +1,6 @@
 package cotton.network;
 
+import cotton.internalRouting.InternalRoutingNetwork;
 import java.net.SocketAddress;
 
 /**
@@ -38,6 +39,11 @@ public interface NetworkHandler extends Runnable {
      */
     public SocketAddress getLocalAddress();
     
+    /**
+     * Sets the interface to push data to the rest of the system
+     * @param internal this machines routing subsystem
+     */
+    public void setInternalRouting(InternalRoutingNetwork internal);
     /**
      * Asks all connections to shutdown and turns off the <code>NetworkHandler</code>.
      */
