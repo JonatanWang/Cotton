@@ -30,7 +30,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
     private ExecutorService threadPool;
     private AtomicBoolean running;
     private SocketAddress localSocketAddress;
-    
+
     public DefaultNetworkHandler() throws UnknownHostException {
         this.localPort = 3333; // TODO: Remove hardcoded port
         try{
@@ -40,12 +40,12 @@ public class DefaultNetworkHandler implements NetworkHandler {
             logError("initialization process local address "+e.getMessage());
             throw e;
         }
-        
+
         threadPool = Executors.newCachedThreadPool();
         running = new AtomicBoolean(true);
         localSocketAddress = getLocalAddress();
     }
-    
+
     public DefaultNetworkHandler(SocketAddress socketAddress) throws UnknownHostException {
         this.localPort = 3333; // TODO: Remove hardcoded port
         try{
@@ -55,14 +55,14 @@ public class DefaultNetworkHandler implements NetworkHandler {
             logError("initialization process local address "+e.getMessage());
             throw e;
         }
-        
+
         localSocketAddress = socketAddress;
-        
+
         threadPool = Executors.newCachedThreadPool();
         running = new AtomicBoolean(true);
         localSocketAddress = getLocalAddress();
     }
-        
+
     public DefaultNetworkHandler(int port) throws UnknownHostException {
         this.localPort = port; // TODO: Remove hardcoded port
         try{
@@ -77,7 +77,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         running = new AtomicBoolean(true);
         localSocketAddress = getLocalAddress();
     }
-    
+
     @Override
     public void setInternalRouting(InternalRoutingNetwork internalRouting) {
         if(internalRouting != null)
@@ -150,12 +150,12 @@ public class DefaultNetworkHandler implements NetworkHandler {
     private void logError(String error){
         System.out.println("Network exception, " + error); // TODO: MAKE THIS ACTUALLY LOG
     }
-    
+
     @Override
     public void send(NetworkPacket packet, SocketAddress dest) throws IOException {
         if(packet == null) throw new NullPointerException("Null data");
         if(dest == null) throw new NullPointerException("Null destination");
-        
+
         TransportPacket.Packet tp = buildTransportPacket(packet);
         sendTransportPacket(tp, dest);
     }
@@ -164,11 +164,11 @@ public class DefaultNetworkHandler implements NetworkHandler {
     public void sendKeepAlive(NetworkPacket packet, SocketAddress dest) throws IOException{
         if(packet == null) throw new NullPointerException("Null data");
         if(dest == null) throw new NullPointerException("Null destination");
-        
+
         TransportPacket.Packet tp = buildTransportPacket(packet, true);
         sendTransportPacket(tp, dest);
     }
-    
+
     private void sendTransportPacket(TransportPacket.Packet packet, SocketAddress dest) throws IOException {
         Socket socket = new Socket(); // TODO: Encryption
         try {
@@ -205,7 +205,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
                 System.out.println("Pathtype is: "+input.getPathtype());
 
                 NetworkPacket np = parseTransportPacket(input);
-                
+
                 if(np.keepAlive()) {
                     SocketLatch latch = new SocketLatch();
                     internalRouting.pushKeepAlivePacket(np, latch);
@@ -223,25 +223,34 @@ public class DefaultNetworkHandler implements NetworkHandler {
     }
 
     private Origin parseOrigin(TransportPacket.Packet input) throws java.net.UnknownHostException{
-        InetSocketAddress iSocketAddress = new InetSocketAddress(Inet4Address.getByName(input.getOrigin().getIp()), input.getOrigin().getPort());
-        return new Origin(iSocketAddress , UUID.fromString(input.getOrigin().getUuid()));
+        TransportPacket.Origin origin = input.getOrigin();
+        InetSocketAddress socketAddress = new InetSocketAddress(Inet4Address.getByName(origin.getIp()), origin.getPort());
+
+        Origin parsedOrigin = new Origin(socketAddress, UUID.fromString(origin.getRequestId()));
+        parsedOrigin.setSocketLatchID(UUID.fromString(origin.getLatchId()));
+
+        return parsedOrigin;
     }
 
     private ServiceChain parsePath(TransportPacket.Packet input){
         DummyServiceChain path = new DummyServiceChain();
+
         for (int i = 0; i < input.getPathCount(); i++)
             path.addService(input.getPath(i));
+
         return path;
     }
 
     private NetworkPacket parseTransportPacket(TransportPacket.Packet input) throws java.net.UnknownHostException{
-        DummyServiceChain path = new DummyServiceChain();
-        for (int i = 0; i < input.getPathCount(); i++)
-            path.addService(input.getPath(i));
+        ServiceChain path = parsePath(input);
+        Origin origin = parseOrigin(input);
 
-        Origin from = new Origin(new InetSocketAddress(Inet4Address.getByName(input.getOrigin().getIp()), input.getOrigin().getPort()), UUID.fromString(input.getOrigin().getUuid()));
-
-        NetworkPacket packet = new NetworkPacket(input.getData().toByteArray(), path, from, PathType.valueOf(input.getPathtype().toString()));
+        NetworkPacket packet = NetworkPacket.newBuilder()
+            .setData(input.getData().toByteArray())
+            .setPath(path)
+            .setOrigin(origin)
+            .setPathType(PathType.valueOf(input.getPathtype().toString()))
+            .build();
 
         return packet;
     }
@@ -256,23 +265,19 @@ public class DefaultNetworkHandler implements NetworkHandler {
         InetSocketAddress address = (InetSocketAddress)input.getOrigin().getAddress();
         TransportPacket.Origin origin = TransportPacket.Origin.newBuilder()
             .setIp(address.getAddress().getHostAddress())
-            .setUuid(input.getOrigin().getServiceRequestID().toString())
+            .setRequestId(input.getOrigin().getServiceRequestID().toString())
+            .setLatchId(input.getOrigin().getSocketLatchID().toString())
             .setPort(address.getPort())
             .build();
         builder.setOrigin(origin);
 
-        try{
-            builder.setData(com.google.protobuf.ByteString.copyFrom(input.getDataBytes()));
-        }catch(IOException e){
-            logError("Could not unpack data from local packet");
-            throw e;
-        }
+        builder.setData(com.google.protobuf.ByteString.copyFrom(input.getData()));
 
         builder.setPathtype(TransportPacket.Packet.PathType.valueOf(input.getType().toString()));
         builder.setKeepalive(false);
         return builder.build();
     }
-    
+
     public TransportPacket.Packet buildTransportPacket(NetworkPacket input, boolean keepAlive) throws IOException{
         TransportPacket.Packet.Builder builder = TransportPacket.Packet.newBuilder();
 
@@ -283,17 +288,13 @@ public class DefaultNetworkHandler implements NetworkHandler {
         InetSocketAddress address = (InetSocketAddress)input.getOrigin().getAddress();
         TransportPacket.Origin origin = TransportPacket.Origin.newBuilder()
             .setIp(address.getAddress().getHostAddress())
-            .setUuid(input.getOrigin().getServiceRequestID().toString())
+            .setRequestId(input.getOrigin().getServiceRequestID().toString())
+            .setLatchId(input.getOrigin().getSocketLatchID().toString())
             .setPort(address.getPort())
             .build();
         builder.setOrigin(origin);
 
-        try{
-            builder.setData(com.google.protobuf.ByteString.copyFrom(input.getDataBytes()));
-        }catch(IOException e){
-            logError("Could not unpack data from local packet");
-            throw e;
-        }
+        builder.setData(com.google.protobuf.ByteString.copyFrom(input.getData()));
 
         builder.setPathtype(TransportPacket.Packet.PathType.valueOf(input.getType().toString()));
         builder.setKeepalive(keepAlive);

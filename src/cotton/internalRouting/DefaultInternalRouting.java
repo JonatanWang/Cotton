@@ -73,7 +73,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     public void pushKeepAlivePacket(NetworkPacket networkPacket, SocketLatch latch) {
         UUID latchID = UUID.randomUUID();
         if (keepAliveTable.putIfAbsent(latchID, latch) != null) {
-            networkPacket.setData(null);
+            networkPacket.removeData();
             latch.setFailed(networkPacket);
             return;
         }
@@ -272,7 +272,14 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         if (path == null) {
             path = new DummyServiceChain();
         }
-        return new NetworkPacket(data, path, origin, pathType);
+        NetworkPacket packet = NetworkPacket.newBuilder()
+            .setData(data)
+            .setOrigin(origin)
+            .setPath(path)
+            .setPathType(pathType)
+            .build();
+
+        return packet;
     }
 
     /**
