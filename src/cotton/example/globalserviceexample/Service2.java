@@ -1,7 +1,7 @@
 
 package cotton.example.globalserviceexample;
 
-import cotton.Cotton;
+import cotton.DeprecatedCotton;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -9,9 +9,9 @@ import cotton.services.DeprecatedActiveServiceLookup;
 
 public class Service2 {
     public static void main(String[] args) {
-        Cotton cotton = null;
+        DeprecatedCotton cotton = null;
         try {
-            cotton = new Cotton(false);
+            cotton = new DeprecatedCotton(false);
         } catch (UnknownHostException ex) {
             Logger.getLogger(GlobalDiscoveryExample.class.getName()).log(Level.SEVERE, null, ex);
         }

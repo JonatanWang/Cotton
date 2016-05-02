@@ -103,9 +103,9 @@ public class DeprecatedCotton {
     }
 
     public static void main(String[] args) {
-        Cotton c;
+        DeprecatedCotton c;
         try{
-            c = new Cotton();
+            c = new DeprecatedCotton();
         }catch(java.net.UnknownHostException e){// TODO: Rethink this
             System.out.println("Init network error, exiting");
             return;
