@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Magnus
  * @see ServiceHandler
  **/
+@Deprecated
 public interface DeprecatedActiveServiceLookup {
 
     /**

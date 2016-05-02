@@ -11,6 +11,7 @@ import java.io.Serializable;
  * @author Magnus
  * @author Tony
  */
+@Deprecated
 public class DeprecatedServicePacket implements Serializable{
     private byte[] data;
     private ServiceConnection from;

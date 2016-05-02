@@ -9,6 +9,7 @@ import java.io.Serializable;
  * @author Jonathan Kåhre
  * @author Tony Tran
  */
+@Deprecated
 public interface DeprecatedNetworkPacket extends Serializable{
     public ServiceChain getPath();
 

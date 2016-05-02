@@ -8,6 +8,7 @@ import java.io.Serializable;
  * @author Jonathan Kåhre
  * @author Tony Tran
  */
+@Deprecated
 public class DeprecatedDefaultNetworkPacket implements DeprecatedNetworkPacket{
     private static final long serialVersionUID = 1L;
     private Serializable data;

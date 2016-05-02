@@ -148,7 +148,7 @@ public class TestServiceDiscovery {
     }
 
     /**
-     * Checking: ip1 == ip2, socketLatch exist, nat brigde -> networkDestination
+     * Checking: ip1 == ip2, socketLatch exist, nat brigde - networkDestination
      */
     @Test
     public void GetLocalInterface06() {

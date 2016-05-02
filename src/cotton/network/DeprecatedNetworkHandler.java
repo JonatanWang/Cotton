@@ -13,6 +13,7 @@ import java.util.concurrent.CountDownLatch;
  * @author Jonathan
  * @author Gunnlaugur
  */
+@Deprecated
 public interface DeprecatedNetworkHandler extends Runnable {
 
     public DeprecatedServicePacket nextPacket();

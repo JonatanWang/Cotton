@@ -18,7 +18,6 @@ public interface Service {
      * Runs the service task and returns the result as a <code>Serializable</code>.
      *
      * @param ctx contains the cloud context.
-     * @param from the information about the connection.
      * @param data the data to be used by the service.
      * @param to the <code>ServiceChain</code> of the connection.
      * @return the result of the task.

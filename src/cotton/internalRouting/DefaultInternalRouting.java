@@ -21,6 +21,9 @@ import cotton.services.BridgeServiceBuffer;
 import cotton.services.DeprecatedServiceBuffer;
 import cotton.services.ServiceBuffer;
 import cotton.services.ServicePacket;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -142,7 +145,13 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     @Override
     public boolean SendBackToOrigin(Origin origin, PathType pathType, byte[] data) {
         NetworkPacket packet = prepareForTransmission(origin, null, data, pathType);
-        return networkHandler.send(packet, origin.getAddress());
+        try {
+            networkHandler.send(packet, origin.getAddress());
+            return true;
+        } catch (IOException ex) {
+            //TODO FIX
+        }
+        return false;
     }
 
     /**
@@ -156,7 +165,13 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     @Override
     public boolean SendToDestination(DestinationMetaData dest, byte[] data) {
         NetworkPacket packet = prepareForTransmission(new Origin(), null, data, dest.getPathType());
-        return networkHandler.send(packet, dest.getSocketAddress());
+        try {
+            networkHandler.send(packet, dest.getSocketAddress());
+            return true;
+        } catch (IOException ex) {
+            //TODO Fix
+        }
+        return false;
     }
 
     /**
@@ -174,11 +189,14 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         origin.setAddress(this.localAddress);
 
         NetworkPacket packet = prepareForTransmission(origin, null, data, dest.getPathType());
-        boolean success = networkHandler.send(packet, dest.getSocketAddress());
-        if (!success) {
+        try {
+            networkHandler.send(packet, dest.getSocketAddress());
+        } catch (IOException ex) {
             removeServiceRequest(origin);
             return null;
+            // TODO Logging
         }
+        
         return request;
 
     }
@@ -281,10 +299,15 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 break;
             case NETWORKDESTINATION:
                 packet = prepareForTransmission(origin, serviceChain, data, dest.getPathType());
-                if (keepAlive) {
-                    success = this.networkHandler.sendKeepAlive(packet, dest.getSocketAddress());
-                } else {
-                    success = this.networkHandler.send(packet, dest.getSocketAddress());
+                try {
+                    if (keepAlive) {
+                        this.networkHandler.sendKeepAlive(packet, dest.getSocketAddress());
+                    } else {
+                        this.networkHandler.send(packet, dest.getSocketAddress());
+                    }
+                    success = true;
+                } catch(IOException e) {
+                    //TODO Fix
                 }
                 break;
             case BRIDGELATCH:
@@ -300,7 +323,12 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 break;
             case RETURNTOORIGIN:
                 packet = prepareForTransmission(origin, serviceChain, data, dest.getPathType());
-                success = this.networkHandler.send(packet, origin.getAddress());
+                try {
+                    this.networkHandler.send(packet, origin.getAddress());
+                    success = true;
+                } catch (IOException ex) {
+                    //TODO Fix
+                }
                 break;
             case ENDPOINT:
                 DefaultServiceRequest request = (DefaultServiceRequest) removeServiceRequest(origin);

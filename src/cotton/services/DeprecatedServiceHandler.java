@@ -5,6 +5,7 @@ import java.util.concurrent.ExecutorService;
 import java.io.Serializable;
 import cotton.network.DeprecatedNetworkHandler;
 
+@Deprecated
 public class DeprecatedServiceHandler implements Runnable{
     private DeprecatedActiveServiceLookup serviceLookup;
     private DeprecatedNetworkHandler networkHandler;

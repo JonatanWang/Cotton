@@ -1,8 +1,6 @@
 package cotton.network;
 
-import java.io.Serializable;
 import java.util.concurrent.CountDownLatch;
-
 
 /**
  *

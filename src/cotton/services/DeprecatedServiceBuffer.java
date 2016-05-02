@@ -7,6 +7,7 @@ package cotton.services;
  * @author Tony Tran
  * @see DeprecatedServicePacket
  **/
+@Deprecated
 public interface DeprecatedServiceBuffer{
 
     /**

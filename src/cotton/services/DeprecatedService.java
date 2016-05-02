@@ -13,6 +13,7 @@ import java.io.Serializable;
  * @author Magnus
  * @see ServiceFactory
  */
+@Deprecated
 public interface DeprecatedService {
 
     /**

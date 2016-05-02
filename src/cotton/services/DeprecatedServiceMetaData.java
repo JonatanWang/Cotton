@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Magnus
  * @see ServiceHandler
  */
+@Deprecated
 public class DeprecatedServiceMetaData {
     private DeprecatedServiceFactory serviceFactory;
     private int maxCapacity;

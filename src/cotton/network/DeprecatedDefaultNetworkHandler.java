@@ -36,6 +36,7 @@ import cotton.services.DeprecatedServiceBuffer;
  * @author Jonathan
  * @author Gunnlaugur
  */
+@Deprecated
 public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler,ClientNetwork {
     private DeprecatedServiceBuffer serviceBuffer;
     private ConcurrentHashMap<UUID,DeprecatedDefaultServiceRequest> connectionTable;

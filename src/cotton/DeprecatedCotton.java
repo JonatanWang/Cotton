@@ -28,6 +28,7 @@ import cotton.services.DeprecatedActiveServiceLookup;
  * @author Magnus
  * @author Gunnlaugur
  */
+@Deprecated
 public class DeprecatedCotton {
     private DeprecatedActiveServiceLookup lookup;
     private DeprecatedDefaultNetworkHandler network;

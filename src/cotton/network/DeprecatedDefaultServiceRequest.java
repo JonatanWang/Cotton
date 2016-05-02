@@ -12,6 +12,7 @@ import java.util.concurrent.CountDownLatch;
  * @author Gunnlaugur
  * @author Magnus
  **/
+@Deprecated
 public class DeprecatedDefaultServiceRequest implements DeprecatedServiceRequest{
     private byte[] data = null;
     private CountDownLatch latch = new CountDownLatch(1);

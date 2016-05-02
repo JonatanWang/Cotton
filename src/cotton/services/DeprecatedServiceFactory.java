@@ -9,6 +9,7 @@ package cotton.services;
  * @author Magnus
  * @see DeprecatedService
  */
+@Deprecated
 public interface DeprecatedServiceFactory {
 
     /**

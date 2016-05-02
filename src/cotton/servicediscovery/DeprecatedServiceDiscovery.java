@@ -9,7 +9,7 @@ import cotton.network.DeprecatedNetworkHandler;
 /**
  *@author Mats, Magnus
  */
-
+@Deprecated
 public interface DeprecatedServiceDiscovery{
     public void setNetwork(DeprecatedNetworkHandler network, SocketAddress localAddress);
     public RouteSignal getDestination(ServiceConnection destination, ServiceChain to); // outgoinging package

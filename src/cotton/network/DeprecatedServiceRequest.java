@@ -9,6 +9,7 @@ import java.io.Serializable;
  * @author Jonathan
  * @author Gunnlaugur
  **/
+@Deprecated
 public interface DeprecatedServiceRequest{
     public byte[] getData();
 }
