@@ -21,21 +21,21 @@ import java.util.concurrent.ConcurrentHashMap.KeySetView;
 import cotton.services.ServiceMetaData;
 import java.util.ArrayList;
 import java.io.Serializable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import cotton.internalRouting.ServiceRequest;
+import cotton.network.DestinationMetaData;
 /**
  *
  * @author magnus
  * @author Tony
  */
-public class GlobalServiceDiscovery implements ServiceDiscovery {
+public class LocalServiceDiscovery implements ServiceDiscovery {
 
     private SocketAddress localAddress;
     private InternalRoutingServiceDiscovery internalRouting;
     private AddressPool discoveryCache;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
     private ActiveServiceLookup localServiceTable = null;
-    private ExecutorService threadPool;
+
     /**
      * Fills in a list of all pre set globalServiceDiscovery addresses
      * @param globalDNS information from the config file
@@ -49,11 +49,10 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         }
     }
 
-    public GlobalServiceDiscovery(GlobalDiscoveryDNS dnsConfig) {
+    public LocalServiceDiscovery(GlobalDiscoveryDNS dnsConfig) {
         this.discoveryCache = new AddressPool();
         initGlobalDiscoveryPool(dnsConfig);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
-        threadPool = Executors.newCachedThreadPool();
     }
 
     /**
@@ -85,6 +84,24 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     private RouteSignal searchForService(DestinationMetaData destination, String serviceName) {
         RouteSignal signal = RouteSignal.NOTFOUND;
         // TODO: ask the other GD
+        SocketAddress addr = discoveryCache.getAddress();
+        DiscoveryProbe probe = new DiscoveryProbe(serviceName,null);
+        DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
+        packet.setProbe(probe);
+        DestinationMetaData dest = new DestinationMetaData(addr,PathType.DISCOVERY);
+        try{
+            byte[] data = serializeToBytes(packet);
+            ServiceRequest request = internalRouting.sendWithResponse(dest,data);
+            DiscoveryPacket discoveryPacket = packetUnpack(request.getData());
+            DiscoveryProbe discoveryProbe = discoveryPacket.getProbe();
+            if(discoveryProbe != null && discoveryProbe.getAddress() != null){
+                destination.setSocketAddress(discoveryProbe.getAddress());
+                destination.setPathType(PathType.SERVICE);
+                return RouteSignal.NETWORKDESTINATION;
+            }
+        }catch(IOException ex){
+        }
+        
         return signal;
     }
 
@@ -116,19 +133,19 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             return signal;
         }
         // this is a GlobalServiceDiscovery so check cache first
-        AddressPool pool = this.serviceCache.get(serviceName);
+        /*        AddressPool pool = this.serviceCache.get(serviceName);
         if (pool == null) {
             return searchForService(destination, serviceName);
-        }
-
-        SocketAddress addr = pool.getAddress();
+            }*/
+        return searchForService(destination,serviceName);
+        /*   SocketAddress addr = pool.getAddress();
         if (addr != null) {
             destination.setSocketAddress(addr);
             destination.setPathType(PathType.SERVICE); // default pathType for now
             signal = RouteSignal.NETWORKDESTINATION;
         }
 
-        return signal;
+        return signal;*/
     }
 
     /**
@@ -230,14 +247,33 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     @Override
     public void stop() {
-        threadPool.shutdown();
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-
+    /**
+     * Handles updates messages from global discovery.
+     *
+     */
     @Override
     public void discoveryUpdate(Origin origin, byte[] data) {
-        DiscoveryLookup lookup = new DiscoveryLookup(origin,data);
-        threadPool.execute(lookup);
+        DiscoveryPacket packet = packetUnpack(data);
+        DiscoveryPacketType type = packet.getPacketType();
+        //to do: switch not functioning properly with enums
+        System.out.println("DefaultGlobalServiceDiscovery: " + type
+                           + " from: " + ((InetSocketAddress) origin.getAddress()).toString());
+        switch (type) {
+        case DISCOVERYREQUEST:
+            //processProbeRequest(origin, packet.getProbe());
+            break;
+        case DISCOVERYRESPONSE:
+            //localDiscovery.updateHandling(from, packet);
+            break;
+        case ANNOUNCE:
+            //processAnnouncePacket(packet.getAnnounce());
+            break;
+        default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
+            System.out.println("DefaultGlobalServiceDiscovery updateHandling recieved, not yet implemented: " + type);
+            break;
+        }
     }
 
     private DiscoveryPacket packetUnpack(byte[] data) {
@@ -276,64 +312,5 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             addService(addr,s);
         }
         printAnnounceList(serviceList);
-    }
-
-    // it sends back a filled discovery request probe
-    private void processProbeRequest(Origin origin, DiscoveryProbe probe){
-        AddressPool pool = this.serviceCache.get(probe.getName());
-        if(pool == null){
-            byte[] data = new byte[0];
-            try{
-            data = serializeToBytes(new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE));
-            }catch(IOException e){}
-            internalRouting.SendBackToOrigin(origin,PathType.DISCOVERY,data);
-            return;
-        }
-        SocketAddress addr = pool.getAddress();
-        probe.setAddress(addr);
-        DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE);
-        packet.setProbe(probe);
-        byte[] data = new byte[0];
-        try{
-            data = serializeToBytes(packet);
-        }catch(IOException ex){
-            
-        }
-        internalRouting.SendBackToOrigin(origin,PathType.DISCOVERY,data);
-        
-    }
-
-    private class DiscoveryLookup implements Runnable {
-
-        private Origin origin;
-        private byte[] data;
-
-        public DiscoveryLookup(Origin origin, byte[] data) {
-            this.origin = origin;
-            this.data = data;
-        }
-
-        @Override
-        public void run() {
-            DiscoveryPacket packet = packetUnpack(data);
-            DiscoveryPacketType type = packet.getPacketType();
-            //to do: switch not functioning properly with enums
-            System.out.println("DefaultGlobalServiceDiscovery: " + type
-                    + " from: " + ((InetSocketAddress) origin.getAddress()).toString());
-            switch (type) {
-                case DISCOVERYREQUEST:
-                    processProbeRequest(origin, packet.getProbe());
-                    break;
-                case DISCOVERYRESPONSE:
-                    //localDiscovery.updateHandling(from, packet);
-                    break;
-                case ANNOUNCE:
-                    processAnnouncePacket(packet.getAnnounce());
-                    break;
-                default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
-                    System.out.println("DefaultGlobalServiceDiscovery updateHandling recieved, not yet implemented: " + type);
-                    break;
-            }
-        }
     }
 }
