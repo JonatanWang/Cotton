@@ -2,7 +2,6 @@ package cotton.example;
 
 import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
-import cotton.network.ServiceConnection;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -21,6 +20,7 @@ import javax.swing.ImageIcon;
 import javax.imageio.ImageIO;
 import cotton.services.DeprecatedService;
 import cotton.services.DeprecatedServiceFactory;
+import cotton.network.DeprecatedServiceConnection;
 
 /**
  * Service that manipulates an incoming image
@@ -34,7 +34,7 @@ public class ImageManipulationService implements DeprecatedService {
     }
 
     @Override
-    public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
+    public byte[] execute(CloudContext ctx, DeprecatedServiceConnection from, byte[] data, ServiceChain to) {
         BufferedImage image = null;
 
         System.out.println("Manipulation");

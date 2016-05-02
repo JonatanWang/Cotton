@@ -1,9 +1,9 @@
 package cotton.services;
 
-import cotton.network.ServiceConnection;
 import cotton.network.ServiceChain;
 import java.io.InputStream;
 import java.io.Serializable;
+import cotton.network.DeprecatedServiceConnection;
 
 /**
  *
@@ -14,10 +14,10 @@ import java.io.Serializable;
 @Deprecated
 public class DeprecatedServicePacket implements Serializable{
     private byte[] data;
-    private ServiceConnection from;
+    private DeprecatedServiceConnection from;
     private ServiceChain to;
 
-    public DeprecatedServicePacket(ServiceConnection from, byte[] data, ServiceChain to) {
+    public DeprecatedServicePacket(DeprecatedServiceConnection from, byte[] data, ServiceChain to) {
         this.data = data;
         this.from = from;
         this.to = to;
@@ -27,7 +27,7 @@ public class DeprecatedServicePacket implements Serializable{
         return data;
     }
 
-    public ServiceConnection getFrom() {
+    public DeprecatedServiceConnection getFrom() {
         return from;
     }
 

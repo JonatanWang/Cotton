@@ -1,10 +1,9 @@
 
 package cotton.servicediscovery;
 
-import cotton.network.DefaultServiceConnection;
+import cotton.network.DeprecatedDefaultServiceConnection;
 import cotton.network.DummyServiceChain;
 import cotton.network.ServiceChain;
-import cotton.network.ServiceConnection;
 import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
@@ -25,6 +24,7 @@ import java.util.Enumeration;
 import cotton.network.DeprecatedNetworkHandler;
 import cotton.network.DeprecatedServiceRequest;
 import cotton.services.DeprecatedActiveServiceLookup;
+import cotton.network.DeprecatedServiceConnection;
 
 /**
  *
@@ -65,7 +65,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
         System.out.println("local ip: " + ((InetSocketAddress)localAddress).toString());
     }
 
-    private RouteSignal getReturnAddress(ServiceConnection destination, ServiceConnection from) {
+    private RouteSignal getReturnAddress(DeprecatedServiceConnection destination, DeprecatedServiceConnection from) {
         if(from == null || from.getAddress() == null){
             return RouteSignal.NOTFOUND;
         }
@@ -74,7 +74,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
             return RouteSignal.ENDPOINT;
         }*/
         if(isLocalAddress(from)) {
-           // ((DefaultServiceConnection)destination).setUserConnectionId(from.getUserConnectionId());
+           // ((DeprecatedDefaultServiceConnection)destination).setUserConnectionId(from.getUserConnectionId());
             return RouteSignal.ENDPOINT;
         }
         
@@ -98,13 +98,13 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
         }
     }
     
-    private RouteSignal getGlobalAddress(ServiceConnection destination, String serviceName) {
+    private RouteSignal getGlobalAddress(DeprecatedServiceConnection destination, String serviceName) {
 
         SocketAddress addr = this.globalDiscovery.getAddress();
         if(addr == null){
             return RouteSignal.NOTFOUND;
         }
-        DefaultServiceConnection globalDest = new DefaultServiceConnection(UUID.randomUUID());
+        DeprecatedDefaultServiceConnection globalDest = new DeprecatedDefaultServiceConnection(UUID.randomUUID());
         globalDest.setPathType(PathType.DISCOVERY);
         DiscoveryProbe discoveryProbe = new DiscoveryProbe(serviceName,null);
         DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
@@ -143,7 +143,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
     }
     
     @Override
-    public RouteSignal getDestination(ServiceConnection destination, ServiceChain to) {
+    public RouteSignal getDestination(DeprecatedServiceConnection destination, ServiceChain to) {
 
         if(destination == null) {
             return RouteSignal.NOTFOUND;
@@ -152,7 +152,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
         return getDestination(destination,destination,to);
     }
     
-    private boolean isLocalAddress(ServiceConnection addr) {
+    private boolean isLocalAddress(DeprecatedServiceConnection addr) {
         boolean flag = false;
         try {
             flag = ((InetSocketAddress)addr.getAddress()).equals((InetSocketAddress)localAddress);
@@ -160,7 +160,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
         return flag;
     }
     
-    private boolean isAddressEqual(ServiceConnection a, ServiceConnection b) {
+    private boolean isAddressEqual(DeprecatedServiceConnection a, DeprecatedServiceConnection b) {
         boolean flag = false;
         try {
             flag = ((InetSocketAddress)a.getAddress()).equals((InetSocketAddress)a.getAddress());
@@ -169,7 +169,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
     }
     
     @Override
-    public RouteSignal getDestination(ServiceConnection destination, ServiceConnection from, ServiceChain to) {
+    public RouteSignal getDestination(DeprecatedServiceConnection destination, DeprecatedServiceConnection from, ServiceChain to) {
 
         if(destination == null) {
             return RouteSignal.NOTFOUND;
@@ -203,7 +203,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
     }
 
     @Override
-    public RouteSignal getLocalInterface(ServiceConnection from, ServiceChain to) {
+    public RouteSignal getLocalInterface(DeprecatedServiceConnection from, ServiceChain to) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -259,7 +259,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
         }
     }
 
-    protected void updateHandling(ServiceConnection from, DiscoveryPacket packet) {
+    protected void updateHandling(DeprecatedServiceConnection from, DiscoveryPacket packet) {
 
         DiscoveryPacketType type = packet.getPacketType();
         //to do: switch not functioning properly with enums
@@ -268,7 +268,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
                             + " from: " + ((InetSocketAddress)localAddress).toString()
                             + " dest: " + ((InetSocketAddress)packet.getProbe().getAddress()).toString());
        */
-       DefaultServiceConnection dest = null;
+       DeprecatedDefaultServiceConnection dest = null;
         switch(type){
         case DISCOVERYREQUEST:
             //updateAdressTable(packet.getProbe());
@@ -290,7 +290,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
                 }
             }
             /*if(from != null && network != null){
-                dest = new DefaultServiceConnection(from.getUserConnectionId());
+                dest = new DeprecatedDefaultServiceConnection(from.getUserConnectionId());
                 network.sendToService(packet, new DummyServiceChain(),dest );
             }*/
             break;
@@ -304,7 +304,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
     }
 
     @Override
-    public void discoveryUpdate(ServiceConnection from, byte[] data) {
+    public void discoveryUpdate(DeprecatedServiceConnection from, byte[] data) {
         DiscoveryPacket packet = packetUnpack(data);
         updateHandling(from, packet);
     }
@@ -329,7 +329,7 @@ public class DefaultLocalServiceDiscovery implements DeprecatedServiceDiscovery 
             System.out.println("\tService: " + serviceNameList[i]);
         }
 
-        DefaultServiceConnection globalDest = new DefaultServiceConnection(UUID.randomUUID());
+        DeprecatedDefaultServiceConnection globalDest = new DeprecatedDefaultServiceConnection(UUID.randomUUID());
         globalDest.setPathType(PathType.DISCOVERY);
         globalDest.setAddress(addr);
         try {

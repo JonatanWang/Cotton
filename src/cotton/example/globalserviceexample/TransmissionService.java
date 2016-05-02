@@ -2,7 +2,6 @@ package cotton.example.globalserviceexample;
 
 import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
-import cotton.network.ServiceConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -12,11 +11,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import cotton.services.DeprecatedService;
 import cotton.services.DeprecatedServiceFactory;
+import cotton.network.DeprecatedServiceConnection;
 
 
 public class TransmissionService implements DeprecatedService {
     @Override
-    public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
+    public byte[] execute(CloudContext ctx, DeprecatedServiceConnection from, byte[] data, ServiceChain to) {
 
         String text = null;
         System.out.println("Starting ServiceInstancew ,TransmissionService" );

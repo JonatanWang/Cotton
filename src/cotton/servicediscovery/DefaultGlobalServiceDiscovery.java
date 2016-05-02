@@ -1,9 +1,8 @@
 package cotton.servicediscovery;
 
-import cotton.network.DefaultServiceConnection;
+import cotton.network.DeprecatedDefaultServiceConnection;
 import cotton.network.PathType;
 import cotton.network.ServiceChain;
-import cotton.network.ServiceConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -18,6 +17,7 @@ import java.util.logging.Logger;
 import cotton.network.DeprecatedNetworkHandler;
 import cotton.network.DeprecatedServiceRequest;
 import cotton.services.DeprecatedActiveServiceLookup;
+import cotton.network.DeprecatedServiceConnection;
 
 /**
  *
@@ -77,7 +77,7 @@ public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery
     }
 
     @Override
-    public RouteSignal getDestination(ServiceConnection destination, ServiceChain to) {
+    public RouteSignal getDestination(DeprecatedServiceConnection destination, ServiceChain to) {
         RouteSignal signal = RouteSignal.NOTFOUND;
         String key = to.peekNextServiceName();
         if(key == null){return signal;}
@@ -100,14 +100,14 @@ public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery
     }
 
     @Override
-    public RouteSignal getDestination(ServiceConnection destination, ServiceConnection from, ServiceChain to) {
+    public RouteSignal getDestination(DeprecatedServiceConnection destination, DeprecatedServiceConnection from, ServiceChain to) {
         RouteSignal signal = RouteSignal.NOTFOUND;
         String key = to.peekNextServiceName();
         if(key == null){ //service chain is empty, send back to origin 
             if(from == null) {return signal;}
             destination.setAddress(from.getAddress());
             destination.setPathType(from.getPathType());
-            ((DefaultServiceConnection)destination).setUserConnectionId(from.getUserConnectionId());
+            ((DeprecatedDefaultServiceConnection)destination).setUserConnectionId(from.getUserConnectionId());
             return RouteSignal.RETURNTOORIGIN;
         }
         AddressPool pool = serviceCache.get(key);
@@ -129,7 +129,7 @@ public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery
     }
 
     @Override
-    public RouteSignal getLocalInterface(ServiceConnection from, ServiceChain to) {
+    public RouteSignal getLocalInterface(DeprecatedServiceConnection from, ServiceChain to) {
         return RouteSignal.NOTFOUND;
     }
 
@@ -156,7 +156,7 @@ public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery
         }
     }
 
-    private void processAnnouncePacket(ServiceConnection from, AnnouncePacket packet) {
+    private void processAnnouncePacket(DeprecatedServiceConnection from, AnnouncePacket packet) {
         String[] serviceList = packet.getServiceList();
         if(from == null) {
             System.out.println("Ip:" + ((InetSocketAddress)from.getAddress()).toString());
@@ -168,7 +168,7 @@ public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery
         }
     }
 
-    private void processProbeRequest(ServiceConnection from, DiscoveryProbe probe) {
+    private void processProbeRequest(DeprecatedServiceConnection from, DiscoveryProbe probe) {
         AddressPool pool = this.serviceCache.get(probe.getName());
         if (pool == null) {
             probe.setAddress(null);
@@ -178,7 +178,7 @@ public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery
         DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacket.DiscoveryPacketType.DISCOVERYRESPONSE);
         packet.setProbe(probe);
         from.setPathType(PathType.DISCOVERY);
-        ServiceConnection dest = new DefaultServiceConnection(from.getUserConnectionId());
+        DeprecatedServiceConnection dest = new DeprecatedDefaultServiceConnection(from.getUserConnectionId());
         dest.setAddress(from.getAddress());
         dest.setPathType(PathType.DISCOVERY);
         DeprecatedServiceRequest req = null;
@@ -193,10 +193,10 @@ public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery
 
     private class DiscoveryLookup implements Runnable {
 
-        private ServiceConnection from;
+        private DeprecatedServiceConnection from;
         private byte[] data;
 
-        public DiscoveryLookup(ServiceConnection from, byte[] data) {
+        public DiscoveryLookup(DeprecatedServiceConnection from, byte[] data) {
             this.from = from;
             this.data = data;
         }
@@ -227,7 +227,7 @@ public class DefaultGlobalServiceDiscovery implements DeprecatedServiceDiscovery
     }
 
     @Override
-    public void discoveryUpdate(ServiceConnection from, byte[] data) {
+    public void discoveryUpdate(DeprecatedServiceConnection from, byte[] data) {
         DiscoveryLookup th = new DiscoveryLookup(from, data);
         threadPool.execute(th);
 

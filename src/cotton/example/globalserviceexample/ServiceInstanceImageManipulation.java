@@ -1,6 +1,5 @@
 package cotton.example.globalserviceexample;
 import cotton.services.CloudContext;
-import cotton.network.ServiceConnection;
 import cotton.network.ServiceChain;
 import java.io.Serializable;
 import java.io.ByteArrayInputStream;
@@ -15,6 +14,7 @@ import java.io.IOException;
 import cotton.services.DeprecatedService;
 import cotton.services.DeprecatedServiceFactory;
 import cotton.services.DeprecatedActiveServiceLookup;
+import cotton.network.DeprecatedServiceConnection;
 
 /**
  *
@@ -58,7 +58,7 @@ public class ServiceInstanceImageManipulation implements DeprecatedService{
         }
     }
 
-    public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data,ServiceChain to){
+    public byte[] execute(CloudContext ctx, DeprecatedServiceConnection from, byte[] data,ServiceChain to){
         String s = null;
         System.out.println("Starting ServiceInstance1 ,StringModifier" );
         try{

@@ -13,7 +13,7 @@ import java.io.Serializable;
 public interface DeprecatedNetworkPacket extends Serializable{
     public ServiceChain getPath();
 
-    public ServiceConnection getOrigin();
+    public DeprecatedServiceConnection getOrigin();
 
     public PathType getType();
 

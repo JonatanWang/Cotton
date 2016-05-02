@@ -3,7 +3,6 @@ package cotton.test;
 import cotton.services.CloudContext;
 import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.ServiceChain;
-import cotton.network.ServiceConnection;
 //import cotton.test.TestDASL.TestServiceFactory.TestService;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -13,6 +12,7 @@ import static org.junit.Assert.*;
 import cotton.services.DeprecatedService;
 import cotton.services.DeprecatedServiceFactory;
 import cotton.services.DeprecatedActiveServiceLookup;
+import cotton.network.DeprecatedServiceConnection;
 
 /**
  * A test class for the <code>DefaultActiveServiceLookup</code> class as well as
@@ -55,7 +55,7 @@ public class TestDASL {
              * @return the incoming number multiplied by 2.
              */
             @Override
-            public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
+            public byte[] execute(CloudContext ctx, DeprecatedServiceConnection from, byte[] data, ServiceChain to) {
                 int number = ByteBuffer.wrap(data).getInt();
                 number *= 2;
                 return ByteBuffer.allocate(4).putInt(number).array();

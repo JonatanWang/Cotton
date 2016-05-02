@@ -10,7 +10,6 @@ import java.net.InetAddress;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,7 +28,6 @@ public class DefaultNetworkHandler implements NetworkHandler {
     private InetAddress localIP;
     private InternalRoutingNetwork internalRouting;
     private ExecutorService threadPool;
-    private ConcurrentHashMap<UUID,DefaultServiceRequest> connectionTable;
     private AtomicBoolean running;
     private SocketAddress localSocketAddress;
     
@@ -44,7 +42,6 @@ public class DefaultNetworkHandler implements NetworkHandler {
         }
         
         threadPool = Executors.newCachedThreadPool();
-        connectionTable = new ConcurrentHashMap<>();
         running = new AtomicBoolean(true);
         localSocketAddress = getLocalAddress();
     }
@@ -62,7 +59,6 @@ public class DefaultNetworkHandler implements NetworkHandler {
         localSocketAddress = socketAddress;
         
         threadPool = Executors.newCachedThreadPool();
-        connectionTable = new ConcurrentHashMap<>();
         running = new AtomicBoolean(true);
         localSocketAddress = getLocalAddress();
     }
@@ -78,7 +74,6 @@ public class DefaultNetworkHandler implements NetworkHandler {
         }
 
         threadPool = Executors.newCachedThreadPool();
-        connectionTable = new ConcurrentHashMap<>();
         running = new AtomicBoolean(true);
         localSocketAddress = getLocalAddress();
     }

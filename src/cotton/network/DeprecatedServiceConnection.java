@@ -11,7 +11,8 @@ import java.util.UUID;
  * @author Tony
  * @author Magnus
  */
-public interface ServiceConnection {
+@Deprecated
+public interface DeprecatedServiceConnection {
     public String getServiceName();
     public UUID getUserConnectionId();
     public SocketAddress getAddress();
