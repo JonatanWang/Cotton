@@ -491,7 +491,7 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
     }
 
     private ServiceConnection parseOrigin(TransportPacket.Packet input) throws java.net.UnknownHostException{
-        ServiceConnection origin = new DefaultServiceConnection(UUID.fromString(input.getOrigin().getUuid()));
+        ServiceConnection origin = new DefaultServiceConnection(UUID.fromString(input.getOrigin().getRequestId()));
         origin.setAddress(new InetSocketAddress(Inet4Address.getByName(input.getOrigin().getIp()), input.getOrigin().getPort()));
         return origin;
     }
@@ -508,9 +508,14 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
         for (int i = 0; i < input.getPathCount(); i++)
             path.addService(input.getPath(i));
 
-        Origin from = new Origin(new InetSocketAddress(Inet4Address.getByName(input.getOrigin().getIp()), input.getOrigin().getPort()), UUID.fromString(input.getOrigin().getUuid()));
+        Origin origin = new Origin(new InetSocketAddress(Inet4Address.getByName(input.getOrigin().getIp()), input.getOrigin().getPort()), UUID.fromString(input.getOrigin().getRequestId()));
 
-        NetworkPacket packet = new NetworkPacket(input.getData().toByteArray(), path, from, PathType.valueOf(input.getPathtype().toString()));
+        NetworkPacket packet = NetworkPacket.newBuilder()
+            .setData(input.getData().toByteArray())
+            .setPath(path)
+            .setOrigin(origin)
+            .setPathType(PathType.valueOf(input.getPathtype().toString()))
+            .build();
 
         return packet;
     }
@@ -525,17 +530,12 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
         InetSocketAddress address = (InetSocketAddress)input.getOrigin().getAddress();
         TransportPacket.Origin origin = TransportPacket.Origin.newBuilder()
             .setIp(address.getAddress().getHostAddress())
-            .setUuid(input.getOrigin().getServiceRequestID().toString())
+            .setRequestId(input.getOrigin().getServiceRequestID().toString())
             .setPort(address.getPort())
             .build();
         builder.setOrigin(origin);
 
-        try{
-            builder.setData(com.google.protobuf.ByteString.copyFrom(input.getDataBytes()));
-        }catch(IOException e){
-            logError("Could not unpack data from local packet");
-            throw e;
-        }
+        builder.setData(com.google.protobuf.ByteString.copyFrom(input.getData()));
 
         builder.setPathtype(TransportPacket.Packet.PathType.valueOf(input.getType().toString()));
         builder.setKeepalive(false);
@@ -552,7 +552,7 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
         InetSocketAddress address = (InetSocketAddress)origin.getAddress();
         TransportPacket.Origin originInfo = TransportPacket.Origin.newBuilder()
             .setIp(address.getAddress().getHostAddress())
-            .setUuid(origin.getUserConnectionId().toString())
+            .setRequestId(origin.getUserConnectionId().toString())
             .setPort(address.getPort())
             .build();
         builder.setOrigin(originInfo);

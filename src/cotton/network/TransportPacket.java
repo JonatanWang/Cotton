@@ -1059,39 +1059,53 @@ public final class TransportPacket {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>optional string uuid = 1;</code>
+     * <code>optional string latchId = 1;</code>
      */
-    boolean hasUuid();
+    boolean hasLatchId();
     /**
-     * <code>optional string uuid = 1;</code>
+     * <code>optional string latchId = 1;</code>
      */
-    java.lang.String getUuid();
+    java.lang.String getLatchId();
     /**
-     * <code>optional string uuid = 1;</code>
+     * <code>optional string latchId = 1;</code>
      */
     com.google.protobuf.ByteString
-        getUuidBytes();
+        getLatchIdBytes();
 
     /**
-     * <code>optional string ip = 2;</code>
+     * <code>optional string requestId = 2;</code>
+     */
+    boolean hasRequestId();
+    /**
+     * <code>optional string requestId = 2;</code>
+     */
+    java.lang.String getRequestId();
+    /**
+     * <code>optional string requestId = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getRequestIdBytes();
+
+    /**
+     * <code>optional string ip = 3;</code>
      */
     boolean hasIp();
     /**
-     * <code>optional string ip = 2;</code>
+     * <code>optional string ip = 3;</code>
      */
     java.lang.String getIp();
     /**
-     * <code>optional string ip = 2;</code>
+     * <code>optional string ip = 3;</code>
      */
     com.google.protobuf.ByteString
         getIpBytes();
 
     /**
-     * <code>optional int32 port = 3;</code>
+     * <code>optional int32 port = 4;</code>
      */
     boolean hasPort();
     /**
-     * <code>optional int32 port = 3;</code>
+     * <code>optional int32 port = 4;</code>
      */
     int getPort();
   }
@@ -1150,17 +1164,23 @@ public final class TransportPacket {
             case 10: {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              uuid_ = bs;
+              latchId_ = bs;
               break;
             }
             case 18: {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000002;
+              requestId_ = bs;
+              break;
+            }
+            case 26: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000004;
               ip_ = bs;
               break;
             }
-            case 24: {
-              bitField0_ |= 0x00000004;
+            case 32: {
+              bitField0_ |= 0x00000008;
               port_ = input.readInt32();
               break;
             }
@@ -1204,19 +1224,19 @@ public final class TransportPacket {
     }
 
     private int bitField0_;
-    public static final int UUID_FIELD_NUMBER = 1;
-    private java.lang.Object uuid_;
+    public static final int LATCHID_FIELD_NUMBER = 1;
+    private java.lang.Object latchId_;
     /**
-     * <code>optional string uuid = 1;</code>
+     * <code>optional string latchId = 1;</code>
      */
-    public boolean hasUuid() {
+    public boolean hasLatchId() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <code>optional string uuid = 1;</code>
+     * <code>optional string latchId = 1;</code>
      */
-    public java.lang.String getUuid() {
-      java.lang.Object ref = uuid_;
+    public java.lang.String getLatchId() {
+      java.lang.Object ref = latchId_;
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
@@ -1224,38 +1244,80 @@ public final class TransportPacket {
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
-          uuid_ = s;
+          latchId_ = s;
         }
         return s;
       }
     }
     /**
-     * <code>optional string uuid = 1;</code>
+     * <code>optional string latchId = 1;</code>
      */
     public com.google.protobuf.ByteString
-        getUuidBytes() {
-      java.lang.Object ref = uuid_;
+        getLatchIdBytes() {
+      java.lang.Object ref = latchId_;
       if (ref instanceof java.lang.String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
-        uuid_ = b;
+        latchId_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
       }
     }
 
-    public static final int IP_FIELD_NUMBER = 2;
-    private java.lang.Object ip_;
+    public static final int REQUESTID_FIELD_NUMBER = 2;
+    private java.lang.Object requestId_;
     /**
-     * <code>optional string ip = 2;</code>
+     * <code>optional string requestId = 2;</code>
      */
-    public boolean hasIp() {
+    public boolean hasRequestId() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>optional string ip = 2;</code>
+     * <code>optional string requestId = 2;</code>
+     */
+    public java.lang.String getRequestId() {
+      java.lang.Object ref = requestId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          requestId_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string requestId = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getRequestIdBytes() {
+      java.lang.Object ref = requestId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        requestId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int IP_FIELD_NUMBER = 3;
+    private java.lang.Object ip_;
+    /**
+     * <code>optional string ip = 3;</code>
+     */
+    public boolean hasIp() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional string ip = 3;</code>
      */
     public java.lang.String getIp() {
       java.lang.Object ref = ip_;
@@ -1272,7 +1334,7 @@ public final class TransportPacket {
       }
     }
     /**
-     * <code>optional string ip = 2;</code>
+     * <code>optional string ip = 3;</code>
      */
     public com.google.protobuf.ByteString
         getIpBytes() {
@@ -1288,23 +1350,24 @@ public final class TransportPacket {
       }
     }
 
-    public static final int PORT_FIELD_NUMBER = 3;
+    public static final int PORT_FIELD_NUMBER = 4;
     private int port_;
     /**
-     * <code>optional int32 port = 3;</code>
+     * <code>optional int32 port = 4;</code>
      */
     public boolean hasPort() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+      return ((bitField0_ & 0x00000008) == 0x00000008);
     }
     /**
-     * <code>optional int32 port = 3;</code>
+     * <code>optional int32 port = 4;</code>
      */
     public int getPort() {
       return port_;
     }
 
     private void initFields() {
-      uuid_ = "";
+      latchId_ = "";
+      requestId_ = "";
       ip_ = "";
       port_ = 0;
     }
@@ -1322,13 +1385,16 @@ public final class TransportPacket {
                         throws java.io.IOException {
       getSerializedSize();
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, getUuidBytes());
+        output.writeBytes(1, getLatchIdBytes());
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeBytes(2, getIpBytes());
+        output.writeBytes(2, getRequestIdBytes());
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeInt32(3, port_);
+        output.writeBytes(3, getIpBytes());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeInt32(4, port_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -1341,15 +1407,19 @@ public final class TransportPacket {
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, getUuidBytes());
+          .computeBytesSize(1, getLatchIdBytes());
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, getIpBytes());
+          .computeBytesSize(2, getRequestIdBytes());
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(3, port_);
+          .computeBytesSize(3, getIpBytes());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(4, port_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -1468,12 +1538,14 @@ public final class TransportPacket {
 
       public Builder clear() {
         super.clear();
-        uuid_ = "";
+        latchId_ = "";
         bitField0_ = (bitField0_ & ~0x00000001);
-        ip_ = "";
+        requestId_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
-        port_ = 0;
+        ip_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
+        port_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -1505,13 +1577,17 @@ public final class TransportPacket {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.uuid_ = uuid_;
+        result.latchId_ = latchId_;
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.ip_ = ip_;
+        result.requestId_ = requestId_;
         if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
           to_bitField0_ |= 0x00000004;
+        }
+        result.ip_ = ip_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
         }
         result.port_ = port_;
         result.bitField0_ = to_bitField0_;
@@ -1530,13 +1606,18 @@ public final class TransportPacket {
 
       public Builder mergeFrom(cotton.network.TransportPacket.Origin other) {
         if (other == cotton.network.TransportPacket.Origin.getDefaultInstance()) return this;
-        if (other.hasUuid()) {
+        if (other.hasLatchId()) {
           bitField0_ |= 0x00000001;
-          uuid_ = other.uuid_;
+          latchId_ = other.latchId_;
+          onChanged();
+        }
+        if (other.hasRequestId()) {
+          bitField0_ |= 0x00000002;
+          requestId_ = other.requestId_;
           onChanged();
         }
         if (other.hasIp()) {
-          bitField0_ |= 0x00000002;
+          bitField0_ |= 0x00000004;
           ip_ = other.ip_;
           onChanged();
         }
@@ -1570,24 +1651,24 @@ public final class TransportPacket {
       }
       private int bitField0_;
 
-      private java.lang.Object uuid_ = "";
+      private java.lang.Object latchId_ = "";
       /**
-       * <code>optional string uuid = 1;</code>
+       * <code>optional string latchId = 1;</code>
        */
-      public boolean hasUuid() {
+      public boolean hasLatchId() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <code>optional string uuid = 1;</code>
+       * <code>optional string latchId = 1;</code>
        */
-      public java.lang.String getUuid() {
-        java.lang.Object ref = uuid_;
+      public java.lang.String getLatchId() {
+        java.lang.Object ref = latchId_;
         if (!(ref instanceof java.lang.String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
           if (bs.isValidUtf8()) {
-            uuid_ = s;
+            latchId_ = s;
           }
           return s;
         } else {
@@ -1595,66 +1676,142 @@ public final class TransportPacket {
         }
       }
       /**
-       * <code>optional string uuid = 1;</code>
+       * <code>optional string latchId = 1;</code>
        */
       public com.google.protobuf.ByteString
-          getUuidBytes() {
-        java.lang.Object ref = uuid_;
+          getLatchIdBytes() {
+        java.lang.Object ref = latchId_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
-          uuid_ = b;
+          latchId_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>optional string uuid = 1;</code>
+       * <code>optional string latchId = 1;</code>
        */
-      public Builder setUuid(
+      public Builder setLatchId(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000001;
-        uuid_ = value;
+        latchId_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional string uuid = 1;</code>
+       * <code>optional string latchId = 1;</code>
        */
-      public Builder clearUuid() {
+      public Builder clearLatchId() {
         bitField0_ = (bitField0_ & ~0x00000001);
-        uuid_ = getDefaultInstance().getUuid();
+        latchId_ = getDefaultInstance().getLatchId();
         onChanged();
         return this;
       }
       /**
-       * <code>optional string uuid = 1;</code>
+       * <code>optional string latchId = 1;</code>
        */
-      public Builder setUuidBytes(
+      public Builder setLatchIdBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000001;
-        uuid_ = value;
+        latchId_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object requestId_ = "";
+      /**
+       * <code>optional string requestId = 2;</code>
+       */
+      public boolean hasRequestId() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>optional string requestId = 2;</code>
+       */
+      public java.lang.String getRequestId() {
+        java.lang.Object ref = requestId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            requestId_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string requestId = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getRequestIdBytes() {
+        java.lang.Object ref = requestId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          requestId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string requestId = 2;</code>
+       */
+      public Builder setRequestId(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        requestId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string requestId = 2;</code>
+       */
+      public Builder clearRequestId() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        requestId_ = getDefaultInstance().getRequestId();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string requestId = 2;</code>
+       */
+      public Builder setRequestIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        requestId_ = value;
         onChanged();
         return this;
       }
 
       private java.lang.Object ip_ = "";
       /**
-       * <code>optional string ip = 2;</code>
+       * <code>optional string ip = 3;</code>
        */
       public boolean hasIp() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       /**
-       * <code>optional string ip = 2;</code>
+       * <code>optional string ip = 3;</code>
        */
       public java.lang.String getIp() {
         java.lang.Object ref = ip_;
@@ -1671,7 +1828,7 @@ public final class TransportPacket {
         }
       }
       /**
-       * <code>optional string ip = 2;</code>
+       * <code>optional string ip = 3;</code>
        */
       public com.google.protobuf.ByteString
           getIpBytes() {
@@ -1687,36 +1844,36 @@ public final class TransportPacket {
         }
       }
       /**
-       * <code>optional string ip = 2;</code>
+       * <code>optional string ip = 3;</code>
        */
       public Builder setIp(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000002;
+  bitField0_ |= 0x00000004;
         ip_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional string ip = 2;</code>
+       * <code>optional string ip = 3;</code>
        */
       public Builder clearIp() {
-        bitField0_ = (bitField0_ & ~0x00000002);
+        bitField0_ = (bitField0_ & ~0x00000004);
         ip_ = getDefaultInstance().getIp();
         onChanged();
         return this;
       }
       /**
-       * <code>optional string ip = 2;</code>
+       * <code>optional string ip = 3;</code>
        */
       public Builder setIpBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000002;
+  bitField0_ |= 0x00000004;
         ip_ = value;
         onChanged();
         return this;
@@ -1724,31 +1881,31 @@ public final class TransportPacket {
 
       private int port_ ;
       /**
-       * <code>optional int32 port = 3;</code>
+       * <code>optional int32 port = 4;</code>
        */
       public boolean hasPort() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
-       * <code>optional int32 port = 3;</code>
+       * <code>optional int32 port = 4;</code>
        */
       public int getPort() {
         return port_;
       }
       /**
-       * <code>optional int32 port = 3;</code>
+       * <code>optional int32 port = 4;</code>
        */
       public Builder setPort(int value) {
-        bitField0_ |= 0x00000004;
+        bitField0_ |= 0x00000008;
         port_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional int32 port = 3;</code>
+       * <code>optional int32 port = 4;</code>
        */
       public Builder clearPort() {
-        bitField0_ = (bitField0_ & ~0x00000004);
+        bitField0_ = (bitField0_ & ~0x00000008);
         port_ = 0;
         onChanged();
         return this;
@@ -1790,9 +1947,9 @@ public final class TransportPacket {
       "\022\014\n\004data\030\003 \001(\014\022&\n\006origin\030\004 \001(\0132\026.cotton." +
       "network.Origin\022\014\n\004path\030\006 \003(\t\"L\n\010PathType" +
       "\022\t\n\005RELAY\020\000\022\r\n\tDISCOVERY\020\001\022\013\n\007SERVICE\020\002\022" +
-      "\013\n\007UNKNOWN\020\003\022\014\n\010NOTFOUND\020\004\"0\n\006Origin\022\014\n\004" +
-      "uuid\030\001 \001(\t\022\n\n\002ip\030\002 \001(\t\022\014\n\004port\030\003 \001(\005B\021B\017" +
-      "TransportPacket"
+      "\013\n\007UNKNOWN\020\003\022\014\n\010NOTFOUND\020\004\"F\n\006Origin\022\017\n\007" +
+      "latchId\030\001 \001(\t\022\021\n\trequestId\030\002 \001(\t\022\n\n\002ip\030\003" +
+      " \001(\t\022\014\n\004port\030\004 \001(\005B\021B\017TransportPacket"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1817,7 +1974,7 @@ public final class TransportPacket {
     internal_static_cotton_network_Origin_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_cotton_network_Origin_descriptor,
-        new java.lang.String[] { "Uuid", "Ip", "Port", });
+        new java.lang.String[] { "LatchId", "RequestId", "Ip", "Port", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
