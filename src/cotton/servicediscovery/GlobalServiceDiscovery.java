@@ -15,7 +15,14 @@ import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
+import java.util.concurrent.ConcurrentHashMap.KeySetView;
+import cotton.services.ServiceMetaData;
+import java.util.ArrayList;
+import java.io.Serializable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 /**
  *
  * @author magnus
@@ -27,7 +34,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     private AddressPool discoveryCache;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
     private ActiveServiceLookup localServiceTable = null;
-
+    private ExecutorService threadPool;
     /**
      * Fills in a list of all pre set globalServiceDiscovery addresses
      * @param globalDNS information from the config file
@@ -45,6 +52,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         this.discoveryCache = new AddressPool();
         initGlobalDiscoveryPool(dnsConfig);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
+        threadPool = Executors.newCachedThreadPool();
     }
 
     /**
@@ -176,9 +184,47 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         return RouteSignal.LOCALDESTINATION;
     }
 
+    private void printAnnounceList(String[] nameList){
+        System.out.println("Service list");
+        for(String s: nameList){
+            System.out.println("\t" + s);
+        }
+    }
+
     @Override
     public boolean announce() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if(localServiceTable == null)
+            return false;
+        InetSocketAddress destAddr = (InetSocketAddress) discoveryCache.getAddress();
+        if(destAddr == null)
+            return false;
+
+        KeySetView<String,ServiceMetaData> keys = localServiceTable.getKeySet();
+        ArrayList<String> serviceList = new ArrayList<>();
+        for(String key : keys){
+            serviceList.add(key);
+        }
+        String[] nameList = serviceList.toArray(new String[serviceList.size()]);
+        AnnouncePacket announce = new AnnouncePacket(localAddress,nameList);
+        DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.ANNOUNCE);
+        packet.setAnnonce(announce);
+        printAnnounceList(nameList);
+        DestinationMetaData dest = new DestinationMetaData(destAddr,PathType.DISCOVERY);
+        try{
+            byte[] bytes = serializeToBytes(packet);
+            internalRouting.SendToDestination(dest,bytes);
+        }catch(IOException ex){
+            return false;
+        }
+        return true;
+        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private byte[] serializeToBytes(Serializable data) throws IOException{
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ObjectOutputStream objectStream = new ObjectOutputStream(stream);
+        objectStream.writeObject(data);
+        return stream.toByteArray();
     }
 
     @Override
@@ -188,7 +234,8 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     @Override
     public void discoveryUpdate(Origin origin, byte[] data) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        DiscoveryLookup lookup = new DiscoveryLookup(origin,data);
+        threadPool.execute(lookup);
     }
 
     private DiscoveryPacket packetUnpack(byte[] data) {
@@ -202,6 +249,56 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
         }
         return probe;
+    }
+
+    private void addService(SocketAddress addr,String name){
+        AddressPool pool = new AddressPool();
+        AddressPool oldPool = this.serviceCache.putIfAbsent(name,pool);
+        if(oldPool != null){
+            oldPool.addAddress(addr);
+        }else{
+            pool.addAddress(addr);
+        }
+    }
+
+    // register announced services in global service discovery
+    private void processAnnouncePacket(AnnouncePacket packet){
+        String[] serviceList = packet.getServiceList();
+        SocketAddress addr = packet.getInstanceAddress();
+        if(addr == null){
+            return;
+        }
+        // TODO: implement logic redirecting services to their request queue
+
+        for(String s: serviceList){
+            addService(addr,s);
+        }
+        printAnnounceList(serviceList);
+    }
+
+    // it sends back a filled discovery request probe
+    private void processProbeRequest(Origin origin, DiscoveryProbe probe){
+        AddressPool pool = this.serviceCache.get(probe.getName());
+        if(pool == null){
+            byte[] data = new byte[0];
+            try{
+            data = serializeToBytes(new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE));
+            }catch(IOException e){}
+            internalRouting.SendBackToOrigin(origin,PathType.DISCOVERY,data);
+            return;
+        }
+        SocketAddress addr = pool.getAddress();
+        probe.setAddress(addr);
+        DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE);
+        packet.setProbe(probe);
+        byte[] data = new byte[0];
+        try{
+            data = serializeToBytes(packet);
+        }catch(IOException ex){
+            
+        }
+        internalRouting.SendBackToOrigin(origin,PathType.DISCOVERY,data);
+        
     }
 
     private class DiscoveryLookup implements Runnable {
@@ -223,14 +320,13 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                     + " from: " + ((InetSocketAddress) origin.getAddress()).toString());
             switch (type) {
                 case DISCOVERYREQUEST:
-                    //processProbeRequest(origin, packet.getProbe());
+                    processProbeRequest(origin, packet.getProbe());
                     break;
                 case DISCOVERYRESPONSE:
                     //localDiscovery.updateHandling(from, packet);
                     break;
                 case ANNOUNCE:
-                    //processAnnouncePacket(origin, packet.getAnnounce());
-                    //intern handeling method
+                    processAnnouncePacket(packet.getAnnounce());
                     break;
                 default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
                     System.out.println("DefaultGlobalServiceDiscovery updateHandling recieved, not yet implemented: " + type);
