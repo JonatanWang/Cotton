@@ -18,23 +18,29 @@ import cotton.network.DummyServiceChain;
 import cotton.servicediscovery.DefaultGlobalServiceDiscovery;
 import java.util.concurrent.ThreadLocalRandom;
 import cotton.network.NetworkHandler;
-import cotton.servicediscovery.DeprecatedServiceDiscovery;
-import cotton.services.DeprecatedActiveServiceLookup;
+import cotton.servicediscovery.ServiceDiscovery;
+import cotton.services.ActiveServiceLookup;
 import cotton.services.ServiceHandler;
+import cotton.servicediscovery.GlobalServiceDiscovery;
+import cotton.servicediscovery.LocalServiceDiscovery;
+import cotton.services.ServiceLookup;
+import cotton.services.ServiceFactory;
+import cotton.internalRouting.DefaultInternalRouting;
+import cotton.internalRouting.InternalRoutingClient;
 /**
  *
  * @author Jonathan
  * @author Magnus
  * @author Gunnlaugur
+ * @author Tony
  */
 public class Cotton {
-    private DeprecatedActiveServiceLookup lookup;
+    private ActiveServiceLookup lookup;
     private NetworkHandler network;
-    private ClientNetwork clientNetwork;
     private ServiceHandler services;
-    private DeprecatedServiceDiscovery discovery;
-
-    public Cotton (boolean GlobalServiceDiscovery) throws java.net.UnknownHostException {
+    private ServiceDiscovery discovery;
+    private DefaultInternalRouting internalRouting;
+    /*public Cotton (boolean GlobalServiceDiscovery) throws java.net.UnknownHostException {
         lookup = new DefaultActiveServiceLookup();
         GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
         NetworkHandler net = null;
@@ -49,25 +55,41 @@ public class Cotton {
         //clientNetwork = net;
         //services = new DeprecatedServiceHandler(lookup, network);
         //TODO swap for current versions
-    }
+        }*/
     
-    public Cotton (boolean GlobalServiceDiscovery, int portNumber) throws java.net.UnknownHostException {
-        lookup = new DefaultActiveServiceLookup();
+    public Cotton (boolean globalServiceDiscovery, int portNumber) throws java.net.UnknownHostException {
+        /*lookup = new DefaultActiveServiceLookup();
         GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
         NetworkHandler net = null;
-        if(GlobalServiceDiscovery) {
-            this.discovery = new DefaultGlobalServiceDiscovery(lookup,globalDiscoveryDNS);
+        if(globalServiceDiscovery) {
+            this.discovery = new GlobalServiceDiscovery(lookup,globalDiscoveryDNS);
             net = new DefaultNetworkHandler();
         }else {
             this.discovery = new DefaultLocalServiceDiscovery(lookup,globalDiscoveryDNS);
             net = new DefaultNetworkHandler(portNumber);
         }
-        network = net;
+        network = net;*/
         //clientNetwork = net;
         //services = new DeprecatedServiceHandler(lookup, network);
         //TODO swap for current versions
+        GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
+        NetworkHandler net = null;
+        if(globalServiceDiscovery) {
+            net = new DefaultNetworkHandler();
+            discovery = new GlobalServiceDiscovery(globalDiscoveryDNS);
+        
+        }else {
+            net = new DefaultNetworkHandler(portNumber);
+            discovery = new LocalServiceDiscovery(globalDiscoveryDNS);
+        
+        }
+        lookup = new ServiceLookup();
+        discovery.setLocalServiceTable(lookup);
+        this.internalRouting = new DefaultInternalRouting(net,discovery);
+        this.services = new ServiceHandler(lookup,internalRouting);
+        
     }
-    
+    /*  
     public Cotton () throws java.net.UnknownHostException {
         lookup = new DefaultActiveServiceLookup();
         GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
@@ -78,64 +100,44 @@ public class Cotton {
         //services = new DeprecatedServiceHandler(lookup, network);
         //TODO swap for current versions
     }
-
+*/
     public void start(){
         new Thread(services).start();
         new Thread(network).start();
         discovery.announce();
+        internalRouting.start();
+        new Thread(services).start();
     }
 
     public void shutdown() {
         services.stop();
         discovery.stop();
         network.stop();
+        internalRouting.stop();
+
     }
 
-    public DeprecatedActiveServiceLookup getServiceRegistation() {
+    public ActiveServiceLookup getServiceRegistation() {
         return lookup;
     }
 
     public NetworkHandler getNetwork() {
         return network;
     }
-    
-    public ClientNetwork getClientNetwork() {
-        return this.clientNetwork;
+
+    public InternalRoutingClient getClient(){
+        return internalRouting;
     }
 
     public static void main(String[] args) {
-        Cotton c;
+        Cotton c = null;
         try{
-            c = new Cotton();
+            c = new Cotton(true,3333);
         }catch(java.net.UnknownHostException e){// TODO: Rethink this
             System.out.println("Init network error, exiting");
             return;
+        }finally{
+            c.shutdown();
         }
-
-        c.getServiceRegistation().registerService("ImageService", ImageManipulationService.getFactory(), 8);
-        c.getServiceRegistation().registerService("FileWriter", FileWriterService.getFactory(), 1);
-
-        ServiceChain s = new DummyServiceChain("ImageService");
-
-        s.addService("FileWriter");
-
-        BufferedImage i = null;
-
-        try {
-            i = ImageIO.read(new File("test_image.png"));
-        }catch (Throwable e) {
-            System.out.println("Error " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        c.start();
-
-        //        c.getNetwork().sendToService(new ImageManipulationPacket(i), s, null);
-
-        try {
-            Thread.sleep(50000);
-        } catch (InterruptedException ignore) { }
-   
-        c.shutdown();
     }
 }

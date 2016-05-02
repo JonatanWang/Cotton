@@ -1,6 +1,6 @@
 package cotton.example.globalserviceexample;
 
-import cotton.Cotton;
+import cotton.DeprecatedCotton;
 import cotton.network.ClientNetwork;
 import cotton.network.DummyServiceChain;
 import cotton.network.ServiceChain;
@@ -18,9 +18,9 @@ import cotton.network.DeprecatedServiceRequest;
 public class ClientPart {
 
     public static void main(String[] args) {
-        Cotton cotton = null;
+        DeprecatedCotton cotton = null;
         try {
-            cotton = new Cotton(false);
+            cotton = new DeprecatedCotton(false);
         } catch (UnknownHostException ex) {
             Logger.getLogger(GlobalDiscoveryExample.class.getName()).log(Level.SEVERE, null, ex);
         }

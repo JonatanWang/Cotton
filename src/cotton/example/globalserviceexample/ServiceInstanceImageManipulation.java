@@ -15,7 +15,7 @@ import cotton.services.DeprecatedService;
 import cotton.services.DeprecatedServiceFactory;
 import cotton.services.DeprecatedActiveServiceLookup;
 import cotton.network.DeprecatedServiceConnection;
-
+import cotton.DeprecatedCotton;
 /**
  *
  * @author Tony
@@ -23,9 +23,9 @@ import cotton.network.DeprecatedServiceConnection;
  **/
 public class ServiceInstanceImageManipulation implements DeprecatedService{
     public static void main(String[] args) {
-        Cotton cotton = null;
+        DeprecatedCotton cotton = null;
         try {
-            cotton = new Cotton(false, 4444);
+            cotton = new DeprecatedCotton(false, 4444);
         } catch (UnknownHostException ex) {
             Logger.getLogger(GlobalDiscoveryExample.class.getName()).log(Level.SEVERE, null, ex);
         }

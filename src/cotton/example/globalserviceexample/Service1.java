@@ -1,4 +1,6 @@
 package cotton.example.globalserviceexample;
+
+import cotton.DeprecatedCotton;
 import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
 import java.io.Serializable;
@@ -21,9 +23,9 @@ import cotton.network.DeprecatedServiceConnection;
  **/
 public class Service1 implements DeprecatedService{
     public static void main(String[] args) {
-        Cotton cotton = null;
+        DeprecatedCotton cotton = null;
         try {
-            cotton = new Cotton(false);
+            cotton = new DeprecatedCotton(false);
         } catch (UnknownHostException ex) {
             Logger.getLogger(GlobalDiscoveryExample.class.getName()).log(Level.SEVERE, null, ex);
         }
