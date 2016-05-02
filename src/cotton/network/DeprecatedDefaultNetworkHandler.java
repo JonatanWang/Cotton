@@ -126,7 +126,7 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
 
     }
 
-    public boolean sendTransportPacket(TransportPacket.Packet data, ServiceConnection destination) throws IOException{
+    public boolean sendTransportPacket(TransportPacket.Packet data, DeprecatedServiceConnection destination) throws IOException{
         if(data == null) throw new NullPointerException("Null data");
         if(destination == null) throw new NullPointerException("Null destination");
 
@@ -156,7 +156,7 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
      * @param destination The information about where the packet is headed.
      * @return Whether the connection succeeded or not.
      */
-    private boolean sendObject(String data, ServiceConnection destination) {
+    private boolean sendObject(String data, DeprecatedServiceConnection destination) {
         if(data == null) throw new NullPointerException("Null data");
         if(destination == null) throw new NullPointerException("Null destination");
 
@@ -186,7 +186,7 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
      * @return Whether the connection succeeded or not.
      */
     @Override
-    public boolean send(byte[] data, ServiceConnection destination) throws IOException {
+    public boolean send(byte[] data, DeprecatedServiceConnection destination) throws IOException {
         TransportPacket.Packet packet = buildTransportPacket(data,
                                                              null,
                                                              getLocalServiceConnection(destination.getUserConnectionId()),
@@ -208,7 +208,7 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
      * @return Whether the connection succeeded or not.
      */
     @Override
-    public boolean send(Serializable data, ServiceConnection destination) throws IOException {
+    public boolean send(Serializable data, DeprecatedServiceConnection destination) throws IOException {
         TransportPacket.Packet packet = buildTransportPacket(serializableToBytes(data),
                                                              null,
                                                              getLocalServiceConnection(destination.getUserConnectionId()),
@@ -230,9 +230,9 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
      * @return The result with which the response will be returned.
      */
     @Override
-    public DeprecatedServiceRequest sendWithResponse(Serializable data, ServiceConnection destination) throws IOException{
+    public DeprecatedServiceRequest sendWithResponse(Serializable data, DeprecatedServiceConnection destination) throws IOException{
         DeprecatedDefaultServiceRequest result = new DeprecatedDefaultServiceRequest();
-        ServiceConnection local = getLocalServiceConnection();
+        DeprecatedServiceConnection local = getLocalServiceConnection();
         TransportPacket.Packet packet = buildTransportPacket(serializableToBytes(data), null, local, destination.getPathType());
         if(sendTransportPacket(packet, destination)){
             this.connectionTable.put(local.getUserConnectionId(), result);
@@ -249,8 +249,8 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
      * @param from The origin of this request.
      */
     @Override
-    public void sendToService(byte[] data, ServiceChain path, ServiceConnection from) throws IOException {
-        ServiceConnection dest = new DefaultServiceConnection();
+    public void sendToService(byte[] data, ServiceChain path, DeprecatedServiceConnection from) throws IOException {
+        DeprecatedServiceConnection dest = new DeprecatedDefaultServiceConnection();
         RouteSignal route = localServiceDiscovery.getDestination(dest, from, path);
 
         switch(route){
@@ -290,7 +290,7 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
     @Override
     public DeprecatedServiceRequest sendToService(byte[] data, ServiceChain path) throws IOException { // TODO: Make sure that this doesn't drop packages with this as last destination
         UUID uuid = UUID.randomUUID();
-        ServiceConnection dest = new DefaultServiceConnection(uuid);
+        DeprecatedServiceConnection dest = new DeprecatedDefaultServiceConnection(uuid);
         RouteSignal route = localServiceDiscovery.getDestination(dest, path);
         DeprecatedDefaultServiceRequest result = new DeprecatedDefaultServiceRequest();
         this.connectionTable.put(dest.getUserConnectionId(), result);
@@ -374,7 +374,7 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
      * @param destination
      * @return
      */
-    public boolean sendEnd(byte[] data, ServiceConnection destination) {
+    public boolean sendEnd(byte[] data, DeprecatedServiceConnection destination) {
         DeprecatedDefaultServiceRequest req = this.connectionTable.get(destination.getUserConnectionId());
         if(req == null) return false;
         req.setData(data);
@@ -388,20 +388,20 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
         return stream.toByteArray();
     }
 
-    private void sendToServiceBuffer(ServiceConnection from, byte[] data, ServiceChain path) {
+    private void sendToServiceBuffer(DeprecatedServiceConnection from, byte[] data, ServiceChain path) {
         DeprecatedServicePacket servicePacket = new DeprecatedServicePacket(from, data, path);
         serviceBuffer.add(servicePacket);
     }
 
     /**
-     * Give back a new ServiceConnection but keeps the uuid between jumps
-     * This is needed to prevent a huge bug when the uuid gets lost between machines
-     * @param uuid the uuid the new ServiceConnection should contain
+     * Give back a new DeprecatedServiceConnection but keeps the uuid between jumps
+ This is needed to prevent a huge bug when the uuid gets lost between machines
+     * @param uuid the uuid the new DeprecatedServiceConnection should contain
      * @return
      */
-    private ServiceConnection getLocalServiceConnection(UUID uuid){
+    private DeprecatedServiceConnection getLocalServiceConnection(UUID uuid){
         SocketAddress address = getLocalSocketAddress();
-        ServiceConnection local = new DefaultServiceConnection(uuid);
+        DeprecatedServiceConnection local = new DeprecatedDefaultServiceConnection(uuid);
         local.setAddress(address);
         return local;
     }
@@ -410,11 +410,11 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
      * getLocalServiceConnection
      * Warning: improper use of this method can lead to huge network routing bugs,
      *      related to losing the uuid between jumps, use the above method instead
-     * @return ServiceConnection with the local socket
+     * @return DeprecatedServiceConnection with the local socket
      */
-    private ServiceConnection getLocalServiceConnection(){
+    private DeprecatedServiceConnection getLocalServiceConnection(){
         SocketAddress address = getLocalSocketAddress();
-        ServiceConnection local = new DefaultServiceConnection();
+        DeprecatedServiceConnection local = new DeprecatedDefaultServiceConnection();
         local.setAddress(address);
         return local;
     }
@@ -473,7 +473,7 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
                     }
                     break;
                 case DISCOVERY:
-                    ServiceConnection origin = parseOrigin(input);
+                    DeprecatedServiceConnection origin = parseOrigin(input);
                     localServiceDiscovery.discoveryUpdate(origin, input.getData().toByteArray());
                     break;
                 default:
@@ -490,8 +490,8 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
         }
     }
 
-    private ServiceConnection parseOrigin(TransportPacket.Packet input) throws java.net.UnknownHostException{
-        ServiceConnection origin = new DefaultServiceConnection(UUID.fromString(input.getOrigin().getUuid()));
+    private DeprecatedServiceConnection parseOrigin(TransportPacket.Packet input) throws java.net.UnknownHostException{
+        DeprecatedServiceConnection origin = new DeprecatedDefaultServiceConnection(UUID.fromString(input.getOrigin().getRequestId()));
         origin.setAddress(new InetSocketAddress(Inet4Address.getByName(input.getOrigin().getIp()), input.getOrigin().getPort()));
         return origin;
     }
@@ -508,9 +508,14 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
         for (int i = 0; i < input.getPathCount(); i++)
             path.addService(input.getPath(i));
 
-        Origin from = new Origin(new InetSocketAddress(Inet4Address.getByName(input.getOrigin().getIp()), input.getOrigin().getPort()), UUID.fromString(input.getOrigin().getUuid()));
+        Origin origin = new Origin(new InetSocketAddress(Inet4Address.getByName(input.getOrigin().getIp()), input.getOrigin().getPort()), UUID.fromString(input.getOrigin().getRequestId()));
 
-        NetworkPacket packet = new NetworkPacket(input.getData().toByteArray(), path, from, PathType.valueOf(input.getPathtype().toString()));
+        NetworkPacket packet = NetworkPacket.newBuilder()
+            .setData(input.getData().toByteArray())
+            .setPath(path)
+            .setOrigin(origin)
+            .setPathType(PathType.valueOf(input.getPathtype().toString()))
+            .build();
 
         return packet;
     }
@@ -525,24 +530,19 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
         InetSocketAddress address = (InetSocketAddress)input.getOrigin().getAddress();
         TransportPacket.Origin origin = TransportPacket.Origin.newBuilder()
             .setIp(address.getAddress().getHostAddress())
-            .setUuid(input.getOrigin().getServiceRequestID().toString())
+            .setRequestId(input.getOrigin().getServiceRequestID().toString())
             .setPort(address.getPort())
             .build();
         builder.setOrigin(origin);
 
-        try{
-            builder.setData(com.google.protobuf.ByteString.copyFrom(input.getDataBytes()));
-        }catch(IOException e){
-            logError("Could not unpack data from local packet");
-            throw e;
-        }
+        builder.setData(com.google.protobuf.ByteString.copyFrom(input.getData()));
 
         builder.setPathtype(TransportPacket.Packet.PathType.valueOf(input.getType().toString()));
         builder.setKeepalive(false);
         return builder.build();
     }
 
-    public TransportPacket.Packet buildTransportPacket(byte[] data, ServiceChain path, ServiceConnection origin, PathType type){
+    public TransportPacket.Packet buildTransportPacket(byte[] data, ServiceChain path, DeprecatedServiceConnection origin, PathType type){
         TransportPacket.Packet.Builder builder = TransportPacket.Packet.newBuilder();
 
         while (path.peekNextServiceName() != null) {
@@ -552,7 +552,7 @@ public class DeprecatedDefaultNetworkHandler implements DeprecatedNetworkHandler
         InetSocketAddress address = (InetSocketAddress)origin.getAddress();
         TransportPacket.Origin originInfo = TransportPacket.Origin.newBuilder()
             .setIp(address.getAddress().getHostAddress())
-            .setUuid(origin.getUserConnectionId().toString())
+            .setRequestId(origin.getUserConnectionId().toString())
             .setPort(address.getPort())
             .build();
         builder.setOrigin(originInfo);

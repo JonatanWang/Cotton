@@ -12,24 +12,25 @@ import java.util.UUID;
  *
  * @author Magnus
  */
-public class DefaultServiceConnection implements ServiceConnection, Serializable {
+@Deprecated
+public class DeprecatedDefaultServiceConnection implements DeprecatedServiceConnection, Serializable {
     private static final long serialVersionUID = 1L;
     private UUID conId;
     private String name;
     private PathType pathType = PathType.SERVICE;
     SocketAddress address = null;
 
-    public DefaultServiceConnection() {
+    public DeprecatedDefaultServiceConnection() {
         conId = UUID.randomUUID();
         this.name = "none";
     }
 
-    public DefaultServiceConnection(UUID uuid) {
+    public DeprecatedDefaultServiceConnection(UUID uuid) {
         conId = uuid;
         this.name = "none";
     }
 
-    public DefaultServiceConnection(String name) {
+    public DeprecatedDefaultServiceConnection(String name) {
         conId = UUID.randomUUID();
         this.name = name;
     }

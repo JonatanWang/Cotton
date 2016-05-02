@@ -3,22 +3,26 @@ package cotton.network;
 option java_outer_classname = "TransportPacket";
 
 message Packet{
-	enum PathType{
+
+enum PathType{
 		RELAY = 0;
 		DISCOVERY = 1;
 		SERVICE = 2;
 		UNKNOWN = 3;
     NOTFOUND = 4;
 	}
+
   optional bool keepalive = 1;
 	optional PathType pathtype = 2;
 	optional bytes data = 3;
 	optional Origin origin = 4;
   repeated string path = 6;
+
 }
 
 message Origin{
-	optional string uuid = 1;
-	optional string ip = 2;
-	optional int32 port = 3;
+	optional string latchId = 1;
+  optional string requestId = 2;
+	optional string ip = 3;
+	optional int32 port = 4;
 }

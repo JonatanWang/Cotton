@@ -18,7 +18,7 @@ public class NetworkPacket implements Serializable{
     private PathType pt;
     private boolean keepAlive;
 
-    public NetworkPacket(byte[] data, ServiceChain path, Origin origin, PathType pt) {
+    private NetworkPacket(byte[] data, ServiceChain path, Origin origin, PathType pt) {
         this.data = data;
         this.origin = origin;
         this.path = path;
@@ -29,7 +29,7 @@ public class NetworkPacket implements Serializable{
         this.keepAlive = false;
     }
 
-    public NetworkPacket(byte[] data, ServiceChain path, Origin origin, PathType pt, boolean keepAlive) {
+    private NetworkPacket(byte[] data, ServiceChain path, Origin origin, PathType pt, boolean keepAlive) {
         this.data = data;
         this.origin = origin;
         this.path = path;
@@ -37,8 +37,12 @@ public class NetworkPacket implements Serializable{
         this.keepAlive = keepAlive;
     }
 
-    public void setData(byte[] data){
-        this.data = data;
+    private NetworkPacket(NetworkPacketBuilder builder){
+        this.data = builder.data;
+        this.origin = builder.origin;
+        this.path = builder.path;
+        this.pt = builder.pt;
+        this.keepAlive = builder.keepAlive;
     }
 
     public ServiceChain getPath(){
@@ -57,14 +61,61 @@ public class NetworkPacket implements Serializable{
         return data;
     }
 
-    public byte[] getDataBytes() throws IOException{
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        ObjectOutputStream writer = new ObjectOutputStream(outputStream);
-        writer.writeObject(data);
-        return outputStream.toByteArray();
-    }
-
     public boolean keepAlive(){
         return keepAlive;
+    }
+
+    public void removeData(){
+        data = null;
+    }
+
+    public static NetworkPacketBuilder newBuilder(){
+        return new NetworkPacketBuilder();
+    }
+
+    public static class NetworkPacketBuilder{
+        byte[] data;
+        Origin origin;
+        ServiceChain path;
+        PathType pt;
+        boolean keepAlive;
+
+        public NetworkPacketBuilder(){
+            data = null;
+            origin = null;
+            path = null;
+            pt = null;
+            keepAlive = false;
+        }
+
+        public NetworkPacketBuilder setData(byte[] data){
+            this.data = data;
+            return this;
+        }
+
+        public NetworkPacketBuilder setOrigin(Origin origin){
+            this.origin = origin;
+            return this;
+        }
+
+        public NetworkPacketBuilder setPath(ServiceChain path){
+            this.path = path;
+            return this;
+        }
+
+        public NetworkPacketBuilder setPathType(PathType pt){
+            this.pt = pt;
+            return this;
+        }
+
+        public NetworkPacketBuilder setKeepAlive(boolean keepAlive){
+            this.keepAlive = keepAlive;
+            return this;
+        }
+
+        public NetworkPacket build(){
+            return new NetworkPacket(this);
+        }
+
     }
 }

@@ -19,7 +19,6 @@ import cotton.network.ServiceChain;
 import cotton.services.CloudContext;
 import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.DummyServiceChain;
-import cotton.network.ServiceConnection;
 import cotton.services.DeprecatedServiceHandler;
 import cotton.services.DeprecatedServiceMetaData;
 import cotton.services.DeprecatedServicePacket;
@@ -44,6 +43,7 @@ import cotton.services.DeprecatedService;
 import cotton.services.DeprecatedServiceBuffer;
 import cotton.services.DeprecatedServiceFactory;
 import cotton.services.DeprecatedActiveServiceLookup;
+import cotton.network.DeprecatedServiceConnection;
 
 public class UnitTest {
     public UnitTest() {
@@ -86,7 +86,7 @@ public class UnitTest {
     private class TestService implements DeprecatedService{
 
         @Override
-        public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
+        public byte[] execute(CloudContext ctx, DeprecatedServiceConnection from, byte[] data, ServiceChain to) {
             String in = "fail";
 
             ObjectInputStream inStream;
@@ -111,7 +111,7 @@ public class UnitTest {
     private class DummyBufferStuffer{
         private DeprecatedServicePacket servicePacket;
         DeprecatedServiceBuffer serviceBuffer;
-        public DummyBufferStuffer(DeprecatedServiceBuffer buffer, ServiceConnection from, byte[] data, ServiceChain to){
+        public DummyBufferStuffer(DeprecatedServiceBuffer buffer, DeprecatedServiceConnection from, byte[] data, ServiceChain to){
             this.serviceBuffer = buffer;
             //try{
                 /*
@@ -233,7 +233,7 @@ public class UnitTest {
         DeprecatedActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
         DeprecatedServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
-        ServiceConnection dest = new DefaultServiceConnection();
+        DeprecatedServiceConnection dest = new DeprecatedDefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain().into("test");
         assertTrue(RouteSignal.LOCALDESTINATION == local.getDestination(dest, null, chain));
     }
@@ -245,7 +245,7 @@ public class UnitTest {
         DeprecatedActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
         DeprecatedServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
-        ServiceConnection dest = new DefaultServiceConnection();
+        DeprecatedServiceConnection dest = new DeprecatedDefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain().into("test");
         assertTrue(RouteSignal.LOCALDESTINATION == local.getDestination(dest, chain));
     }
@@ -257,7 +257,7 @@ public class UnitTest {
         DeprecatedActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
         DeprecatedServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
-        ServiceConnection dest = new DefaultServiceConnection();
+        DeprecatedServiceConnection dest = new DeprecatedDefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain();
         assertTrue(RouteSignal.NOTFOUND == local.getDestination(dest, null, chain));
     }
@@ -269,7 +269,7 @@ public class UnitTest {
         DeprecatedActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("test", new TestFactory(), 10);
         DeprecatedServiceDiscovery local = new DefaultLocalServiceDiscovery(lookup);
-        ServiceConnection dest = new DefaultServiceConnection();
+        DeprecatedServiceConnection dest = new DeprecatedDefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain().into("test");
         assertTrue(RouteSignal.NOTFOUND == local.getDestination(null, chain));
     }
@@ -296,7 +296,7 @@ public class UnitTest {
             e.printStackTrace();
         }
 
-        ServiceConnection from = new DefaultServiceConnection();
+        DeprecatedServiceConnection from = new DeprecatedDefaultServiceConnection();
 
         DeprecatedActiveServiceLookup lookup = new DefaultActiveServiceLookup();
         lookup.registerService("Store", new TestFactory(), 10);
@@ -304,7 +304,7 @@ public class UnitTest {
         //local.announce();
         local.discoveryUpdate(from, message);
 
-        ServiceConnection dest = new DefaultServiceConnection();
+        DeprecatedServiceConnection dest = new DeprecatedDefaultServiceConnection();
         ServiceChain chain = new DummyServiceChain().into("test");
         assertTrue(RouteSignal.NETWORKDESTINATION == local.getDestination(dest, from, chain));
 

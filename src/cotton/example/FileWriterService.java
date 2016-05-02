@@ -2,7 +2,6 @@ package cotton.example;
 
 import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
-import cotton.network.ServiceConnection;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -18,11 +17,12 @@ import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import cotton.services.DeprecatedService;
 import cotton.services.DeprecatedServiceFactory;
+import cotton.network.DeprecatedServiceConnection;
 
 public class FileWriterService implements DeprecatedService{
 
     @Override
-    public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
+    public byte[] execute(CloudContext ctx, DeprecatedServiceConnection from, byte[] data, ServiceChain to) {
         System.out.println("Write");
         BufferedImage image = null;
 

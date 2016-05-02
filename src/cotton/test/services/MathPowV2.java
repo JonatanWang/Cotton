@@ -4,7 +4,6 @@ package cotton.test.services;
 import cotton.network.Origin;
 import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
-import cotton.network.ServiceConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -15,6 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import cotton.services.Service;
 import cotton.services.ServiceFactory;
+import cotton.network.DeprecatedServiceConnection;
 
 /**
  *

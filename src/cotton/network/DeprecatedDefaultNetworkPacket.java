@@ -12,12 +12,12 @@ import java.io.Serializable;
 public class DeprecatedDefaultNetworkPacket implements DeprecatedNetworkPacket{
     private static final long serialVersionUID = 1L;
     private Serializable data;
-    private ServiceConnection from;
+    private DeprecatedServiceConnection from;
     private ServiceChain path;
     private PathType pt;
     private boolean keepAlive;
 
-    public DeprecatedDefaultNetworkPacket(Serializable data, ServiceChain path, ServiceConnection from, PathType pt) {
+    public DeprecatedDefaultNetworkPacket(Serializable data, ServiceChain path, DeprecatedServiceConnection from, PathType pt) {
         this.data = data;
         this.from = from;
         this.path = path;
@@ -28,7 +28,7 @@ public class DeprecatedDefaultNetworkPacket implements DeprecatedNetworkPacket{
         this.keepAlive = false;
     }
 
-    public DeprecatedDefaultNetworkPacket(Serializable data, ServiceChain path, ServiceConnection from, PathType pt, boolean keepAlive) {
+    public DeprecatedDefaultNetworkPacket(Serializable data, ServiceChain path, DeprecatedServiceConnection from, PathType pt, boolean keepAlive) {
         this.data = data;
         this.from = from;
         this.path = path;
@@ -40,7 +40,7 @@ public class DeprecatedDefaultNetworkPacket implements DeprecatedNetworkPacket{
         return path;
     }
 
-    public ServiceConnection getOrigin(){
+    public DeprecatedServiceConnection getOrigin(){
         return from;
     }
 

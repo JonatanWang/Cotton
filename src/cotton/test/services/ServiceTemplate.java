@@ -2,7 +2,6 @@
 package cotton.test.services;
 
 import cotton.services.CloudContext;
-import cotton.network.ServiceConnection;
 import cotton.network.ServiceChain;
 import java.io.Serializable;
 import cotton.Cotton;
@@ -15,6 +14,7 @@ import java.io.IOException;
 import cotton.services.DeprecatedService;
 import cotton.services.DeprecatedServiceFactory;
 import cotton.services.DeprecatedActiveServiceLookup;
+import cotton.network.DeprecatedServiceConnection;
 
 /**
  *
@@ -23,7 +23,7 @@ import cotton.services.DeprecatedActiveServiceLookup;
  **/
 public class ServiceTemplate implements DeprecatedService {
     @Override
-    public byte[] execute(CloudContext ctx, ServiceConnection from, byte[] data, ServiceChain to) {
+    public byte[] execute(CloudContext ctx, DeprecatedServiceConnection from, byte[] data, ServiceChain to) {
         return "none".getBytes();
     }
     
