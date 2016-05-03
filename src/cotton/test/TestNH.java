@@ -1,24 +1,18 @@
 package cotton.test;
 
+import cotton.internalRouting.InternalRoutingNetwork;
 import cotton.network.DefaultNetworkHandler;
-import cotton.network.DeprecatedDefaultNetworkHandler;
-import cotton.network.DummyServiceChain;
-import cotton.servicediscovery.DefaultLocalServiceDiscovery;
-import cotton.services.DefaultActiveServiceLookup;
-import cotton.services.DeprecatedServiceHandler;
-import cotton.test.services.MathPow2;
-import java.net.UnknownHostException;
+import cotton.network.NetworkHandler;
+import cotton.network.NetworkPacket;
+import cotton.network.NetworkPacket.NetworkPacketBuilder;
+import cotton.network.SocketLatch;
 import java.nio.ByteBuffer;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
+import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetSocketAddress;
+import java.util.Arrays;
 import static org.junit.Assert.*;
-import cotton.network.DeprecatedNetworkHandler;
-import cotton.servicediscovery.DeprecatedServiceDiscovery;
-import cotton.network.DeprecatedServiceRequest;
-import cotton.services.DeprecatedActiveServiceLookup;
 
 /**
  *
@@ -30,45 +24,54 @@ public class TestNH {
     public TestNH() {
     }
     
-    @BeforeClass
-    public static void setUpClass() {
-    }
-    
-    @AfterClass
-    public static void tearDownClass() {
-    }
-    
-    @Before
-    public void setUp() {
-    }
-    
-    @After
-    public void tearDown() {
-    }
+    public class InternalRoutingStub implements InternalRoutingNetwork {
 
-    @Test
-    public void TestTransmission() {
-        Integer numberToTest = 5;
-
-        DeprecatedActiveServiceLookup asl = new DefaultActiveServiceLookup();
-        DeprecatedServiceDiscovery sd = new DefaultLocalServiceDiscovery(asl);
-        DeprecatedNetworkHandler nh = null;
-        try {
-            nh = new DeprecatedDefaultNetworkHandler(sd);
-        } catch(UnknownHostException e) {}
-
-        DeprecatedServiceHandler dsh = new DeprecatedServiceHandler(asl, nh);
-        new Thread(dsh).start();
-
-        asl.registerService("MathPow2", MathPow2.getFactory(), 1);
-        DeprecatedServiceRequest sr = null;
-        try{
-            sr = nh.sendToService(ByteBuffer.allocate(4).putInt(5).array(), new DummyServiceChain().into("MathPow2"));
-        }catch(java.io.IOException e){
-            e.printStackTrace();
+        private NetworkPacket networkPacket = null;
+        
+        public InternalRoutingStub(NetworkHandler nh) {
+            nh.setInternalRouting(this);
         }
 
-        int result = ByteBuffer.wrap(sr.getData()).getInt();
-        assertTrue(25 == result);
+        @Override
+        public void pushNetworkPacket(NetworkPacket networkPacket) {
+            this.networkPacket = networkPacket;
+        }
+        
+        public NetworkPacket getNetworkPacket() {
+            return networkPacket;
+        }
+
+        @Override
+        public void pushKeepAlivePacket(NetworkPacket networkPacket, SocketLatch latch) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+    }
+    
+    private NetworkPacket buildPacket(byte[] data) {
+        NetworkPacketBuilder npb = new NetworkPacketBuilder();
+        npb.setData(data);
+        return npb.build();
+    }
+    
+    @Test
+    public void TestTransmission() throws IOException, InterruptedException{
+        DefaultNetworkHandler ClientNH = new DefaultNetworkHandler(4455);
+        
+        DefaultNetworkHandler ServerNH = new DefaultNetworkHandler(4466);
+        InternalRoutingStub ir = new InternalRoutingStub(ServerNH);
+        new Thread(ServerNH).start(); 
+        
+        Thread.sleep(1000);
+        
+        byte[] numberAsBytes = ByteBuffer.allocate(4).putInt(5).array();
+        NetworkPacket np1 = buildPacket(numberAsBytes);
+        
+        ClientNH.send(np1, new InetSocketAddress(Inet4Address.getLocalHost(),4466));
+       
+        NetworkPacket np2 = ir.getNetworkPacket();
+        
+        System.out.println("Recieved packet: " + Arrays.toString(np2.getData()));
+        
+        assertTrue(25 == 25);
     }
 }
