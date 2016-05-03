@@ -171,7 +171,21 @@ public class DefaultNetworkHandler implements NetworkHandler {
         if(dest == null) throw new NullPointerException("Null destination");
 
         TransportPacket.Packet tp = buildTransportPacket(packet);
-        sendTransportPacket(tp, dest);
+        
+        Socket socket = new Socket();
+        try {
+            socket.connect(dest);
+            tp.writeDelimitedTo(socket.getOutputStream());
+        }catch (IOException e) {
+            logError("send: " + e.getMessage());
+            throw e;
+        }finally{
+            try {
+                socket.close();
+            } catch (Throwable e) {
+                logError("send socket close: " + e.getMessage());
+            }
+        }
     }
 
     @Override
@@ -180,14 +194,23 @@ public class DefaultNetworkHandler implements NetworkHandler {
         if(dest == null) throw new NullPointerException("Null destination");
 
         TransportPacket.Packet tp = buildTransportPacket(packet, true);
-        sendTransportPacket(tp, dest);
+        
+        Socket socket = new Socket();
+        try {
+            socket.connect(dest);
+            tp.writeDelimitedTo(socket.getOutputStream());
+            NetworkUnpacker nu = new NetworkUnpacker(socket);
+            
+            threadPool.execute(nu);
+        }catch (IOException e) {
+            logError("send: " + e.getMessage());
+            throw e;
+        }
     }
 
     private void sendTransportPacket(TransportPacket.Packet packet, SocketAddress dest) throws IOException {
         Socket socket = new Socket();
         try {
-            //socket = createSSLClientSocket((InetSocketAddress) dest);
-            //socket.startHandshake();
             socket.connect(dest);
             packet.writeDelimitedTo(socket.getOutputStream());
         }catch (IOException e) {
@@ -279,6 +302,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             .setPath(path)
             .setOrigin(origin)
             .setPathType(PathType.valueOf(input.getPathtype().toString()))
+            .setKeepAlive(input.getKeepalive())
             .build();
 
         return packet;
@@ -323,19 +347,30 @@ public class DefaultNetworkHandler implements NetworkHandler {
         while (input.getPath().peekNextServiceName() != null) {
             builder.addPath(input.getPath().getNextServiceName());
         }
-
+        
         InetSocketAddress address = (InetSocketAddress)input.getOrigin().getAddress();
-        TransportPacket.Origin origin = TransportPacket.Origin.newBuilder()
-            .setIp(address.getAddress().getHostAddress())
-            .setRequestId(input.getOrigin().getServiceRequestID().toString())
-            .setLatchId(input.getOrigin().getSocketLatchID().toString())
-            .setPort(address.getPort())
-            .build();
+        UUID serviceRequestID = input.getOrigin().getServiceRequestID();
+        UUID socketLatchID = input.getOrigin().getSocketLatchID();
+        
+        TransportPacket.Origin.Builder originBuilder = TransportPacket.Origin.newBuilder();
+        if(address != null) {
+            originBuilder = originBuilder
+                    .setIp(address.getAddress().getHostAddress())
+                    .setPort(address.getPort());
+        }
+        if(serviceRequestID != null) {
+             originBuilder = originBuilder.setRequestId(serviceRequestID.toString());
+        }
+        if(socketLatchID != null) {
+             originBuilder = originBuilder.setLatchId(socketLatchID.toString());
+        }
+        TransportPacket.Origin origin = originBuilder.build();
         builder.setOrigin(origin);
 
         builder.setData(com.google.protobuf.ByteString.copyFrom(input.getData()));
 
         builder.setPathtype(TransportPacket.Packet.PathType.valueOf(input.getType().toString()));
+        
         builder.setKeepalive(keepAlive);
         return builder.build();
     }
