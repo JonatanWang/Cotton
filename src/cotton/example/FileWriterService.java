@@ -1,7 +1,10 @@
 package cotton.example;
 
+import cotton.network.Origin;
 import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
+import cotton.services.Service;
+import cotton.services.ServiceFactory;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -15,14 +18,11 @@ import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
-import cotton.services.DeprecatedService;
-import cotton.services.DeprecatedServiceFactory;
-import cotton.network.DeprecatedServiceConnection;
 
-public class FileWriterService implements DeprecatedService{
+public class FileWriterService implements Service{
 
     @Override
-    public byte[] execute(CloudContext ctx, DeprecatedServiceConnection from, byte[] data, ServiceChain to) {
+    public byte[] execute(CloudContext ctx, Origin origin, byte[] data, ServiceChain to) {
         System.out.println("Write");
         BufferedImage image = null;
 
@@ -40,14 +40,14 @@ public class FileWriterService implements DeprecatedService{
         return data;
     }
 
-    public static DeprecatedServiceFactory getFactory(){
+    public static ServiceFactory getFactory(){
         return new FileFactory();
     }
 
-    public static class FileFactory implements DeprecatedServiceFactory {
+    public static class FileFactory implements ServiceFactory {
 
         @Override
-        public DeprecatedService newService() {
+        public Service newService() {
             return new FileWriterService();
         }
 

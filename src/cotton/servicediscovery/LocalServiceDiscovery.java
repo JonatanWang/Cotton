@@ -124,6 +124,9 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         }
         if (serviceName == null) {
             signal = resolveOriginRoute(origin);
+            if(signal == RouteSignal.NOTFOUND) {
+                return signal;
+            }
             destination.setSocketAddress(origin.getAddress());
             destination.setPathType(PathType.RELAY);// latch is a relay??
             return signal;
@@ -285,9 +288,9 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
             probe = (DiscoveryPacket) input.readObject();
         } catch (IOException ex) {
-            Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(LocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
         } catch (ClassNotFoundException ex) {
-            Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(LocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
         }
         return probe;
     }

@@ -1,5 +1,6 @@
 package cotton.test;
 
+
 import cotton.internalRouting.InternalRoutingNetwork;
 import cotton.network.DefaultNetworkHandler;
 import cotton.network.DummyServiceChain;
@@ -18,6 +19,9 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.UUID;
 import static org.junit.Assert.*;
+import cotton.network.NetworkHandler;
+import cotton.servicediscovery.ServiceDiscovery;
+import cotton.services.ActiveServiceLookup;
 
 /**
  *
@@ -65,6 +69,7 @@ public class TestNH {
     }
     
     @Test
+
     public void TestClientServerTransmission() throws IOException, InterruptedException{
         int numberToSend = 5;
         

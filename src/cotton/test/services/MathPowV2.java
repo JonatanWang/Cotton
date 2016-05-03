@@ -14,7 +14,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import cotton.services.Service;
 import cotton.services.ServiceFactory;
-import cotton.network.DeprecatedServiceConnection;
 
 /**
  *
