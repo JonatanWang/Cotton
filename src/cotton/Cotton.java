@@ -42,27 +42,53 @@ public class Cotton {
     private ServiceDiscovery discovery;
     private DefaultInternalRouting internalRouting;
 
-    public Cotton (boolean globalServiceDiscovery) throws java.net.UnknownHostException {
+    public Cotton(boolean globalServiceDiscovery) throws java.net.UnknownHostException {
         Random rnd = new Random();
         GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
         NetworkHandler net = null;
-        if(globalServiceDiscovery) {
-            net = new DefaultNetworkHandler(rnd.nextInt(20000)+3000);
+        if (globalServiceDiscovery) {
+            net = new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
             discovery = new GlobalServiceDiscovery(globalDiscoveryDNS);
-        
-        }else {
-            net = new DefaultNetworkHandler();
+
+        } else {
+            net = new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
             discovery = new LocalServiceDiscovery(globalDiscoveryDNS);
-        
+
         }
         lookup = new ServiceLookup();
         discovery.setLocalServiceTable(lookup);
-        this.internalRouting = new DefaultInternalRouting(net,discovery);
-        this.services = new ServiceHandler(lookup,internalRouting);
+        this.internalRouting = new DefaultInternalRouting(net, discovery);
+        this.services = new ServiceHandler(lookup, internalRouting);
         //clientNetwork = net;
         //services = new DeprecatedServiceHandler(lookup, network);
         //TODO swap for current versions
+        this.network = net;
+    }
+    
+    public Cotton(boolean globalServiceDiscovery,GlobalDiscoveryDNS globalDiscoveryDNS) throws java.net.UnknownHostException {
+        Random rnd = new Random();
+        if(globalDiscoveryDNS == null) {
+            globalDiscoveryDNS = new GlobalDiscoveryDNS();
         }
+        NetworkHandler net = null;
+        if (globalServiceDiscovery) {
+            net = new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
+            discovery = new GlobalServiceDiscovery(globalDiscoveryDNS);
+
+        } else {
+            net = new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
+            discovery = new LocalServiceDiscovery(globalDiscoveryDNS);
+
+        }
+        lookup = new ServiceLookup();
+        discovery.setLocalServiceTable(lookup);
+        this.internalRouting = new DefaultInternalRouting(net, discovery);
+        this.services = new ServiceHandler(lookup, internalRouting);
+        //clientNetwork = net;
+        //services = new DeprecatedServiceHandler(lookup, network);
+        //TODO swap for current versions
+        this.network = net;
+    }
     
     public Cotton (boolean globalServiceDiscovery, int portNumber) throws java.net.UnknownHostException {
         //TODO swap for current versions
@@ -81,6 +107,7 @@ public class Cotton {
         discovery.setLocalServiceTable(lookup);
         this.internalRouting = new DefaultInternalRouting(net,discovery);
         this.services = new ServiceHandler(lookup,internalRouting);
+        this.network = net;
         
     }
     /*  
@@ -96,11 +123,10 @@ public class Cotton {
     }
 */
     public void start(){
-        new Thread(services).start();
         new Thread(network).start();
-        discovery.announce();
         internalRouting.start();
         new Thread(services).start();
+        discovery.announce();
     }
 
     public void shutdown() {

@@ -11,10 +11,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import cotton.internalRouting.InternalRoutingNetwork;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 
 /**
  * Handles all of the packet buffering and relaying.
@@ -91,12 +94,17 @@ public class DefaultNetworkHandler implements NetworkHandler {
         SSLServerSocketFactory sf = (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
         return (SSLServerSocket)sf.createServerSocket();
     }
+    
+    private SSLSocket createSSLClientSocket(InetSocketAddress address) throws IOException{
+        SSLSocketFactory sf = (SSLSocketFactory)SSLSocketFactory.getDefault();
+        return (SSLSocket)sf.createSocket(address.getAddress(), address.getPort());
+    }
 
     @Override
     public void run(){
-        SSLServerSocket serverSocket = null;
+        ServerSocket serverSocket = null;
         try{
-            serverSocket = createSSLServerSocket();
+            serverSocket = new ServerSocket();
             serverSocket.bind(getLocalAddress());
             serverSocket.setSoTimeout(80);
         }catch(IOException e){// TODO: Logging
@@ -176,10 +184,12 @@ public class DefaultNetworkHandler implements NetworkHandler {
     }
 
     private void sendTransportPacket(TransportPacket.Packet packet, SocketAddress dest) throws IOException {
-        Socket socket = new Socket(); // TODO: Encryption
+        Socket socket = new Socket();
         try {
+            //socket = createSSLClientSocket((InetSocketAddress) dest);
+            //socket.startHandshake();
             socket.connect(dest);
-            packet.writeTo(socket.getOutputStream());
+            packet.writeDelimitedTo(socket.getOutputStream());
         }catch (IOException e) {
             logError("send: " + e.getMessage());
             throw e;
@@ -221,6 +231,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
                     internalRouting.pushNetworkPacket(np);
                 }
             } catch(IOException e) {
+                e.printStackTrace();
                 logError(e.toString());
             } finally {
                 try {clientSocket.close();} catch (IOException ex) {}
@@ -230,11 +241,23 @@ public class DefaultNetworkHandler implements NetworkHandler {
 
     private Origin parseOrigin(TransportPacket.Packet input) throws java.net.UnknownHostException{
         TransportPacket.Origin origin = input.getOrigin();
-        InetSocketAddress socketAddress = new InetSocketAddress(Inet4Address.getByName(origin.getIp()), origin.getPort());
-
-        Origin parsedOrigin = new Origin(socketAddress, UUID.fromString(origin.getRequestId()));
-        parsedOrigin.setSocketLatchID(UUID.fromString(origin.getLatchId()));
-
+        String ip = origin.getIp();
+        int port = origin.getPort();
+        String requestId = origin.getRequestId();
+        String latchId = origin.getLatchId();
+        
+        Origin parsedOrigin = new Origin();
+        if(ip != "") {
+            InetSocketAddress socketAddress = new InetSocketAddress(Inet4Address.getByName(ip),port);
+            parsedOrigin.setAddress(socketAddress);
+        }
+        if(requestId != "") {
+            parsedOrigin.setServiceRequestID(UUID.fromString(requestId));
+        }
+        if(latchId != "") {
+            parsedOrigin.setSocketLatchID(UUID.fromString(latchId));
+        }
+        
         return parsedOrigin;
     }
 
@@ -267,14 +290,24 @@ public class DefaultNetworkHandler implements NetworkHandler {
         while (input.getPath().peekNextServiceName() != null) {
             builder.addPath(input.getPath().getNextServiceName());
         }
-
+        
         InetSocketAddress address = (InetSocketAddress)input.getOrigin().getAddress();
-        TransportPacket.Origin origin = TransportPacket.Origin.newBuilder()
-            .setIp(address.getAddress().getHostAddress())
-            .setRequestId(input.getOrigin().getServiceRequestID().toString())
-            .setLatchId(input.getOrigin().getSocketLatchID().toString())
-            .setPort(address.getPort())
-            .build();
+        UUID serviceRequestID = input.getOrigin().getServiceRequestID();
+        UUID socketLatchID = input.getOrigin().getSocketLatchID();
+        
+        TransportPacket.Origin.Builder originBuilder = TransportPacket.Origin.newBuilder();
+        if(address != null) {
+            originBuilder = originBuilder
+                    .setIp(address.getAddress().getHostAddress())
+                    .setPort(address.getPort());
+        }
+        if(serviceRequestID != null) {
+             originBuilder = originBuilder.setRequestId(serviceRequestID.toString());
+        }
+        if(socketLatchID != null) {
+             originBuilder = originBuilder.setLatchId(socketLatchID.toString());
+        }
+        TransportPacket.Origin origin = originBuilder.build();
         builder.setOrigin(origin);
 
         builder.setData(com.google.protobuf.ByteString.copyFrom(input.getData()));

@@ -1,4 +1,4 @@
-package cotton.example.systemintegrationsexample;
+package cotton.example.systemintegrationexample;
 import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
 import java.io.Serializable;
@@ -30,6 +30,7 @@ public class StringModifier implements Service{
         ActiveServiceLookup reg = cotton.getServiceRegistation();
         reg.registerService("StringModifier",getFactory(),10);
         cotton.start();
+        
         try {
             Thread.sleep(20000);
         } catch (InterruptedException ignore) { }

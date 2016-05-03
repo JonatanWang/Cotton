@@ -1,4 +1,4 @@
-package cotton.example.systemintegrationsexample;
+package cotton.example.systemintegrationexample;
 
 import cotton.Cotton;
 import cotton.network.ClientNetwork;

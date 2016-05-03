@@ -318,8 +318,8 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             DiscoveryPacket packet = packetUnpack(data);
             DiscoveryPacketType type = packet.getPacketType();
             //to do: switch not functioning properly with enums
-            System.out.println("DefaultGlobalServiceDiscovery: " + type
-                    + " from: " + ((InetSocketAddress) origin.getAddress()).toString());
+//            System.out.println("DefaultGlobalServiceDiscovery: " + type
+//                    + " from: " + ((InetSocketAddress) origin.getAddress()).toString());
             switch (type) {
                 case DISCOVERYREQUEST:
                     processProbeRequest(origin, packet.getProbe());
