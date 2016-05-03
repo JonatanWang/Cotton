@@ -1,4 +1,4 @@
-package cotton.example.systemintegrationsexample;
+package cotton.example.systemintegrationexample;
 import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
 import java.io.Serializable;
