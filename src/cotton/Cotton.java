@@ -27,6 +27,7 @@ import cotton.services.ServiceLookup;
 import cotton.services.ServiceFactory;
 import cotton.internalRouting.DefaultInternalRouting;
 import cotton.internalRouting.InternalRoutingClient;
+import java.util.Random;
 /**
  *
  * @author Jonathan
@@ -40,42 +41,35 @@ public class Cotton {
     private ServiceHandler services;
     private ServiceDiscovery discovery;
     private DefaultInternalRouting internalRouting;
-    /*public Cotton (boolean GlobalServiceDiscovery) throws java.net.UnknownHostException {
-        lookup = new DefaultActiveServiceLookup();
+
+    public Cotton (boolean globalServiceDiscovery) throws java.net.UnknownHostException {
+        Random rnd = new Random();
         GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
         NetworkHandler net = null;
-        if(GlobalServiceDiscovery) {
-            this.discovery = new DefaultGlobalServiceDiscovery(lookup,globalDiscoveryDNS);
-            net = new DefaultNetworkHandler();
+        if(globalServiceDiscovery) {
+            net = new DefaultNetworkHandler(rnd.nextInt(20000)+3000);
+            discovery = new GlobalServiceDiscovery(globalDiscoveryDNS);
+        
         }else {
-            this.discovery = new DefaultLocalServiceDiscovery(lookup,globalDiscoveryDNS);
-            net = new DefaultNetworkHandler(ThreadLocalRandom.current().nextInt(3000,20000));
+            net = new DefaultNetworkHandler();
+            discovery = new LocalServiceDiscovery(globalDiscoveryDNS);
+        
         }
-        network = net;
+        lookup = new ServiceLookup();
+        discovery.setLocalServiceTable(lookup);
+        this.internalRouting = new DefaultInternalRouting(net,discovery);
+        this.services = new ServiceHandler(lookup,internalRouting);
         //clientNetwork = net;
         //services = new DeprecatedServiceHandler(lookup, network);
         //TODO swap for current versions
-        }*/
+        }
     
     public Cotton (boolean globalServiceDiscovery, int portNumber) throws java.net.UnknownHostException {
-        /*lookup = new DefaultActiveServiceLookup();
-        GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
-        NetworkHandler net = null;
-        if(globalServiceDiscovery) {
-            this.discovery = new GlobalServiceDiscovery(lookup,globalDiscoveryDNS);
-            net = new DefaultNetworkHandler();
-        }else {
-            this.discovery = new DefaultLocalServiceDiscovery(lookup,globalDiscoveryDNS);
-            net = new DefaultNetworkHandler(portNumber);
-        }
-        network = net;*/
-        //clientNetwork = net;
-        //services = new DeprecatedServiceHandler(lookup, network);
         //TODO swap for current versions
         GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
         NetworkHandler net = null;
         if(globalServiceDiscovery) {
-            net = new DefaultNetworkHandler();
+            net = new DefaultNetworkHandler(portNumber);
             discovery = new GlobalServiceDiscovery(globalDiscoveryDNS);
         
         }else {
