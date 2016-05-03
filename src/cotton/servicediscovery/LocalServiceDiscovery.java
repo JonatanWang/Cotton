@@ -92,6 +92,9 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         try{
             byte[] data = serializeToBytes(packet);
             ServiceRequest request = internalRouting.sendWithResponse(dest,data);
+            if(request == null) {
+                return RouteSignal.NOTFOUND;
+            }
             DiscoveryPacket discoveryPacket = packetUnpack(request.getData());
             DiscoveryProbe discoveryProbe = discoveryPacket.getProbe();
             if(discoveryProbe != null && discoveryProbe.getAddress() != null){

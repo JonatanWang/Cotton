@@ -261,14 +261,24 @@ public class DefaultNetworkHandler implements NetworkHandler {
         while (input.getPath().peekNextServiceName() != null) {
             builder.addPath(input.getPath().getNextServiceName());
         }
-
+        
         InetSocketAddress address = (InetSocketAddress)input.getOrigin().getAddress();
-        TransportPacket.Origin origin = TransportPacket.Origin.newBuilder()
-            .setIp(address.getAddress().getHostAddress())
-            .setRequestId(input.getOrigin().getServiceRequestID().toString())
-            .setLatchId(input.getOrigin().getSocketLatchID().toString())
-            .setPort(address.getPort())
-            .build();
+        UUID serviceRequestID = input.getOrigin().getServiceRequestID();
+        UUID socketLatchID = input.getOrigin().getSocketLatchID();
+        
+        TransportPacket.Origin.Builder originBuilder = TransportPacket.Origin.newBuilder();
+        if(address != null) {
+            originBuilder = originBuilder
+                    .setIp(address.getAddress().getHostAddress())
+                    .setPort(address.getPort());
+        }
+        if(serviceRequestID != null) {
+             originBuilder = originBuilder.setRequestId(serviceRequestID.toString());
+        }
+        if(socketLatchID != null) {
+             originBuilder = originBuilder.setLatchId(socketLatchID.toString());
+        }
+        TransportPacket.Origin origin = originBuilder.build();
         builder.setOrigin(origin);
 
         builder.setData(com.google.protobuf.ByteString.copyFrom(input.getData()));
