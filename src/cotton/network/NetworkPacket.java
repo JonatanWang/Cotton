@@ -8,6 +8,7 @@ import java.io.Serializable;
  *
  * @author tony
  * @author Magnus
+ * @author Jonathan
  */
 public class NetworkPacket implements Serializable{
     private static final long serialVersionUID = 1L;
