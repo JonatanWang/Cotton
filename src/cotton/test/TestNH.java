@@ -1,5 +1,6 @@
 package cotton.test;
 
+
 import cotton.internalRouting.InternalRoutingNetwork;
 import cotton.network.DefaultNetworkHandler;
 import cotton.network.DummyServiceChain;
@@ -17,6 +18,9 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.UUID;
 import static org.junit.Assert.*;
+import cotton.network.NetworkHandler;
+import cotton.servicediscovery.ServiceDiscovery;
+import cotton.services.ActiveServiceLookup;
 
 /**
  *

@@ -246,9 +246,9 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
             probe = (DiscoveryPacket) input.readObject();
         } catch (IOException ex) {
-            Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
         } catch (ClassNotFoundException ex) {
-            Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
         }
         return probe;
     }

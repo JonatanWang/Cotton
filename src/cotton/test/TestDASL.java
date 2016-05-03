@@ -1,18 +1,17 @@
 package cotton.test;
 
+import cotton.network.Origin;
 import cotton.services.CloudContext;
-import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.ServiceChain;
+import cotton.services.Service;
+import cotton.services.ServiceFactory;
+import cotton.services.ServiceLookup;
 //import cotton.test.TestDASL.TestServiceFactory.TestService;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Enumeration;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import cotton.services.DeprecatedService;
-import cotton.services.DeprecatedServiceFactory;
-import cotton.services.DeprecatedActiveServiceLookup;
-import cotton.network.DeprecatedServiceConnection;
 
 /**
  * A test class for the <code>DefaultActiveServiceLookup</code> class as well as
@@ -25,7 +24,7 @@ public class TestDASL {
     /**
      * A test service factory to generate test service instances.
      */
-    public class TestServiceFactory implements DeprecatedServiceFactory {
+    public class TestServiceFactory implements ServiceFactory {
 
         /**
          * Returns an <code>TestServiceInstance</code> for testing purposes.
@@ -34,14 +33,14 @@ public class TestDASL {
          * @see TestService
          */
         @Override
-        public DeprecatedService newService() {
+        public Service newService() {
             return new TestService();
         }
 
         /**
          * A service instance intended for testing the <code>DefaultActiveServiceLookup</code> class.
          */
-        public class TestService implements DeprecatedService{
+        public class TestService implements Service{
 
             /**
              * Retrieves the data and converts it to an <code>int</code> and multiplies it by two.
@@ -55,7 +54,7 @@ public class TestDASL {
              * @return the incoming number multiplied by 2.
              */
             @Override
-            public byte[] execute(CloudContext ctx, DeprecatedServiceConnection from, byte[] data, ServiceChain to) {
+            public byte[] execute(CloudContext ctx, Origin origin, byte[] data, ServiceChain to) {
                 int number = ByteBuffer.wrap(data).getInt();
                 number *= 2;
                 return ByteBuffer.allocate(4).putInt(number).array();
@@ -70,7 +69,7 @@ public class TestDASL {
      */
     @Test
     public void testCapacity() {
-        DeprecatedActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        ServiceLookup dasl = new ServiceLookup();
         dasl.registerService("Coloring", null, 10);
 
         assertEquals(10, dasl.getService("Coloring").getMaxCapacity());
@@ -85,7 +84,7 @@ public class TestDASL {
      */
     @Test
     public void testWrongCapacity() {
-        DeprecatedActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        ServiceLookup dasl = new ServiceLookup();
         dasl.registerService("Coloring", new TestServiceFactory(), 10);
         int maxCapacity = dasl.getService("Coloring").getMaxCapacity();
         assertTrue(9 != maxCapacity);
@@ -98,7 +97,7 @@ public class TestDASL {
      */
     @Test
     public void testHashMapKeys() {
-        DeprecatedActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        ServiceLookup dasl = new ServiceLookup();
 
         String[] services = new String[3];
         services[0] = "Coloring";
@@ -127,7 +126,7 @@ public class TestDASL {
      */
     @Test
     public void testRemove() {
-        DeprecatedActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        ServiceLookup dasl = new ServiceLookup();
 
         String[] services = new String[3];
         services[0] = "Coloring";
@@ -156,7 +155,7 @@ public class TestDASL {
      */
     @Test
     public void testFactory() throws IOException {
-        DeprecatedServiceFactory sf = new TestServiceFactory();
+        ServiceFactory sf = new TestServiceFactory();
         TestServiceFactory.TestService si = (TestServiceFactory.TestService)sf.newService();
 
         byte[] res = si.execute(null, null, ByteBuffer.allocate(4).putInt(2).array(), null);

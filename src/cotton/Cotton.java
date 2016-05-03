@@ -8,14 +8,10 @@ import javax.imageio.ImageIO;
 import cotton.example.FileWriterService;
 import cotton.example.ImageManipulationPacket;
 import cotton.example.ImageManipulationService;
-import cotton.network.ClientNetwork;
 import cotton.network.DefaultNetworkHandler;
 import cotton.network.ServiceChain;
-import cotton.servicediscovery.DefaultLocalServiceDiscovery;
 import cotton.servicediscovery.GlobalDiscoveryDNS;
-import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.DummyServiceChain;
-import cotton.servicediscovery.DefaultGlobalServiceDiscovery;
 import java.util.concurrent.ThreadLocalRandom;
 import cotton.network.NetworkHandler;
 import cotton.servicediscovery.ServiceDiscovery;
@@ -153,6 +149,7 @@ public class Cotton {
         Cotton c = null;
         try{
             c = new Cotton(true,3333);
+            c.start();
         }catch(java.net.UnknownHostException e){// TODO: Rethink this
             System.out.println("Init network error, exiting");
             return;

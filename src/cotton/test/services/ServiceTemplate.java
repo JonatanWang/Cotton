@@ -5,34 +5,33 @@ import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
 import java.io.Serializable;
 import cotton.Cotton;
+import cotton.network.Origin;
+import cotton.services.Service;
+import cotton.services.ServiceFactory;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.IOException;
-import cotton.services.DeprecatedService;
-import cotton.services.DeprecatedServiceFactory;
-import cotton.services.DeprecatedActiveServiceLookup;
-import cotton.network.DeprecatedServiceConnection;
 
 /**
  *
  * @author Tony
  * @author Magnus
  **/
-public class ServiceTemplate implements DeprecatedService {
+public class ServiceTemplate implements Service {
     @Override
-    public byte[] execute(CloudContext ctx, DeprecatedServiceConnection from, byte[] data, ServiceChain to) {
+    public byte[] execute(CloudContext ctx, Origin origin, byte[] data, ServiceChain to) {
         return "none".getBytes();
     }
     
-    public static DeprecatedServiceFactory getFactory(){
+    public static ServiceFactory getFactory(){
         return new Factory();
     }
-    public static class Factory implements DeprecatedServiceFactory {
+    public static class Factory implements ServiceFactory {
         @Override
-        public DeprecatedService newService() {
+        public Service newService() {
             return new ServiceTemplate();
         }
     }

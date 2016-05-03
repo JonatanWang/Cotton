@@ -1,7 +1,6 @@
 package cotton.example.systemintegrationexample;
 
 import cotton.Cotton;
-import cotton.network.ClientNetwork;
 import cotton.network.DummyServiceChain;
 import cotton.network.ServiceChain;
 import java.io.Serializable;

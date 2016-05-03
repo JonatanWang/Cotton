@@ -2,9 +2,6 @@ package cotton.test;
 
 import cotton.network.DefaultNetworkHandler;
 import cotton.network.DummyServiceChain;
-import cotton.servicediscovery.DefaultLocalServiceDiscovery;
-import cotton.services.DefaultActiveServiceLookup;
-import cotton.test.services.MathPow2;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import cotton.Cotton;
@@ -67,10 +64,10 @@ public class TestPackageInteraction {
 
     @Test
     public void TestTransmission() throws UnknownHostException {
-        Cotton discovery = new Cotton(true, 3333);
+        Cotton discovery = new Cotton(true, 5555);
         GlobalDnsStub gDns = new GlobalDnsStub();
         
-        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 3333);
+        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 5555);
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = gdAddr;
         gDns.setGlobalDiscoveryAddress(arr);
@@ -82,12 +79,8 @@ public class TestPackageInteraction {
 
         ser1.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
         ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
-
-        
-
         ser1.start();
         ser2.start();
-
         
         try {
             Thread.sleep(10);
