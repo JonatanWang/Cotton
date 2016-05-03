@@ -64,10 +64,10 @@ public class TestPackageInteraction {
 
     @Test
     public void TestTransmission() throws UnknownHostException {
-        Cotton discovery = new Cotton(true, 5555);
+        Cotton discovery = new Cotton(true, 6542);
         GlobalDnsStub gDns = new GlobalDnsStub();
         
-        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 5555);
+        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 6542);
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = gdAddr;
         gDns.setGlobalDiscoveryAddress(arr);
@@ -83,7 +83,7 @@ public class TestPackageInteraction {
         ser2.start();
         
         try {
-            Thread.sleep(10);
+            Thread.sleep(1000);
         } catch (InterruptedException ex) {
             Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }

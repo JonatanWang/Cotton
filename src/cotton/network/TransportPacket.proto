@@ -10,7 +10,8 @@ enum PathType{
 		SERVICE = 2;
 		UNKNOWN = 3;
     NOTFOUND = 4;
-	}
+    REQUESTQUEUE = 5;
+}
 
   optional bool keepalive = 1;
 	optional PathType pathtype = 2;

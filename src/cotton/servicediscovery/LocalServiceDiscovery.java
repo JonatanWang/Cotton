@@ -35,7 +35,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     private AddressPool discoveryCache;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
     private ActiveServiceLookup localServiceTable = null;
-
+    private ConcurrentHashMap<String,AddressPool> activeQueue;
     /**
      * Fills in a list of all pre set globalServiceDiscovery addresses
      * @param globalDNS information from the config file
@@ -53,6 +53,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         this.discoveryCache = new AddressPool();
         initGlobalDiscoveryPool(dnsConfig);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
+        this.activeQueue = new ConcurrentHashMap<>();
     }
 
     /**
@@ -320,8 +321,49 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         printAnnounceList(serviceList);
     }
 
+
+    private void addQueue(SocketAddress addr,String queue){
+        AddressPool pool = new AddressPool();
+        AddressPool oldPool = this.activeQueue.putIfAbsent(queue,pool);
+        if(oldPool != null){
+            oldPool.addAddress(addr);
+        }else{
+            pool.addAddress(addr);
+        }
+    }
+
+    private void processQueuePacket(QueuePacket packet){
+        String[] queueList = packet.getRequestQueueList();
+        SocketAddress addr = packet.getInstanceAddress();
+        if(addr == null)
+            return;
+        for(String s: queueList){
+            addQueue(addr,s);
+        }
+    }
+
+    /**
+     * Finds the destination to the request queue.
+     *
+     * @param DestinationMetaData destination the destination address for the queueList
+     * @param String serviceName the name for the service that needs new work.
+     */
+    @Override
     public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName){
-        return RouteSignal.NOTFOUND;
+        AddressPool pool = activeQueue.get(serviceName);
+        if(pool == null)
+            return RouteSignal.NOTFOUND;
+        InetSocketAddress addr = (InetSocketAddress)pool.getAddress();
+        if (addr == null){
+            return RouteSignal.NOTFOUND;
+        }
+        if(!addr.equals((InetSocketAddress) localAddress)) {
+            return RouteSignal.LOCALDESTINATION;
+        }
+    
+        destination.setSocketAddress(addr);
+        destination.setPathType(PathType.REQUESTQUEUE);
+        return RouteSignal.NETWORKDESTINATION;
     }
 
 }

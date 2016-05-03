@@ -210,7 +210,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      * @param result result from serviceHandler
      * @return false if it failed to send the data
      */
-    @Overriden
+    @Override
     public boolean forwardResult(Origin origin, ServiceChain serviceChain, byte[] result) {
         return resolveDestination(origin, serviceChain, result, false);
     }
@@ -230,10 +230,15 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         origin.setAddress(this.localAddress);
         
         NetworkPacket packet = prepareForTransmission(origin,null,serviceName.getBytes(),destination.getPathType());
-        try{
-            networkHandler.send(packet,destination.getSocketAddress());
-        }catch(IOException e){
-            return false;
+        if(route == RouteSignal.LOCALDESTINATION){
+            routingQueue.add(packet);
+        }else if(route == RouteSignal.NETWORKDESTINATION){ 
+            try{
+                networkHandler.send(packet,destination.getSocketAddress());
+            }catch(IOException e){
+                // TODO: logging
+                return false;
+            }   
         }
         return true;
     }
@@ -441,25 +446,28 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
             }
 
             switch (packet.getType()) {
-                case RELAY:
-                    break;
-                case DISCOVERY:
-                    discovery.discoveryUpdate(packet.getOrigin(), packet.getData());
-                    break;
-                case SERVICE:
-                    ServicePacket servicePacket = new ServicePacket(packet.getOrigin(), packet.getData(), packet.getPath());
-                    serviceHandlerBridge.add(servicePacket);
-                    break;
-                case UNKNOWN:
-                    System.out.println("PacketType unknown in process packet");
-                    break;
-                case NOTFOUND:
-                    System.out.println("PacketType NOT found in process packet");
-                    break;
-                default:
-                    System.out.println("PacketType invalid in process packet");
-                    //TODO: logg error
-                    break;
+            case RELAY:
+                break;
+            case DISCOVERY:
+                discovery.discoveryUpdate(packet.getOrigin(), packet.getData());
+                break;
+            case SERVICE:
+                ServicePacket servicePacket = new ServicePacket(packet.getOrigin(), packet.getData(), packet.getPath());
+                serviceHandlerBridge.add(servicePacket);
+                break;
+            case REQUESTQUEUE:
+                
+                break;
+            case UNKNOWN:
+                System.out.println("PacketType unknown in process packet");
+                break;
+            case NOTFOUND:
+                System.out.println("PacketType NOT found in process packet");
+                break;
+            default:
+                System.out.println("PacketType invalid in process packet");
+                //TODO: logg error
+                break;
             }
         }
     }

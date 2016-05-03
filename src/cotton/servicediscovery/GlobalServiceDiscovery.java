@@ -36,6 +36,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     private ConcurrentHashMap<String, AddressPool> serviceCache;
     private ActiveServiceLookup localServiceTable = null;
     private ExecutorService threadPool;
+    private ConcurrentHashMap<String,AddressPool> activeQueue;
     /**
      * Fills in a list of all pre set globalServiceDiscovery addresses
      * @param globalDNS information from the config file
@@ -54,6 +55,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         initGlobalDiscoveryPool(dnsConfig);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         threadPool = Executors.newCachedThreadPool();
+        this.activeQueue = new ConcurrentHashMap<>();
     }
 
     /**
@@ -238,6 +240,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     public void discoveryUpdate(Origin origin, byte[] data) {
         DiscoveryLookup lookup = new DiscoveryLookup(origin,data);
         threadPool.execute(lookup);
+        
     }
 
     private DiscoveryPacket packetUnpack(byte[] data) {
@@ -303,16 +306,57 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         
     }
 
+    private void addQueue(SocketAddress addr,String queue){
+        AddressPool pool = new AddressPool();
+        AddressPool oldPool = this.activeQueue.putIfAbsent(queue,pool);
+        if(oldPool != null){
+            oldPool.addAddress(addr);
+        }else{
+            pool.addAddress(addr);
+        }
+    }
+
+    private void processQueuePacket(QueuePacket packet){
+        String[] queueList = packet.getRequestQueueList();
+        SocketAddress addr = packet.getInstanceAddress();
+        if(addr == null)
+            return;
+        for(String s: queueList){
+            addQueue(addr,s);
+        }
+    }
+
+    /**
+     * Finds the destination to the request queue.
+     *
+     * @param DestinationMetaData destination the destination address for the queueList
+     * @param String serviceName the name for the service that needs new work.
+     */
     @Override
     public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName){
-        return RouteSignal.NOTFOUND;
+        AddressPool pool = activeQueue.get(serviceName);
+        if(pool == null)
+            return RouteSignal.NOTFOUND;
+        InetSocketAddress addr = (InetSocketAddress)pool.getAddress();
+        if (addr == null){
+            return RouteSignal.NOTFOUND;
+        }
+        if(!addr.equals((InetSocketAddress) localAddress)) {
+            return RouteSignal.LOCALDESTINATION;
+        }
+    
+        destination.setSocketAddress(addr);
+        destination.setPathType(PathType.REQUESTQUEUE);
+        return RouteSignal.NETWORKDESTINATION;
     }
+
+
 
     private class DiscoveryLookup implements Runnable {
 
         private Origin origin;
         private byte[] data;
-
+        
         public DiscoveryLookup(Origin origin, byte[] data) {
             this.origin = origin;
             this.data = data;
@@ -326,19 +370,23 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 //            System.out.println("DefaultGlobalServiceDiscovery: " + type
 //                    + " from: " + ((InetSocketAddress) origin.getAddress()).toString());
             switch (type) {
-                case DISCOVERYREQUEST:
-                    processProbeRequest(origin, packet.getProbe());
-                    break;
-                case DISCOVERYRESPONSE:
-                    //localDiscovery.updateHandling(from, packet);
-                    break;
-                case ANNOUNCE:
-                    processAnnouncePacket(packet.getAnnounce());
-                    break;
-                default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
-                    System.out.println("DefaultGlobalServiceDiscovery updateHandling recieved, not yet implemented: " + type);
-                    break;
+            case DISCOVERYREQUEST:
+                processProbeRequest(origin, packet.getProbe());
+                break;
+            case DISCOVERYRESPONSE:
+                //localDiscovery.updateHandling(from, packet);
+                break;
+            case ANNOUNCE:
+                processAnnouncePacket(packet.getAnnounce());
+                break;
+            case REQUESTQUEUE:
+                processQueuePacket(packet.getQueue());
+                break;
+            default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
+                System.out.println("DefaultGlobalServiceDiscovery updateHandling recieved, not yet implemented: " + type);
+                break;
             }
         }
+
     }
 }

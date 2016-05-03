@@ -16,11 +16,30 @@ public class DiscoveryPacket implements Serializable {
     private DiscoveryProbe probe = null;
     private AnnouncePacket announce = null;
     private DiscoveryPacketType type;
-    
+    private QueuePacket queue;
+
     public enum DiscoveryPacketType {
-        DISCOVERYREQUEST, DISCOVERYRESPONSE, ANNOUNCE
+        DISCOVERYREQUEST, DISCOVERYRESPONSE, ANNOUNCE,REQUESTQUEUE
     }
 
+    /**
+     * Returns the <code>QueuePacket</code> connected to the <code>DiscoveryPacket</code>.
+     * 
+     * @return the connected <code>QueuePacket</code>.
+     */
+    public QueuePacket getQueue() {
+        return queue;
+    }
+
+    /**
+     * Sets the containing <code>QueuePacket</code> to the incoming packet.
+     * 
+     * @param queue new <code>QueuePacket</code>.
+     */
+    public void setQueue(QueuePacket queue) {
+        this.queue = queue;
+    }
+    
     /**
      * Constructs an empty <code>DiscoveryPacket</code> consisting only of the 
      * <code>DiscoveryPacketType</code>.
