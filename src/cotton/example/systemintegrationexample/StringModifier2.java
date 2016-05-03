@@ -1,4 +1,4 @@
-package cotton.example.globalserviceexample;
+package cotton.example.systemintegrationsexample;
 import cotton.services.CloudContext;
 import cotton.network.ServiceChain;
 import java.io.Serializable;
@@ -19,16 +19,16 @@ import cotton.network.Origin;
  * @author Tony
  * @author Magnus
  **/
-public class StringModifier implements Service{
+public class StringModifier2 implements Service{
     public static void main(String[] args) {
         Cotton cotton = null;
         try {
-            cotton = new Cotton(false,4444);
+            cotton = new Cotton(false);
         } catch (UnknownHostException ex) {
-            Logger.getLogger(GlobalDiscoveryExample.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(StringModifier2.class.getName()).log(Level.SEVERE, null, ex);
         }
         ActiveServiceLookup reg = cotton.getServiceRegistation();
-        reg.registerService("StringModifier",getFactory(),10);
+        reg.registerService("StringModifier2",getFactory(),10);
         cotton.start();
         try {
             Thread.sleep(20000);
@@ -37,7 +37,7 @@ public class StringModifier implements Service{
         
     }
 
-    public StringModifier(){
+    public StringModifier2(){
         
     }
 
@@ -47,14 +47,14 @@ public class StringModifier implements Service{
     private static class Factory implements ServiceFactory{
         @Override
         public Service newService(){
-            return new StringModifier();
+            return new StringModifier2();
         }
     }
 
     public byte[] execute(CloudContext ctx,Origin origin, byte[] data,ServiceChain to){
         String s = new String(data);
         System.out.println("before:" + s);
-        s += "The incomming string was modified";
+        s += "Cotton Cloud";
         System.out.println("After:" + s);
         return s.getBytes();
     }
