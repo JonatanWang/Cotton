@@ -31,7 +31,7 @@ public interface NetworkHandler extends Runnable {
      * @param dest defines the <code>SocketAddress</code> to send through.
      * @throws java.io.IOException
      */
-    public void sendKeepAlive(NetworkPacket netPacket,SocketAddress dest) throws IOException;
+    public void sendKeepAlive(NetworkPacket netPacket, SocketAddress dest) throws IOException;
     
     /**
      * Returns the local <code>SocketAddress</code> of the running machine.
