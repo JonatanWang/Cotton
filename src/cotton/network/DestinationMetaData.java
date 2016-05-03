@@ -5,13 +5,14 @@
  */
 package cotton.network;
 import cotton.network.PathType;
+import java.io.Serializable;
 import java.net.SocketAddress;
 
 /**
  *
  * @author tony
  */
-public class DestinationMetaData {
+public class DestinationMetaData implements Serializable {
     private SocketAddress socketAddress;
     private PathType pathType;
 

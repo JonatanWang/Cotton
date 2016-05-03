@@ -1,5 +1,6 @@
 package cotton.servicediscovery;
 
+import cotton.network.DestinationMetaData;
 import java.io.Serializable;
 import java.net.SocketAddress;
 
@@ -12,7 +13,7 @@ import java.net.SocketAddress;
  */
 public class DiscoveryProbe implements Serializable {
     private String name;
-    private SocketAddress address;
+    private DestinationMetaData address;
 
     /**
      * Constructs a <code>DiscoveryPack</code> through the in parameters.
@@ -20,7 +21,7 @@ public class DiscoveryProbe implements Serializable {
      * @param name the service name.
      * @param address the service address.
      */
-    public DiscoveryProbe(String name, SocketAddress address) {
+    public DiscoveryProbe(String name, DestinationMetaData address) {
         this.name = name;
         this.address = address;
     }
@@ -49,7 +50,7 @@ public class DiscoveryProbe implements Serializable {
      * 
      * @return the <code>SocketAddress</code>
      */
-    public SocketAddress getAddress() {
+    public DestinationMetaData getAddress() {
         return address;
     }
 
@@ -59,7 +60,7 @@ public class DiscoveryProbe implements Serializable {
      * 
      * @param address the new address.
      */
-    public void setAddress(SocketAddress address) {
+    public void setAddress(DestinationMetaData address) {
         this.address = address;
     }        
 }

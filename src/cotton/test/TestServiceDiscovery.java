@@ -248,7 +248,7 @@ public class TestServiceDiscovery {
        ServiceRequest req = client.sendWithResponse(data,chain);
 
        byte[] data2 = req.getData();
-       System.out.println(data2);
+       //System.out.println(data2);
        int num2 = ByteBuffer.wrap(data2).getInt();
        System.out.println("result" + num2);
        internal.stop();

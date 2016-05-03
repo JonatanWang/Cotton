@@ -1,5 +1,6 @@
 package cotton.servicediscovery;
 
+import cotton.network.DestinationMetaData;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 
@@ -14,7 +15,7 @@ import java.util.ArrayList;
 public class AddressPool {
 
     private int pos = 0;
-    private ArrayList<SocketAddress> pool = new ArrayList<>();
+    private ArrayList<DestinationMetaData> pool = new ArrayList<>();
 
     /**
      * Adds a <code>SocketAddress</code> to the <code>AddressPool</code> concurrently.
@@ -22,7 +23,7 @@ public class AddressPool {
      * @param address the <code>SocketAddress</code> to add to the <code>AddressPool</code>.
      * @return <code>true</code> always.
      */
-    public boolean addAddress(SocketAddress address) {
+    public boolean addAddress(DestinationMetaData address) {
         synchronized (this) {
             pool.add(address);
         }
@@ -35,8 +36,8 @@ public class AddressPool {
      * 
      * @return the next <code>SocketAddress</code> or null if the list is empty.
      */
-    public SocketAddress getAddress() {
-        SocketAddress addr = null;
+    public DestinationMetaData getAddress() {
+        DestinationMetaData addr = null;
         
         synchronized (this) {
             if (pool.isEmpty() == false) {
