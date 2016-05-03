@@ -316,4 +316,9 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         }
         printAnnounceList(serviceList);
     }
+
+    public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName){
+        return RouteSignal.NOTFOUND;
+    }
+
 }

@@ -19,4 +19,5 @@ public interface ServiceDiscovery {
     public boolean announce();
     public void stop();
     public void discoveryUpdate(Origin origin, byte[] data);
+    public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName);
 }

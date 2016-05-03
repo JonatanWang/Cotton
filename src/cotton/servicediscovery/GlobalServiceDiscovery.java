@@ -303,6 +303,11 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         
     }
 
+    @Override
+    public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName){
+        return RouteSignal.NOTFOUND;
+    }
+
     private class DiscoveryLookup implements Runnable {
 
         private Origin origin;

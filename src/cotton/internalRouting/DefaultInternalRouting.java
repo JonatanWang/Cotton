@@ -24,6 +24,8 @@ import cotton.services.ServicePacket;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import cotton.servicediscovery.LocalServiceDiscovery;
+import cotton.servicediscovery.GlobalServiceDiscovery;
 
 /**
  *
@@ -212,7 +214,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      * @param result result from serviceHandler
      * @return false if it failed to send the data
      */
-    @Override
+    @Overriden
     public boolean forwardResult(Origin origin, ServiceChain serviceChain, byte[] result) {
         return resolveDestination(origin, serviceChain, result, false);
     }
@@ -222,6 +224,23 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         return serviceHandlerBridge;
     }
 
+    @Override
+    public boolean notifyRequestQueue(String serviceName){
+        // TODO: actually notify the queue
+        DestinationMetaData destination = new DestinationMetaData();
+        RouteSignal route = discovery.getRequestQueueDestination(destination,serviceName);
+        Origin origin = new Origin();
+        ServiceRequest request = newServiceRequest(origin);
+        origin.setAddress(this.localAddress);
+        
+        NetworkPacket packet = prepareForTransmission(origin,null,serviceName.getBytes(),destination.getPathType());
+        try{
+            networkHandler.send(packet,destination.getSocketAddress());
+        }catch(IOException e){
+            return false;
+        }
+        return true;
+    }
     /**
      * The InternalRouting helper methods implementation
      */

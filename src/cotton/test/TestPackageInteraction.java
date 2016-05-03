@@ -67,10 +67,10 @@ public class TestPackageInteraction {
 
     @Test
     public void TestTransmission() throws UnknownHostException {
-        Cotton discovery = new Cotton(true, 3333);
+        Cotton discovery = new Cotton(true, 5555);
         GlobalDnsStub gDns = new GlobalDnsStub();
         
-        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 3333);
+        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 5555);
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = gdAddr;
         gDns.setGlobalDiscoveryAddress(arr);
