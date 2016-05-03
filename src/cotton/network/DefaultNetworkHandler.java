@@ -1,11 +1,8 @@
 package cotton.network;
 
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.InetAddress;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
@@ -14,6 +11,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import cotton.internalRouting.InternalRoutingNetwork;
+import java.net.Socket;
+import java.net.SocketAddress;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
 
 /**
  * Handles all of the packet buffering and relaying.
@@ -60,11 +61,11 @@ public class DefaultNetworkHandler implements NetworkHandler {
 
         threadPool = Executors.newCachedThreadPool();
         running = new AtomicBoolean(true);
-        localSocketAddress = getLocalAddress();
     }
 
+    // This constructor should be replaced by a config file
     public DefaultNetworkHandler(int port) throws UnknownHostException {
-        this.localPort = port; // TODO: Remove hardcoded port
+        this.localPort = port;
         try{
             //this.localIP = InetAddress.getByName(null);
             this.localIP = Inet4Address.getLocalHost();
@@ -85,12 +86,17 @@ public class DefaultNetworkHandler implements NetworkHandler {
         else
             throw new NullPointerException("InternalRoutingNetwork points to null");
     }
+    
+    private SSLServerSocket createSSLServerSocket() throws IOException {
+        SSLServerSocketFactory sf = (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
+        return (SSLServerSocket)sf.createServerSocket();
+    }
 
     @Override
     public void run(){
-        ServerSocket serverSocket = null;
+        SSLServerSocket serverSocket = null;
         try{
-            serverSocket = new ServerSocket();
+            serverSocket = createSSLServerSocket();
             serverSocket.bind(getLocalAddress());
             serverSocket.setSoTimeout(80);
         }catch(IOException e){// TODO: Logging
