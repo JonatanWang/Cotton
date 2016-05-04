@@ -270,7 +270,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     /**
      * Notifies the requestQueue that this instance is available 
      *
-     * @param a serviceName to find a given queue by.
+     * @param serviceName a serviceName to find a given queue by.
      */
     @Override
     public boolean notifyRequestQueue(String serviceName){

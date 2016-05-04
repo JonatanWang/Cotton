@@ -430,7 +430,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     /**
      * Announces active queues 
-     * @param a list of names for the queues.
+     * @param queueList a list of names for the queues.
      */
     public boolean announceQueues(String[] queueList){
         DestinationMetaData dest = discoveryCache.getAddress();
