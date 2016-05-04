@@ -1,10 +1,8 @@
 package cotton.test;
 
-
 import cotton.internalRouting.InternalRoutingNetwork;
 import cotton.network.DefaultNetworkHandler;
 import cotton.network.DummyServiceChain;
-import cotton.network.NetworkHandler;
 import cotton.network.NetworkPacket;
 import cotton.network.NetworkPacket.NetworkPacketBuilder;
 import cotton.network.Origin;
@@ -19,8 +17,6 @@ import java.net.UnknownHostException;
 import java.util.UUID;
 import static org.junit.Assert.*;
 import cotton.network.NetworkHandler;
-import cotton.servicediscovery.ServiceDiscovery;
-import cotton.services.ActiveServiceLookup;
 
 /**
  *
@@ -43,8 +39,6 @@ public class TestNH {
         @Override
         public void pushNetworkPacket(NetworkPacket networkPacket) {
             this.networkPacket = networkPacket;
-            
-            System.out.println("bbbbbbbbbbb");
         }
         
         public NetworkPacket getNetworkPacket() {
@@ -53,8 +47,6 @@ public class TestNH {
 
         @Override
         public void pushKeepAlivePacket(NetworkPacket receivedPacket, SocketLatch latch) {
-            System.out.println("wwwwwwwwwwwwww");
-            
             int receivedNumber = ByteBuffer.wrap(receivedPacket.getData()).getInt();
             byte[] numberAsBytes = ByteBuffer.allocate(4).putInt(receivedNumber * 2).array();
             

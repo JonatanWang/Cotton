@@ -47,7 +47,7 @@ public class TestDASL {
              * The number sent through the <code>InputStream</code> should be defined as an <code>Integer</code>.
              *
              * @param ctx contains the cloud context.
-             * @param from describes who sent the original request.
+             * @param origin describes who sent the original request.
              * @param data the number to be multiplied.
              * @param to describes where the service should redirect the request before returning the number.
              *
