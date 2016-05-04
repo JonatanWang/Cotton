@@ -9,7 +9,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import cotton.network.NetworkHandler;
 import java.io.IOException;
 import cotton.network.PathType;
-
+import java.util.Set;
+import java.util.ArrayList;
 /**
  * @author Tony
  * @author Magnus
@@ -20,10 +21,27 @@ public class RequestQueueManager{
     private ExecutorService threadPool;    
     private NetworkHandler networkHandler;
 
+    public RequestQueueManager(){
+        this.internalQueueMap = new ConcurrentHashMap<>();
+        threadPool = Executors.newCachedThreadPool();
+    }
+
     public RequestQueueManager(NetworkHandler networkHandler){
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();
         this.networkHandler = networkHandler;
+    }
+
+    public void setNetworkHandler(NetworkHandler networkHandler){
+        this.networkHandler = networkHandler;
+    }
+
+    public String[] getActiveQueues(){
+        Set<String> keys = internalQueueMap.keySet();
+        ArrayList<String> names = new ArrayList<>();
+        names.addAll(keys);
+        String[] nameList = names.toArray(new String[names.size()]);
+        return nameList;
     }
 
     private void startQueue(String serviceName){

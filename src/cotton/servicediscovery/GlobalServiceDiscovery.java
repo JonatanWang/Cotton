@@ -281,19 +281,35 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         if(addr == null){
             return;
         }
-        // TODO: implement logic redirecting services to their request queue
-
         
-
         DestinationMetaData sAddr = new DestinationMetaData(addr,PathType.SERVICE);
-        ArrayList<AddressPool> addressPools = new ArrayList<>();
+        ArrayList<QueuePacket> queueList = new ArrayList<>();
         for (String s : serviceList) {
             addService(sAddr, s);
-            AddressPool addressPool = serviceCache.get(s);
+            AddressPool addressPool = activeQueue.get(s);
             if(addressPool != null){
-                addressPools.add(addressPool);
+                DestinationMetaData dest = addressPool.getAddress();
+                if(dest == null)
+                    continue;
+                QueuePacket queuePacket = new QueuePacket(dest.getSocketAddress(),serviceList);
+                queueList.add(queuePacket);
+                
             }
                                       
+        }
+
+        DestinationMetaData dest = new DestinationMetaData(addr,PathType.DISCOVERY);
+        
+        for(QueuePacket queuePacket: queueList){
+            DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
+            discoveryPacket.setQueue(queuePacket);
+            try{
+                byte[] data = serializeToBytes(discoveryPacket);
+                internalRouting.SendToDestination(dest,data);
+            }catch(IOException e){
+                e.printStackTrace();
+                // TODO: Logg error
+            }
         }
         printAnnounceList(serviceList);
     }
@@ -368,6 +384,24 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         destination.setSocketAddress(addr.getSocketAddress());
         destination.setPathType(addr.getPathType());
         return RouteSignal.NETWORKDESTINATION;
+    }
+
+    public boolean announceQueues(String[] queueList){
+        DestinationMetaData dest = discoveryCache.getAddress();
+        if(dest == null)
+            return false;
+        QueuePacket queuePacket = new QueuePacket(localAddress,queueList);
+        DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
+        discoveryPacket.setQueue(queuePacket);
+        
+        try{
+            byte[] data = serializeToBytes(queuePacket);
+            internalRouting.SendToDestination(dest,data);
+        }catch(IOException e){
+            e.printStackTrace();
+            return false;
+        }
+        return true;
     }
 
     private class DiscoveryLookup implements Runnable {

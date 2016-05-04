@@ -22,7 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.servicediscovery.GlobalServiceDiscovery;
-
+import cotton.requestqueue.RequestQueueManager;
 /**
  *
  * @author Magnus
@@ -37,6 +37,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     private ConcurrentLinkedQueue<NetworkPacket> routingQueue;
     private ServiceBuffer serviceHandlerBridge;
     private RouteDispatcher dispatcher = null;
+    private RequestQueueManager requestQueueManager = null;
 
     public DefaultInternalRouting(NetworkHandler networkHandler, ServiceDiscovery discovery) {
         this.networkHandler = networkHandler;
@@ -48,6 +49,11 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         this.connectionTable = new ConcurrentHashMap<>();
         this.routingQueue = new ConcurrentLinkedQueue<>();
         this.serviceHandlerBridge = new BridgeServiceBuffer();
+    }
+
+    public void setRequestQueueManager(RequestQueueManager requestQueueManager){
+        this.requestQueueManager = requestQueueManager;
+        this.requestQueueManager.setNetworkHandler(networkHandler);
     }
 
     /**
@@ -226,7 +232,6 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         DestinationMetaData destination = new DestinationMetaData();
         RouteSignal route = discovery.getRequestQueueDestination(destination,serviceName);
         Origin origin = new Origin();
-        ServiceRequest request = newServiceRequest(origin);
         origin.setAddress(this.localAddress);
         
         NetworkPacket packet = prepareForTransmission(origin,null,serviceName.getBytes(),destination.getPathType());
@@ -381,6 +386,10 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     public void start() {
         this.dispatcher = new RouteDispatcher();
         new Thread(this.dispatcher).start();
+        if(requestQueueManager != null){
+            String[] nameList = requestQueueManager.getActiveQueues();
+            discovery.announceQueues(nameList);
+        }
     }
 
     /**
@@ -456,7 +465,16 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 serviceHandlerBridge.add(servicePacket);
                 break;
             case REQUESTQUEUE:
-                
+                ServiceChain pathChain = packet.getPath();
+                String serviceName = null;
+                if(requestQueueManager == null)
+                    break; // TODO: give error
+                if(pathChain != null && (serviceName = pathChain.peekNextServiceName()) != null){
+                    requestQueueManager.queueService(packet,serviceName);
+                }else{
+                    serviceName = new String(packet.getData());
+                    requestQueueManager.addAvailableInstance(packet.getOrigin(),serviceName);
+                }
                 break;
             case UNKNOWN:
                 System.out.println("PacketType unknown in process packet");

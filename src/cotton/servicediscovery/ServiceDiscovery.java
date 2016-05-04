@@ -20,4 +20,5 @@ public interface ServiceDiscovery {
     public void stop();
     public void discoveryUpdate(Origin origin, byte[] data);
     public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName);
+    public boolean announceQueues(String[] queueList);
 }
