@@ -363,9 +363,9 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     /**
      * Finds the destination to the request queue.
      *
-     * @param DestinationMetaData destination the destination address for the
+     * @param destination destination the destination address for the
      * queueList
-     * @param String serviceName the name for the service that needs new work.
+     * @param serviceName serviceName the name for the service that needs new work.
      */
     @Override
     public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName) {

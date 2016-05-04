@@ -5,7 +5,7 @@ package cotton.services;
  * distributes packets.
  *
  * @author Tony Tran
- * @see DeprecatedServicePacket
+ * @see ServicePacket
  **/
 public interface ServiceBuffer{
 
