@@ -6,19 +6,24 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import cotton.network.NetworkHandler;
+import java.io.IOException;
+import cotton.network.PathType;
+
 /**
  * @author Tony
  * @author Magnus
  */
-public class RequestQueueManager implements Runnable{
+public class RequestQueueManager{
 
     private ConcurrentHashMap<String,RequestQueue> internalQueueMap;
-    private ExecutorService threadPool;
+    private ExecutorService threadPool;    
+    private NetworkHandler networkHandler;
 
-    public RequestQueueManager(){
+    public RequestQueueManager(NetworkHandler networkHandler){
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();
-
+        this.networkHandler = networkHandler;
     }
 
     private void startQueue(String serviceName){
@@ -30,25 +35,55 @@ public class RequestQueueManager implements Runnable{
         RequestQueue queue = internalQueueMap.get(serviceName);
         if(queue == null)
             return;
-        queue.queueService(packet);
+        queue.queueService(packet); 
+        threadPool.execute(queue);
     }
 
     public void addAvailableInstance(Origin origin,String serviceName){
-        
+        RequestQueue queue = internalQueueMap.get(serviceName);
+        if(queue == null)
+            return;
+        queue.addInstance(origin);
+        threadPool.execute(queue);
     }
 
-    public void run(){
-        
+    public void stop(){
+        threadPool.shutdown();
     }
 
-    private class RequestQueue{
+    private class RequestQueue implements Runnable{
         private ConcurrentLinkedQueue<NetworkPacket> processQueue;
+        private ConcurrentLinkedQueue<Origin> processingNodes;
         public RequestQueue(){
             processQueue = new ConcurrentLinkedQueue<>();
+            processingNodes = new ConcurrentLinkedQueue<>();
+
         }
 
         public void queueService(NetworkPacket packet){
             processQueue.add(packet);
+        } 
+
+        public void addInstance(Origin origin){
+            processingNodes.add(origin);
+        }
+
+        public void run(){
+            Origin origin = null;
+            while((origin = processingNodes.poll()) != null){
+                NetworkPacket packet = processQueue.poll();
+                if(packet == null){
+                    processingNodes.add(origin);
+                    return;
+                }
+                packet.setPathType(PathType.SERVICE);
+                try{
+                    networkHandler.send(packet,origin.getAddress());
+                }catch(IOException e){
+                    processQueue.add(packet);
+                    // TODO: LOGGING
+                }
+            }
         }
     }
 }

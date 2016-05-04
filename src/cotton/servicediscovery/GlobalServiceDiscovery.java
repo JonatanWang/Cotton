@@ -119,9 +119,12 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             return signal;
         }
         // this is a GlobalServiceDiscovery so check cache first
-        AddressPool pool = this.serviceCache.get(serviceName);
-        if (pool == null) {
-            return searchForService(destination, serviceName);
+        AddressPool pool = this.activeQueue.get(serviceName);
+        if(pool == null){    
+            pool = this.serviceCache.get(serviceName);
+            if (pool == null) {
+                return searchForService(destination, serviceName);
+            }
         }
 
         DestinationMetaData addr = pool.getAddress();
@@ -280,9 +283,17 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         }
         // TODO: implement logic redirecting services to their request queue
 
+        
+
         DestinationMetaData sAddr = new DestinationMetaData(addr,PathType.SERVICE);
+        ArrayList<AddressPool> addressPools = new ArrayList<>();
         for (String s : serviceList) {
             addService(sAddr, s);
+            AddressPool addressPool = serviceCache.get(s);
+            if(addressPool != null){
+                addressPools.add(addressPool);
+            }
+                                      
         }
         printAnnounceList(serviceList);
     }
@@ -358,8 +369,6 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         destination.setPathType(addr.getPathType());
         return RouteSignal.NETWORKDESTINATION;
     }
-
-
 
     private class DiscoveryLookup implements Runnable {
 

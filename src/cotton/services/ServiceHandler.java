@@ -77,12 +77,13 @@ public class ServiceHandler implements Runnable{
 
                 byte[] result = service.execute(null, servicePacket.getOrigin(), servicePacket.getData(),servicePacket.getTo());
                 internalRouting.forwardResult(servicePacket.getOrigin(), servicePacket.getTo(), result);
-
-
+                serviceLookup.getService(serviceName).decrementThreadCount(); 
+                internalRouting.notifyRequestQueue(serviceName);
+                
             }catch(Exception e){
+                serviceLookup.getService(serviceName).decrementThreadCount(); 
                 e.printStackTrace();
             }
-            serviceLookup.getService(serviceName).decrementThreadCount();
         }
     }
 }

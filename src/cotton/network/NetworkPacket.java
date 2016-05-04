@@ -97,6 +97,10 @@ public class NetworkPacket implements Serializable{
         return pt;
     }
 
+    public void setPathType(PathType type){
+        this.pt = type;
+    }
+
     /**
      * Returns the <code>NetworkPacket</code> data as a byte array.
      * 
@@ -105,6 +109,7 @@ public class NetworkPacket implements Serializable{
     public byte[] getData() {
         return data;
     }
+
 
     /**
      * Returns whether it is a <code>keepAlive</code> packet or not.
