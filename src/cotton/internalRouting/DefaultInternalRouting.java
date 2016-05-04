@@ -83,6 +83,10 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         this.serviceHandlerBridge = new BridgeServiceBuffer();
     }
 
+    /**
+     * initialiazes the RequestQueueManager
+     * @param requestQueueManager sets the requestQueueManager
+     */
     public void setRequestQueueManager(RequestQueueManager requestQueueManager){
         this.requestQueueManager = requestQueueManager;
         this.requestQueueManager.setNetworkHandler(networkHandler);
@@ -153,7 +157,12 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         this.removeServiceRequest(origin);
         return null;
     }
-
+    /**
+     * Sends client data to the cloud for processing and returns a request so that the result can be retrieved.
+     *
+     * @param data a byte array of data to forward for processing
+     * @param serviceChain
+     */
     @Override
     public ServiceRequest sendWithResponse(byte[] data, ServiceChain serviceChain) {
         Origin origin = new Origin();
@@ -258,6 +267,11 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         return serviceHandlerBridge;
     }
 
+    /**
+     * Notifies the requestQueue that this instance is available 
+     *
+     * @param a serviceName to find a given queue by.
+     */
     @Override
     public boolean notifyRequestQueue(String serviceName){
         // TODO: actually notify the queue

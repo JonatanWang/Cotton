@@ -49,6 +49,9 @@ import java.util.ArrayList;
  * @author Tony
  * @author Magnus
  */
+/**
+ * Manages the requestqueues.
+ */
 public class RequestQueueManager{
 
     private ConcurrentHashMap<String,RequestQueue> internalQueueMap;
@@ -66,10 +69,19 @@ public class RequestQueueManager{
         this.networkHandler = networkHandler;
     }
 
+    /**
+     * Sets the netorkhandler so that the request queues can forward data for processing.
+     * @param networkHandler sets the networkHandler 
+     */
     public void setNetworkHandler(NetworkHandler networkHandler){
         this.networkHandler = networkHandler;
     }
 
+
+    /**
+     * A array of names on different queues.
+     * @return activeQueues
+     */
     public String[] getActiveQueues(){
         Set<String> keys = internalQueueMap.keySet();
         ArrayList<String> names = new ArrayList<>();
@@ -83,6 +95,13 @@ public class RequestQueueManager{
         internalQueueMap.putIfAbsent(serviceName,queuePool);
         
     }
+
+    /**
+     * Buffers data for processing
+     * 
+     * @param packet A network packet containing the data to be processed 
+     * @param serviceName the name of the service that is supposed to process this data.
+     */
     public void queueService(NetworkPacket packet,String serviceName){
         RequestQueue queue = internalQueueMap.get(serviceName);
         if(queue == null)
@@ -90,6 +109,12 @@ public class RequestQueueManager{
         queue.queueService(packet); 
         threadPool.execute(queue);
     }
+    /**
+     * Adds an available instance to the internal queue
+     * 
+     * @param origin the instance that sent the message 
+     * @param serviceName the name of the service that is supposed to process this data.
+     */
 
     public void addAvailableInstance(Origin origin,String serviceName){
         RequestQueue queue = internalQueueMap.get(serviceName);
@@ -111,15 +136,28 @@ public class RequestQueueManager{
             processingNodes = new ConcurrentLinkedQueue<>();
 
         }
-
+        /**
+         * buffers networkpackets to be processed
+         *
+         * @param packet a networkpacket to be processed
+         */
         public void queueService(NetworkPacket packet){
             processQueue.add(packet);
         } 
 
+        /**
+         * Adds an available instance to the internal queue
+         * 
+         * @param origin the instance that sent the message 
+         */
         public void addInstance(Origin origin){
             processingNodes.add(origin);
         }
 
+        /**
+         * polls data and sents it to available instances. 
+         *
+         */
         public void run(){
             Origin origin = null;
             while((origin = processingNodes.poll()) != null){

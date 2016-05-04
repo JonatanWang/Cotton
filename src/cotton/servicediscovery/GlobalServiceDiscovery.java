@@ -232,7 +232,10 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             System.out.println("\t" + s);
         }
     }
-
+    /**
+     * Announces the available services on this node.
+     *
+     */
     @Override
     public boolean announce() {
         if(localServiceTable == null)
@@ -277,6 +280,12 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    /**
+     * updates the discovery lookup table
+     *
+     * @param origin the origin of the instance who sent update message
+     * @param data a byte representation of a discoverypacket
+     */
     @Override
     public void discoveryUpdate(Origin origin, byte[] data) {
         DiscoveryLookup lookup = new DiscoveryLookup(origin,data);
@@ -419,6 +428,10 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         return RouteSignal.NETWORKDESTINATION;
     }
 
+    /**
+     * Announces active queues 
+     * @param a list of names for the queues.
+     */
     public boolean announceQueues(String[] queueList){
         DestinationMetaData dest = discoveryCache.getAddress();
         if(dest == null)
