@@ -1,0 +1,6 @@
+{
+  "name": "Cotton",
+  "tagline": "An elastic cloud solution.",
+  "body": "# Welcome to the Cotton Project\r\n##What Cotton is about?\r\n\r\nThe purpose of this project is to create a scalable cloud system capable of storing and processing data in the cloud. The main focus of this project is scalabi# Cotton\r\nAn elastic cloud solution.\r\nlity, the cloud needs to be prepared for an extreme increase or decrease of usage and then scale according to the changing demands. Beside the scaling, the system is required to be fault tolerant and secure.\r\n\r\n##Current approach\r\n\r\nThe current approach consists of five components:\r\n\r\n* Service Discovery\r\n  * Local Service Discovery\r\n  * Global Service Discovery\r\n* Service Handler\r\n* Network Handler\r\n* Internal Routing\r\n* Request Queue\r\n\r\n## To use the Cloud System\r\n\r\nIn order to use the cloud system the developer needs to make:\r\n\r\n* Service implementing the Service interface and then register it to the cloud.\r\n* Client instantiating an cotton instance.\r\n* The current approach running.",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
