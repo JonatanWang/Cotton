@@ -55,6 +55,7 @@ import java.util.logging.Logger;
 import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.servicediscovery.GlobalServiceDiscovery;
 import cotton.requestqueue.RequestQueueManager;
+import java.util.Arrays;
 /**
  *
  * @author Magnus
@@ -435,7 +436,9 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         if(requestQueueManager != null){
             String[] nameList = requestQueueManager.getActiveQueues();
             discovery.announceQueues(nameList);
+            System.out.println("REQUEST QUEUE NAMELIST: " + Arrays.toString(nameList));
         }
+        
     }
 
     /**

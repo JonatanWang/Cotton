@@ -397,7 +397,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         }
         SocketAddress addr = packet.getInstanceAddress();
         DestinationMetaData qAddr = new DestinationMetaData(addr,PathType.REQUESTQUEUE); 
-        if (addr == null) {
+        if (qAddr == null) {
             return;
         }
         for (String s : queueList) {
@@ -407,14 +407,20 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
 
     public boolean announceQueues(String[] queueList){
         DestinationMetaData dest = discoveryCache.getAddress();
-        if(dest == null || queueList == null)
+        if(dest == null){
+            System.out.println("dest is null in announceQueues localServiceDiscovery");
             return false;
+        }
+        if(queueList == null){
+            System.out.println("queue list is null in announceQueues localServiceDiscovery");
+            return false;
+        }
         QueuePacket queuePacket = new QueuePacket(localAddress,queueList);
         DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
         discoveryPacket.setQueue(queuePacket);
         
         try{
-            byte[] data = serializeToBytes(queuePacket);
+            byte[] data = serializeToBytes(discoveryPacket);
             internalRouting.SendToDestination(dest,data);
         }catch(IOException e){
             e.printStackTrace();
@@ -441,6 +447,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         }
         InetSocketAddress socketAddress = (InetSocketAddress)addr.getSocketAddress();
         if(!socketAddress.equals((InetSocketAddress) localAddress)) {
+            destination.setPathType(addr.getPathType());
             return RouteSignal.LOCALDESTINATION;
         }
     

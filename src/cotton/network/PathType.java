@@ -36,5 +36,5 @@ package cotton.network;
  *@author Magnus
  */
 public enum PathType{
-    RELAY, DISCOVERY,REQUESTQUEUE, SERVICE, UNKNOWN, NOTFOUND
+    RELAY, DISCOVERY, SERVICE, UNKNOWN, NOTFOUND,REQUESTQUEUE
 }

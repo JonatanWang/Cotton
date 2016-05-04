@@ -90,7 +90,11 @@ public class RequestQueueManager{
         return nameList;
     }
 
-    private void startQueue(String serviceName){
+    /**
+     * initializes a specific queue for a specific service
+     * @param serviceName the name for a specific service.
+     */
+    public void startQueue(String serviceName){
         RequestQueue queuePool = new RequestQueue();
         internalQueueMap.putIfAbsent(serviceName,queuePool);
         
@@ -169,6 +173,7 @@ public class RequestQueueManager{
                 packet.setPathType(PathType.SERVICE);
                 try{
                     networkHandler.send(packet,origin.getAddress());
+                    System.out.println("Queue sent work to " + origin.getAddress().toString());
                 }catch(IOException e){
                     processQueue.add(packet);
                     // TODO: LOGGING

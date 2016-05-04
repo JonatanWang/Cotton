@@ -57,6 +57,8 @@ import cotton.services.ServiceFactory;
 import cotton.internalRouting.DefaultInternalRouting;
 import cotton.internalRouting.InternalRoutingClient;
 import java.util.Random;
+import cotton.requestqueue.RequestQueueManager;
+
 /**
  *
  * @author Jonathan
@@ -178,6 +180,9 @@ public class Cotton {
         return internalRouting;
     }
 
+    public void setRequestQueueManager(RequestQueueManager requestQueueManager){
+        this.internalRouting.setRequestQueueManager(requestQueueManager);
+    }
     public static void main(String[] args) {
         Cotton c = null;
         try{

@@ -392,13 +392,22 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     }
 
     private void processQueuePacket(QueuePacket packet){
-        String[] queueList = packet.getRequestQueueList();
-        SocketAddress addr = packet.getInstanceAddress();
-        DestinationMetaData qAddr = new DestinationMetaData(addr,PathType.REQUESTQUEUE); 
-        if (addr == null) {
+        if(packet == null){
             return;
         }
+        String[] queueList = packet.getRequestQueueList();
+        SocketAddress addr = packet.getInstanceAddress();
+        if(queueList == null){
+            System.out.println("Queuelist is null in processQueuePacket GlobalServiceDiscovery");
+            return;
+        }
+        DestinationMetaData qAddr = new DestinationMetaData(addr,PathType.REQUESTQUEUE);
+        if (qAddr == null) {
+            return;
+        }
+        System.out.println("registrating queues: " + qAddr.toString());
         for (String s : queueList) {
+            System.out.println("\t" + s);
             addQueue(qAddr, s);
         }
     }
@@ -420,6 +429,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         }
         InetSocketAddress socketAddress = (InetSocketAddress)addr.getSocketAddress();
         if(!socketAddress.equals((InetSocketAddress) localAddress)) {
+            destination.setPathType(addr.getPathType());
             return RouteSignal.LOCALDESTINATION;
         }
     
@@ -441,7 +451,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         discoveryPacket.setQueue(queuePacket);
         
         try{
-            byte[] data = serializeToBytes(queuePacket);
+            byte[] data = serializeToBytes(discoveryPacket);
             internalRouting.SendToDestination(dest,data);
         }catch(IOException e){
             e.printStackTrace();
