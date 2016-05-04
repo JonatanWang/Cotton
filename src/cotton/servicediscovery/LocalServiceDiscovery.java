@@ -384,6 +384,12 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         }
     }
 
+    private void notifyQueue(int numInstances,String serviceName,DestinationMetaData address) {
+        for (int i = 0; i < numInstances; i++) {
+            this.internalRouting.notifyRequestQueue(address, RouteSignal.NETWORKDESTINATION, serviceName);
+        }
+    }
+    
     private void processQueuePacket(QueuePacket packet) {
         if(packet == null){
             System.out.println("ERROR in processQueuePacket");
@@ -402,6 +408,12 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         }
         for (String s : queueList) {
             addQueue(qAddr, s);
+            ServiceMetaData service = this.localServiceTable.getService(s);
+            if(service != null) {
+                int num = service.getMaxCapacity() - service.getCurrentThreadCount();
+                //this.internalRouting.notifyRequestQueue(qAddr, RouteSignal.NETWORKDESTINATION, s);
+                notifyQueue(num,s,qAddr);
+            }
         }
     }
 
@@ -446,7 +458,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             return RouteSignal.NOTFOUND;
         }
         InetSocketAddress socketAddress = (InetSocketAddress)addr.getSocketAddress();
-        if(!socketAddress.equals((InetSocketAddress) localAddress)) {
+        if(socketAddress.equals((InetSocketAddress) localAddress)) {
             destination.setPathType(addr.getPathType());
             return RouteSignal.LOCALDESTINATION;
         }

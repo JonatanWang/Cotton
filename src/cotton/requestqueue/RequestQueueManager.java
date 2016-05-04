@@ -124,6 +124,7 @@ public class RequestQueueManager{
         RequestQueue queue = internalQueueMap.get(serviceName);
         if(queue == null)
             return;
+        System.out.println("AvailableInstance: " + origin.getAddress().toString() + " :: " + serviceName);
         queue.addInstance(origin);
         threadPool.execute(queue);
     }

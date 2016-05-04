@@ -209,6 +209,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             socket.connect(dest);
             tp.writeDelimitedTo(socket.getOutputStream());
         }catch (IOException e) {
+            e.printStackTrace();
             logError("send: " + e.getMessage());
             throw e;
         }finally{
@@ -246,6 +247,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             socket.connect(dest);
             packet.writeDelimitedTo(socket.getOutputStream());
         }catch (IOException e) {
+            e.printStackTrace();
             logError("send: " + e.getMessage());
             throw e;
         }finally{
@@ -263,17 +265,20 @@ public class DefaultNetworkHandler implements NetworkHandler {
         public NetworkUnpacker(Socket clientSocket){
             this.clientSocket = clientSocket;
         }
+        
 
         @Override
         public void run(){
-            System.out.println("Incoming connection to: " + clientSocket.getLocalSocketAddress() +" from" + clientSocket.getRemoteSocketAddress());
+            // TODO: ablility  to turn on and off debug msg
+            //System.out.println("Incoming connection to: " + clientSocket.getLocalSocketAddress() +" from" + clientSocket.getRemoteSocketAddress());
             try {
                 TransportPacket.Packet input = TransportPacket.Packet.parseDelimitedFrom(clientSocket.getInputStream());
 
                 if(input == null) {
                     System.out.println("TransportPacket null");
                 }
-                System.out.println("Pathtype is: "+input.getPathtype());
+                //// TODO: ablility  to turn on and off debug msg
+                //System.out.println("Pathtype is: "+input.getPathtype());
 
                 NetworkPacket np = parseTransportPacket(input);
 

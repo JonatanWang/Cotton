@@ -36,6 +36,7 @@ import cotton.network.DestinationMetaData;
 import cotton.network.Origin;
 import cotton.network.PathType;
 import cotton.internalRouting.ServiceRequest;
+import cotton.servicediscovery.RouteSignal;
 
 
 /**
@@ -46,4 +47,5 @@ public interface InternalRoutingServiceDiscovery {
     public boolean SendBackToOrigin(Origin origin,PathType pathType,byte[] data);
     public boolean SendToDestination(DestinationMetaData dest,byte[] data);
     public ServiceRequest sendWithResponse(DestinationMetaData dest, byte[] data);
+    public boolean notifyRequestQueue(DestinationMetaData destination,RouteSignal route, String serviceName);
 }

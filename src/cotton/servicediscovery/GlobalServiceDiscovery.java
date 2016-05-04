@@ -358,7 +358,12 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     // it sends back a filled discovery request probe
     private void processProbeRequest(Origin origin, DiscoveryProbe probe){
-        AddressPool pool = this.serviceCache.get(probe.getName());
+        
+        AddressPool pool = null;
+        if((pool = this.activeQueue.get(probe.getName())) == null){
+            pool = this.serviceCache.get(probe.getName());
+        }
+        
         if(pool == null){
             byte[] data = new byte[0];
             try{
@@ -428,7 +433,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             return RouteSignal.NOTFOUND;
         }
         InetSocketAddress socketAddress = (InetSocketAddress)addr.getSocketAddress();
-        if(!socketAddress.equals((InetSocketAddress) localAddress)) {
+        if(socketAddress.equals((InetSocketAddress) localAddress)) {
             destination.setPathType(addr.getPathType());
             return RouteSignal.LOCALDESTINATION;
         }

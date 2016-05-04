@@ -55,6 +55,7 @@ import java.util.logging.Logger;
 import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.servicediscovery.GlobalServiceDiscovery;
 import cotton.requestqueue.RequestQueueManager;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 /**
  *
@@ -248,6 +249,33 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     }
 
     /**
+     * Notifies the requestQueue that this instance is available 
+     *
+     * @param serviceName a serviceName to find a given queue by.
+     */
+    @Override
+    public boolean notifyRequestQueue(DestinationMetaData destination,RouteSignal route, String serviceName){
+        // TODO: actually notify the queue
+        Origin origin = new Origin();
+        origin.setAddress(this.localAddress);
+        byte[] data = serviceName.getBytes(StandardCharsets.UTF_8);
+        //String tt = new String(data,StandardCharsets.UTF_8);
+        //System.out.println("ServiceDiscovery::notifyRequestQueue:" + tt);
+        NetworkPacket packet = prepareForTransmission(origin,null,data,destination.getPathType());
+        if(route == RouteSignal.LOCALDESTINATION){
+            routingQueue.add(packet);
+        }else if(route == RouteSignal.NETWORKDESTINATION){ 
+            try{
+                networkHandler.send(packet,destination.getSocketAddress());
+            }catch(IOException e){
+                // TODO: logging
+                return false;
+            }   
+        }
+        return true;
+    }
+    
+    /**
      * The InternalRoutingServiceHandler implementation
      */
     /**
@@ -280,8 +308,10 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         RouteSignal route = discovery.getRequestQueueDestination(destination,serviceName);
         Origin origin = new Origin();
         origin.setAddress(this.localAddress);
-        
-        NetworkPacket packet = prepareForTransmission(origin,null,serviceName.getBytes(),destination.getPathType());
+        byte[] data = serviceName.getBytes(StandardCharsets.UTF_8);
+        //String tt = new String(data,StandardCharsets.UTF_8);
+        //System.out.println("ServiceHandler::notifyRequestQueue:" + tt);
+        NetworkPacket packet = prepareForTransmission(origin,null,data,destination.getPathType());
         if(route == RouteSignal.LOCALDESTINATION){
             routingQueue.add(packet);
         }else if(route == RouteSignal.NETWORKDESTINATION){ 
@@ -515,13 +545,15 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 break;
             case REQUESTQUEUE:
                 ServiceChain pathChain = packet.getPath();
+                byte[] data = packet.getData();
                 String serviceName = null;
                 if(requestQueueManager == null)
                     break; // TODO: give error
                 if(pathChain != null && (serviceName = pathChain.peekNextServiceName()) != null){
                     requestQueueManager.queueService(packet,serviceName);
                 }else{
-                    serviceName = new String(packet.getData());
+                    serviceName = new String(data,StandardCharsets.UTF_8);
+                    //System.out.println("serviceName: " + serviceName);
                     requestQueueManager.addAvailableInstance(packet.getOrigin(),serviceName);
                 }
                 break;
