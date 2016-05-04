@@ -2,6 +2,8 @@
 
 ## What Cotton is about?
 The purpose of this project is to create a **scalable cloud system** capable of **storing** and **processing** data in the cloud. The main focus of this project is **scalability**, the cloud needs to be prepared for an extreme increase or decrease of usage and then scale according to the changing demands. Beside the scaling, the system is required to be **fault tolerant** and **secure**.
+Read more at http://kahre.github.io/Cotton/ 
+
 
 ## Current approach
 The current approach consists of five components:
