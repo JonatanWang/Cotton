@@ -70,6 +70,15 @@ public final class TransportPacket {
      */
     com.google.protobuf.ByteString
         getPathBytes(int index);
+
+    /**
+     * <code>optional bool activelink = 7;</code>
+     */
+    boolean hasActivelink();
+    /**
+     * <code>optional bool activelink = 7;</code>
+     */
+    boolean getActivelink();
   }
   /**
    * Protobuf type {@code cotton.network.Packet}
@@ -164,6 +173,11 @@ public final class TransportPacket {
                 mutable_bitField0_ |= 0x00000010;
               }
               path_.add(bs);
+              break;
+            }
+            case 56: {
+              bitField0_ |= 0x00000010;
+              activelink_ = input.readBool();
               break;
             }
           }
@@ -422,12 +436,28 @@ public final class TransportPacket {
       return path_.getByteString(index);
     }
 
+    public static final int ACTIVELINK_FIELD_NUMBER = 7;
+    private boolean activelink_;
+    /**
+     * <code>optional bool activelink = 7;</code>
+     */
+    public boolean hasActivelink() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>optional bool activelink = 7;</code>
+     */
+    public boolean getActivelink() {
+      return activelink_;
+    }
+
     private void initFields() {
       keepalive_ = false;
       pathtype_ = cotton.network.TransportPacket.Packet.PathType.RELAY;
       data_ = com.google.protobuf.ByteString.EMPTY;
       origin_ = cotton.network.TransportPacket.Origin.getDefaultInstance();
       path_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      activelink_ = false;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -456,6 +486,9 @@ public final class TransportPacket {
       }
       for (int i = 0; i < path_.size(); i++) {
         output.writeBytes(6, path_.getByteString(i));
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeBool(7, activelink_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -490,6 +523,10 @@ public final class TransportPacket {
         }
         size += dataSize;
         size += 1 * getPathList().size();
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(7, activelink_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -623,6 +660,8 @@ public final class TransportPacket {
         bitField0_ = (bitField0_ & ~0x00000008);
         path_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000010);
+        activelink_ = false;
+        bitField0_ = (bitField0_ & ~0x00000020);
         return this;
       }
 
@@ -676,6 +715,10 @@ public final class TransportPacket {
           bitField0_ = (bitField0_ & ~0x00000010);
         }
         result.path_ = path_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.activelink_ = activelink_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -713,6 +756,9 @@ public final class TransportPacket {
             path_.addAll(other.path_);
           }
           onChanged();
+        }
+        if (other.hasActivelink()) {
+          setActivelink(other.getActivelink());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -1048,6 +1094,38 @@ public final class TransportPacket {
   }
   ensurePathIsMutable();
         path_.add(value);
+        onChanged();
+        return this;
+      }
+
+      private boolean activelink_ ;
+      /**
+       * <code>optional bool activelink = 7;</code>
+       */
+      public boolean hasActivelink() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <code>optional bool activelink = 7;</code>
+       */
+      public boolean getActivelink() {
+        return activelink_;
+      }
+      /**
+       * <code>optional bool activelink = 7;</code>
+       */
+      public Builder setActivelink(boolean value) {
+        bitField0_ |= 0x00000020;
+        activelink_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool activelink = 7;</code>
+       */
+      public Builder clearActivelink() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        activelink_ = false;
         onChanged();
         return this;
       }
@@ -1951,15 +2029,15 @@ public final class TransportPacket {
   static {
     java.lang.String[] descriptorData = {
       "\n\025TransportPacket.proto\022\016cotton.network\"" +
-      "\362\001\n\006Packet\022\021\n\tkeepalive\030\001 \001(\010\0221\n\010pathtyp" +
+      "\206\002\n\006Packet\022\021\n\tkeepalive\030\001 \001(\010\0221\n\010pathtyp" +
       "e\030\002 \001(\0162\037.cotton.network.Packet.PathType" +
       "\022\014\n\004data\030\003 \001(\014\022&\n\006origin\030\004 \001(\0132\026.cotton." +
-      "network.Origin\022\014\n\004path\030\006 \003(\t\"^\n\010PathType" +
-      "\022\t\n\005RELAY\020\000\022\r\n\tDISCOVERY\020\001\022\013\n\007SERVICE\020\002\022" +
-      "\013\n\007UNKNOWN\020\003\022\014\n\010NOTFOUND\020\004\022\020\n\014REQUESTQUE" +
-      "UE\020\005\"F\n\006Origin\022\017\n\007latchId\030\001 \001(\t\022\021\n\treque" +
-      "stId\030\002 \001(\t\022\n\n\002ip\030\003 \001(\t\022\014\n\004port\030\004 \001(\005B\021B\017" +
-      "TransportPacket"
+      "network.Origin\022\014\n\004path\030\006 \003(\t\022\022\n\nactiveli" +
+      "nk\030\007 \001(\010\"^\n\010PathType\022\t\n\005RELAY\020\000\022\r\n\tDISCO" +
+      "VERY\020\001\022\013\n\007SERVICE\020\002\022\013\n\007UNKNOWN\020\003\022\014\n\010NOTF" +
+      "OUND\020\004\022\020\n\014REQUESTQUEUE\020\005\"F\n\006Origin\022\017\n\007la" +
+      "tchId\030\001 \001(\t\022\021\n\trequestId\030\002 \001(\t\022\n\n\002ip\030\003 \001" +
+      "(\t\022\014\n\004port\030\004 \001(\005B\021B\017TransportPacket"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1978,7 +2056,7 @@ public final class TransportPacket {
     internal_static_cotton_network_Packet_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_cotton_network_Packet_descriptor,
-        new java.lang.String[] { "Keepalive", "Pathtype", "Data", "Origin", "Path", });
+        new java.lang.String[] { "Keepalive", "Pathtype", "Data", "Origin", "Path", "Activelink", });
     internal_static_cotton_network_Origin_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_cotton_network_Origin_fieldAccessorTable = new

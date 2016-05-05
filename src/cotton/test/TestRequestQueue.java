@@ -53,6 +53,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import cotton.requestqueue.RequestQueueManager;
+import cotton.test.services.MathResult;
 
 /**
  *
@@ -141,8 +142,7 @@ public class TestRequestQueue {
 
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
-        ServiceRequest[] req = new ServiceRequest[4];
-        
+        ServiceRequest[] req = new ServiceRequest[5];
 
         //ServiceRequest req = client.sendWithResponse(data, chain);
         for (int i = 0; i < req.length; i++) {
@@ -155,18 +155,91 @@ public class TestRequestQueue {
             if (req[i] != null) {
                 byte[] data2 = req[i].getData();
                 int num2 = ByteBuffer.wrap(data2).getInt();
-                System.out.println("result: " + i + " : " + num2);
+                //System.out.println("result: " + i + " : " + num2);
                 num = num2;
             } else {
                 System.out.println("Failed req: ");
             }
         }
+        System.out.println("result:  : " + num);
         //Cotton discovery = new Cotton(true,3333);
         //Cotton discovery = new Cotton(true,3333);
         queueInstance.shutdown();
         discovery.shutdown();
         ser1.shutdown();
         ser2.shutdown();
+        cCotton.shutdown();
+        assertTrue(65536 == num);
+    }
+    
+    @Test
+    public void TestWorkFloodRequestQueue() throws UnknownHostException {
+        Cotton discovery = new Cotton(true, 8265);
+        GlobalDnsStub gDns = new GlobalDnsStub();
+
+        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 8265);
+        InetSocketAddress[] arr = new InetSocketAddress[1];
+        arr[0] = gdAddr;
+        gDns.setGlobalDiscoveryAddress(arr);
+
+        discovery.start();
+
+        Cotton queueInstance = new Cotton(false, gDns);
+        RequestQueueManager requestQueueManager = new RequestQueueManager();
+        requestQueueManager.startQueue("mathpow21");
+        requestQueueManager.startQueue("mathpow2");
+        queueInstance.setRequestQueueManager(requestQueueManager);
+        queueInstance.start();
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        Cotton ser1 = new Cotton(false, gDns);
+        Cotton ser2 = new Cotton(false, gDns);
+        Cotton ser3 = new Cotton(false, gDns);
+
+        ser1.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
+        ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
+        ser2.getServiceRegistation().registerService("result", MathResult.getFactory(), 10);
+        ser1.start();
+        ser2.start();
+        ser3.start();
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        Cotton cCotton = new Cotton(false, gDns);
+        cCotton.start();
+
+        InternalRoutingClient client = cCotton.getClient();
+        ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
+
+        int num = 2;
+        byte[] data = ByteBuffer.allocate(4).putInt(num).array();
+
+        //ServiceRequest req = client.sendWithResponse(data, chain);
+        for (int i = 0; i < 1000; i++) {
+            chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
+            client.sendToService(data, chain);
+        }
+
+        chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21");
+        ServiceRequest req = client.sendWithResponse(data, chain);
+        data = req.getData();
+        num = ByteBuffer.wrap(data).getInt();
+        System.out.println("result:  : " + num);
+        //Cotton discovery = new Cotton(true,3333);
+        //Cotton discovery = new Cotton(true,3333);
+        queueInstance.shutdown();
+        discovery.shutdown();
+        ser1.shutdown();
+        ser2.shutdown();
+        ser3.shutdown();
         cCotton.shutdown();
         assertTrue(65536 == num);
     }

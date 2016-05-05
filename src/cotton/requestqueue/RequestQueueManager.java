@@ -124,7 +124,7 @@ public class RequestQueueManager{
         RequestQueue queue = internalQueueMap.get(serviceName);
         if(queue == null)
             return;
-        System.out.println("AvailableInstance: " + origin.getAddress().toString() + " :: " + serviceName);
+        //System.out.println("AvailableInstance: " + origin.getAddress().toString() + " :: " + serviceName);
         queue.addInstance(origin);
         threadPool.execute(queue);
     }
@@ -173,8 +173,9 @@ public class RequestQueueManager{
                 }
                 packet.setPathType(PathType.SERVICE);
                 try{
-                    networkHandler.send(packet,origin.getAddress());
-                    System.out.println("Queue sent work to " + origin.getAddress().toString());
+                    //networkHandler.send(packet,origin.getAddress());
+                    networkHandler.sendOverActiveLink(packet, origin.getAddress());
+                    //System.out.println("Queue sent work to " + origin.getAddress().toString());
                 }catch(IOException e){
                     processQueue.add(packet);
                     // TODO: LOGGING

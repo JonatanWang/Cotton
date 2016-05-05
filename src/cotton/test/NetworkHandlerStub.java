@@ -103,4 +103,9 @@ public class NetworkHandlerStub implements NetworkHandler{
 
     @Override
     public void run(){}
+
+    @Override
+    public void sendOverActiveLink(NetworkPacket netPacket, SocketAddress dest) throws IOException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

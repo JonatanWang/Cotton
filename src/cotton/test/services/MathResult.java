@@ -30,32 +30,47 @@ POSSIBILITY OF SUCH DAMAGE.
 
  */
 
-package cotton.network;
 
-option java_outer_classname = "TransportPacket";
 
-message Packet{
+package cotton.test.services;
 
-enum PathType{
-		RELAY = 0;
-		DISCOVERY = 1;
-		SERVICE = 2;
-		UNKNOWN = 3;
-    NOTFOUND = 4;
-    REQUESTQUEUE = 5;
-}
+import cotton.network.Origin;
+import cotton.services.CloudContext;
+import cotton.network.ServiceChain;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.io.ByteArrayInputStream;
+import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import cotton.services.Service;
+import cotton.services.ServiceFactory;
 
-  optional bool keepalive = 1;
-	optional PathType pathtype = 2;
-	optional bytes data = 3;
-	optional Origin origin = 4;
-  repeated string path = 6;
-optional bool activelink = 7;
-}
+/**
+ *
+ * @author Magnus
+ */
+public class MathResult implements Service{
 
-message Origin{
-	optional string latchId = 1;
-  optional string requestId = 2;
-	optional string ip = 3;
-	optional int32 port = 4;
+    @Override
+    public byte[] execute(CloudContext ctx, Origin origin, byte[] data, ServiceChain to) {
+        int num = 0;
+        num = ByteBuffer.wrap(data).getInt();
+        System.out.print(".");
+        return data;
+    }
+
+    public static ServiceFactory getFactory() {
+        return new Factory();
+    }
+
+    public static class Factory implements ServiceFactory {
+
+        @Override
+        public Service newService() {
+            return new MathResult();
+        }
+    }
 }

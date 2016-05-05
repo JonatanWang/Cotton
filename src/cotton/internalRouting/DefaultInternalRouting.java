@@ -193,7 +193,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     public boolean SendBackToOrigin(Origin origin, PathType pathType, byte[] data) {
         NetworkPacket packet = prepareForTransmission(origin, null, data, pathType);
         try {
-            networkHandler.send(packet, origin.getAddress());
+            //networkHandler.send(packet, origin.getAddress());
+            networkHandler.sendOverActiveLink(packet, origin.getAddress());
             return true;
         } catch (IOException ex) {
             //TODO FIX
@@ -213,7 +214,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     public boolean SendToDestination(DestinationMetaData dest, byte[] data) {
         NetworkPacket packet = prepareForTransmission(new Origin(), null, data, dest.getPathType());
         try {
-            networkHandler.send(packet, dest.getSocketAddress());
+            //networkHandler.send(packet, dest.getSocketAddress());
+            networkHandler.sendOverActiveLink(packet, dest.getSocketAddress());
             return true;
         } catch (IOException ex) {
             //TODO Fix
@@ -237,7 +239,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
 
         NetworkPacket packet = prepareForTransmission(origin, null, data, dest.getPathType());
         try {
-            networkHandler.send(packet, dest.getSocketAddress());
+            //networkHandler.send(packet, dest.getSocketAddress());
+            networkHandler.sendOverActiveLink(packet, dest.getSocketAddress());
         } catch (IOException ex) {
             removeServiceRequest(origin);
             return null;
@@ -266,7 +269,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
             routingQueue.add(packet);
         }else if(route == RouteSignal.NETWORKDESTINATION){ 
             try{
-                networkHandler.send(packet,destination.getSocketAddress());
+                //networkHandler.send(packet,destination.getSocketAddress());
+                networkHandler.sendOverActiveLink(packet,destination.getSocketAddress());
             }catch(IOException e){
                 // TODO: logging
                 return false;
@@ -316,7 +320,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
             routingQueue.add(packet);
         }else if(route == RouteSignal.NETWORKDESTINATION){ 
             try{
-                networkHandler.send(packet,destination.getSocketAddress());
+                //networkHandler.send(packet,destination.getSocketAddress());
+                networkHandler.sendOverActiveLink(packet,destination.getSocketAddress());
             }catch(IOException e){
                 // TODO: logging
                 return false;
@@ -412,7 +417,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                     if (keepAlive) {
                         this.networkHandler.sendKeepAlive(packet, dest.getSocketAddress());
                     } else {
-                        this.networkHandler.send(packet, dest.getSocketAddress());
+                        //this.networkHandler.send(packet, dest.getSocketAddress());
+                        this.networkHandler.sendOverActiveLink(packet, dest.getSocketAddress());
                     }
                     success = true;
                 } catch(IOException e) {
@@ -433,7 +439,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
             case RETURNTOORIGIN:
                 packet = prepareForTransmission(origin, serviceChain, data, dest.getPathType());
                 try {
-                    this.networkHandler.send(packet, origin.getAddress());
+                    //this.networkHandler.send(packet, origin.getAddress());
+                    this.networkHandler.sendOverActiveLink(packet, origin.getAddress());
                     success = true;
                 } catch (IOException ex) {
                     //TODO Fix

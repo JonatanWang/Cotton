@@ -46,6 +46,8 @@ import cotton.internalRouting.InternalRoutingNetwork;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
@@ -151,8 +153,19 @@ public class DefaultNetworkHandler implements NetworkHandler {
                     NetworkUnpacker pck = new NetworkUnpacker(clientSocket);
                     threadPool.execute(pck);
                 }
-            }catch(SocketTimeoutException ignore){
-            }catch (Throwable e) {
+            } catch (SocketTimeoutException ignore) {
+            } catch (SocketException e) {
+                System.out.println("SocketException " + e.getMessage());
+                e.printStackTrace();
+                break;
+//                try {
+//                    serverSocket = new ServerSocket();
+//                    serverSocket.bind(getLocalAddress());
+//                    serverSocket.setSoTimeout(80);
+//                } catch (IOException ex) {// TODO: Logging
+//                    ex.printStackTrace();
+//                }
+            } catch (Throwable e) {
                 System.out.println("Error " + e.getMessage());
                 e.printStackTrace();
             }
@@ -197,6 +210,87 @@ public class DefaultNetworkHandler implements NetworkHandler {
         System.out.println("Network exception, " + error); // TODO: MAKE THIS ACTUALLY LOG
     }
 
+    private ConcurrentHashMap<InetSocketAddress, Socket> liveSockets = new ConcurrentHashMap<InetSocketAddress, Socket>();
+    
+    private boolean storeSocket(SocketAddress dest,Socket socket) {
+        return liveSockets.putIfAbsent((InetSocketAddress)dest, socket) == null;
+    }
+    
+    private Socket removeSocket(SocketAddress dest) {
+        return liveSockets.remove((InetSocketAddress)dest);
+    }
+    
+    private Socket reuseSocket(SocketAddress dest) {
+        return liveSockets.get((InetSocketAddress)dest);
+    }
+    
+    private void fallbackSend(TransportPacket.Packet tp, SocketAddress dest) throws IOException {
+        Socket socket = null;
+        boolean keepSocket = false;
+        try {
+            socket = new Socket();
+            socket.connect(dest);
+            keepSocket = storeSocket(dest, socket);
+            tp.writeDelimitedTo(socket.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+            logError("fallbackSend: " + e.getMessage());
+            throw e;
+        }finally {
+            try {
+                if(!keepSocket && socket != null) {
+                    socket.close();
+                }
+            } catch (Throwable e) {
+                logError("fallbackSend socket close: " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Sends data wrapped in a <code>NetworkPacket</code> over the network.
+     * It creates a oneway link to the destination, the link is reused every call afterwards.
+     * 
+     * @param netPacket contains the data and the <code>metadata</code> needed to send the packet.
+     * @param dest defines the <code>SocketAddress</code> to send through.
+     * @throws java.io.IOException
+     */
+    public void sendOverActiveLink(NetworkPacket packet, SocketAddress dest) throws IOException {
+        if(packet == null) throw new NullPointerException("Null data");
+        if(dest == null) throw new NullPointerException("Null destination");
+
+        TransportPacket.Packet tp = buildTransportLinkPacket(packet);
+        Socket socket = reuseSocket(dest);
+        
+        boolean keepSocket = true;
+        try {
+            if(socket == null) {
+                socket = new Socket();
+                socket.connect(dest);
+                keepSocket = storeSocket(dest,socket);
+            }            
+            tp.writeDelimitedTo(socket.getOutputStream());
+        }catch(SocketException e){
+            Socket removeSocket = removeSocket(dest);
+            if(removeSocket != null)
+                removeSocket.close();
+            socket.close();
+            fallbackSend(tp,dest);
+        }catch (IOException e) {
+            e.printStackTrace();
+            logError("send: " + e.getMessage());
+            throw e;
+        }finally{
+            try {
+                if(!keepSocket) {
+                    socket.close();
+                }
+            } catch (Throwable e) {
+                logError("send socket close: " + e.getMessage());
+            }
+        }
+    }
+    
     @Override
     public void send(NetworkPacket packet, SocketAddress dest) throws IOException {
         if(packet == null) throw new NullPointerException("Null data");
@@ -266,6 +360,31 @@ public class DefaultNetworkHandler implements NetworkHandler {
             this.clientSocket = clientSocket;
         }
         
+        private void activeStream() {
+            // run for atleast 100 packets...
+            while(running.get() == true) {
+                try {
+                    TransportPacket.Packet input = TransportPacket.Packet.parseDelimitedFrom(clientSocket.getInputStream());
+
+                    if (input == null) {
+                        System.out.println("TransportPacket null");
+                        break;
+                    }
+                    //// TODO: ablility  to turn on and off debug msg
+                    //System.out.println("Pathtype is: "+input.getPathtype());
+
+                    NetworkPacket np = parseTransportPacket(input);
+                    internalRouting.pushNetworkPacket(np);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    logError(e.toString());
+                    break;
+                }
+
+            }
+
+        }
 
         @Override
         public void run(){
@@ -287,7 +406,10 @@ public class DefaultNetworkHandler implements NetworkHandler {
                     internalRouting.pushKeepAlivePacket(np, latch);
                     NetworkPacket keepAliveResult = latch.getData();
                     buildTransportPacket(keepAliveResult).writeDelimitedTo(clientSocket.getOutputStream());
-                } else {
+                } else if(input.hasActivelink() && input.getActivelink()) {
+                    internalRouting.pushNetworkPacket(np);
+                    activeStream();
+                }else {
                     internalRouting.pushNetworkPacket(np);
                 }
             } catch(IOException e) {
@@ -345,7 +467,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         return packet;
     }
 
-    public TransportPacket.Packet buildTransportPacket(NetworkPacket input) throws IOException{
+    private TransportPacket.Packet.Builder constructTransportPacketCore(NetworkPacket input) {
         TransportPacket.Packet.Builder builder = TransportPacket.Packet.newBuilder();
 
         while (input.getPath().peekNextServiceName() != null) {
@@ -374,41 +496,25 @@ public class DefaultNetworkHandler implements NetworkHandler {
         builder.setData(com.google.protobuf.ByteString.copyFrom(input.getData()));
 
         builder.setPathtype(TransportPacket.Packet.PathType.valueOf(input.getType().toString()));
+        return builder;
+    }
+    
+    public TransportPacket.Packet buildTransportPacket(NetworkPacket input) throws IOException{
+        TransportPacket.Packet.Builder builder = constructTransportPacketCore(input);
         builder.setKeepalive(false);
         return builder.build();
     }
 
     public TransportPacket.Packet buildTransportPacket(NetworkPacket input, boolean keepAlive) throws IOException{
-        TransportPacket.Packet.Builder builder = TransportPacket.Packet.newBuilder();
-
-        while (input.getPath().peekNextServiceName() != null) {
-            builder.addPath(input.getPath().getNextServiceName());
-        }
-        
-        InetSocketAddress address = (InetSocketAddress)input.getOrigin().getAddress();
-        UUID serviceRequestID = input.getOrigin().getServiceRequestID();
-        UUID socketLatchID = input.getOrigin().getSocketLatchID();
-        
-        TransportPacket.Origin.Builder originBuilder = TransportPacket.Origin.newBuilder();
-        if(address != null) {
-            originBuilder = originBuilder
-                    .setIp(address.getAddress().getHostAddress())
-                    .setPort(address.getPort());
-        }
-        if(serviceRequestID != null) {
-             originBuilder = originBuilder.setRequestId(serviceRequestID.toString());
-        }
-        if(socketLatchID != null) {
-             originBuilder = originBuilder.setLatchId(socketLatchID.toString());
-        }
-        TransportPacket.Origin origin = originBuilder.build();
-        builder.setOrigin(origin);
-
-        builder.setData(com.google.protobuf.ByteString.copyFrom(input.getData()));
-
-        builder.setPathtype(TransportPacket.Packet.PathType.valueOf(input.getType().toString()));
-        
+        TransportPacket.Packet.Builder builder = constructTransportPacketCore(input);
         builder.setKeepalive(keepAlive);
+        return builder.build();
+    }
+    
+    public TransportPacket.Packet buildTransportLinkPacket(NetworkPacket input) throws IOException{
+        TransportPacket.Packet.Builder builder = constructTransportPacketCore(input);
+        builder.setKeepalive(false);
+        builder.setActivelink(true);
         return builder.build();
     }
 }
