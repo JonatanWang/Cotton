@@ -54,4 +54,5 @@ public interface ServiceDiscovery {
     public void discoveryUpdate(Origin origin, byte[] data);
     public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName);
     public boolean announceQueues(String[] queueList);
+    public DestinationMetaData destinationUnreachable(DestinationMetaData dest,String serviceName);
 }

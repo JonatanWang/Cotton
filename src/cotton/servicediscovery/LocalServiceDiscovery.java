@@ -117,6 +117,28 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     }
 
     /**
+     * Notifyes ServiceDiscovery that a destination cant be reached
+     * @param dest the faulty destination
+     * @param serviceName optional name for the service that the address was for
+     * @return a new destiantion if 
+     */
+    @Override
+    public DestinationMetaData destinationUnreachable(DestinationMetaData dest,String serviceName){
+        if(serviceName != null){
+            AddressPool pool = serviceCache.get(serviceName);
+            if(pool != null){
+                pool.remove(dest);
+                return pool.getAddress();  
+            }
+        }
+        if(dest.getPathType() == PathType.DISCOVERY){
+            discoveryCache.remove(dest);
+            return discoveryCache.getAddress();
+        }
+        return null;
+  	}
+
+    /**
      * Search globaly for a destination with a service named serviceName
      *
      * @param destination in/out gets filled in with the address and pathtype

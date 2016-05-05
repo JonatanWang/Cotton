@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.io.Serializable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 /**
  *
  * @author magnus
@@ -111,6 +112,28 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     public void setLocalServiceTable(ActiveServiceLookup serviceTable) {
         this.localServiceTable = serviceTable;
     }
+
+    /**
+     * Notifyes ServiceDiscovery that a destination cant be reached
+     * @param dest the faulty destination
+     * @param serviceName optional name for the service that the address was for
+     * @return a new destiantion if 
+     */
+    @Override
+  	public DestinationMetaData destinationUnreachable(DestinationMetaData dest,String serviceName){
+        if(serviceName != null){
+            AddressPool pool = serviceCache.get(serviceName);
+            if(pool != null){
+                pool.remove(dest);
+                return pool.getAddress();  
+            }
+        }
+        if(dest.getPathType() == PathType.DISCOVERY){
+            discoveryCache.remove(dest);
+            return discoveryCache.getAddress();
+        }
+        return null;
+  	}
 
     /**
      * Search globaly for a destination with a service named serviceName
@@ -253,13 +276,19 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         }
         String[] nameList = serviceList.toArray(new String[serviceList.size()]);
         AnnouncePacket announce = new AnnouncePacket(localAddress,nameList);
+        announce.setGlobalDiscovery(true);
         DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.ANNOUNCE);
         packet.setAnnonce(announce);
         printAnnounceList(nameList);
         //DestinationMetaData dest = new DestinationMetaData(destAddr,PathType.DISCOVERY);
+        boolean success = false;
         try{
             byte[] bytes = serializeToBytes(packet);
-            internalRouting.SendToDestination(dest,bytes);
+            success = internalRouting.SendToDestination(dest,bytes);
+            if(!success){
+                dest = destinationUnreachable(dest,null);
+                success = internalRouting.SendToDestination(dest, bytes);
+            }
         }catch(IOException ex){
             return false;
         }
@@ -306,6 +335,40 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         return probe;
     }
 
+    private void propagateTopology(TopologyPacket packet){
+        int count = packet.decrementCount();
+      	if(count <= 0)
+            return;
+      	DestinationMetaData nextHop = null;
+        InetSocketAddress lastJump = (InetSocketAddress)packet.getLastJump();
+        InetSocketAddress originalSource = (InetSocketAddress)packet.getOriginalSource();
+        for(int i = 0; i < count; i++) {
+            nextHop = this.discoveryCache.getAddress();
+            if(nextHop.equals(lastJump) || nextHop.equals(originalSource))
+                continue;
+            DiscoveryPacket discPack = new DiscoveryPacket(DiscoveryPacketType.TOPOLOGY);
+            packet.setLastJump(localAddress);
+            discPack.setTopologyPacket(packet);
+            boolean success = false;
+            try{
+                byte[] data = serializeToBytes(discPack);
+                success = internalRouting.SendToDestination(nextHop,data);
+                if(!success){
+                    destinationUnreachable(nextHop,null);
+                }
+            }catch(IOException e){
+                // TODO: LOGGING
+            }
+        }
+
+    }
+
+  	private void processTopologyPackets(TopologyPacket packet){
+        
+        this.discoveryCache.addAddress(packet.getInstanceAddress());
+      	propagateTopology(packet);
+  	}
+
     private void addService(DestinationMetaData addr,String name){
         AddressPool pool = new AddressPool();
         AddressPool oldPool = this.serviceCache.putIfAbsent(name,pool);
@@ -339,7 +402,12 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             }
                                       
         }
-
+        if(packet.isGlobalDiscovery()){
+            DestinationMetaData globUpdate= new DestinationMetaData(addr,PathType.DISCOVERY);
+            discoveryCache.addAddress(globUpdate);
+          	TopologyPacket topology = new TopologyPacket(globUpdate,localAddress,4);
+            propagateTopology(topology);
+        }
         DestinationMetaData dest = new DestinationMetaData(addr,PathType.DISCOVERY);
         
         for(QueuePacket queuePacket: queueList){
@@ -347,7 +415,9 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             discoveryPacket.setQueue(queuePacket);
             try{
                 byte[] data = serializeToBytes(discoveryPacket);
-                internalRouting.SendToDestination(dest,data);
+                if(!internalRouting.SendToDestination(dest,data)){
+                    break;
+                }
             }catch(IOException e){
                 e.printStackTrace();
                 // TODO: Logg error
@@ -454,15 +524,19 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         QueuePacket queuePacket = new QueuePacket(localAddress,queueList);
         DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
         discoveryPacket.setQueue(queuePacket);
-        
+        boolean success = false;
         try{
             byte[] data = serializeToBytes(discoveryPacket);
-            internalRouting.SendToDestination(dest,data);
+            success = internalRouting.SendToDestination(dest,data);
+            if(!success){
+                DestinationMetaData destination = destinationUnreachable(dest,null);
+            	success = internalRouting.SendToDestination(destination,data);
+            }
         }catch(IOException e){
             e.printStackTrace();
             return false;
         }
-        return true;
+        return success;
     }
 
     private class DiscoveryLookup implements Runnable {

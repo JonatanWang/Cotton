@@ -29,25 +29,20 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
 package cotton.servicediscovery;
 
-import java.io.Serializable;
+import cotton.network.DestinationMetaData;
 import java.net.SocketAddress;
-
 /**
- * The <code>AnnouncePacket</code> wraps the service list and <code>SocketAddress</code> 
- * of a <code>Cotton</code> instance.
- * 
+ * @author Tony
  * @author Magnus
- * @see SocketAddress
  */
-public class AnnouncePacket implements Serializable {
-    private SocketAddress instanceAddress;
-    private String[] serviceList;
+public class TopologyPacket {
+    private DestinationMetaData instanceAddress;
+  	private SocketAddress originalSource;
+  	private SocketAddress lastJump;
     private boolean isGlobalDiscovery;
-
+    private int count;
     /**
      * Constructs a <code>AnnouncePacket</code> containing the current <code>Cotton</code> 
      * instance <code>SocketAddress</code> and the service list.
@@ -55,34 +50,76 @@ public class AnnouncePacket implements Serializable {
      * @param instanceAddress the <code>Cotton</code> instance address.
      * @param serviceList the <code>Cotton</code> instance service list.
      */
-    public AnnouncePacket(SocketAddress instanceAddress, String[] serviceList) {
+    public TopologyPacket(DestinationMetaData instanceAddress,SocketAddress originalSource,int count) {
         this.instanceAddress = instanceAddress;
-        this.serviceList = serviceList;
+      	this.originalSource = originalSource;
+      	this.lastJump = originalSource;
+        this.count = count;
     }
-
+    
     /**
-     * Returns the containing <code>SocketAddress</code> of the 
-     * <code>AnnouncePacket</code>.
+     * Returns the containing <code>DestinationMetaData</code> of the 
+     * <code>TopologyPacket</code>.
      * 
-     * @return the containing <code>SocketAddress</code>.
+     * @return the containing <code>DestinationMetaData</code>.
      */
-    public SocketAddress getInstanceAddress() {
+    public DestinationMetaData getInstanceAddress() {
         return instanceAddress;
     }
+    /**
+     * decrements a value 
+     * @return count the value after decrement 
+     */
+  	public int decrementCount(){
+        count--;
+        return count;
+  	}
 
     /**
-     * Returns the containing <code>serviceList</code> of the 
-     * <code>AnnouncePacket</code>.
-     * 
-     * @return the containing <code>serviceList</code>.
+     * returns a value
+     * @return count a intger that represent how many connections that should be connected in next topology jump
      */
-    public String[] getServiceList() {
-        return serviceList;
+  	public int getCount(){
+        return this.count;
     }
+
+    /**
+     * returns the address of the instance that initiated a topology change
+     * @return socketAddress the address of the instance that initiated the topology change
+     */
+  	public SocketAddress getOriginalSource(){
+  		return originalSource;
+  	}
+
+    /**
+     * checks whether the instance is a global discovery or not.
+     *
+     */
     public boolean isGlobalDiscovery(){
         return isGlobalDiscovery;
     }
+
+    /**
+     * sets whether the instance is a global discovery or not.
+     * @param globalDiscovery a boolean that indicates if the instance is a global discovery
+     */
     public void setGlobalDiscovery(boolean globalDiscovery){
         this.isGlobalDiscovery = globalDiscovery;
-  }
+    }
+
+    /**
+     * returns the last hop address in order to prevent recursive loops in topology
+     * @return lastJump the address of the last hop address 
+     */
+  	public SocketAddress getLastJump(){
+        return lastJump;
+  	}
+
+    /**
+     * sets last jump address.
+     * @param lastJump the lastJump address for the topology change
+     */
+  	public void setLastJump(SocketAddress lastJump){
+        this.lastJump = lastJump;
+  	}
 }
