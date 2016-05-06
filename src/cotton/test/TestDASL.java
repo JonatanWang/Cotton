@@ -1,23 +1,48 @@
+/*
+
+Copyright (c) 2016, Gunnlaugur Juliusson, Jonathan Kåhre, Magnus Lundmark,
+Mats Levin, Tony Tran
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+ * Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+ * Neither the name of Cotton Production Team nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+ */
+
+
 package cotton.test;
 
-import cotton.services.ActiveServiceLookup;
+import cotton.network.Origin;
 import cotton.services.CloudContext;
-import cotton.services.DefaultActiveServiceLookup;
 import cotton.network.ServiceChain;
-import cotton.network.ServiceConnection;
+import cotton.services.Service;
 import cotton.services.ServiceFactory;
-import cotton.services.ServiceInstance;
-import cotton.test.TestDASL.TestServiceFactory.TestServiceInstance;
+import cotton.services.ServiceLookup;
+//import cotton.test.TestDASL.TestServiceFactory.TestService;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.Enumeration;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -38,61 +63,34 @@ public class TestDASL {
          * Returns an <code>TestServiceInstance</code> for testing purposes.
          * 
          * @return an TestServiceInstance.
-         * @see TestServiceInstance
+         * @see TestService
          */
         @Override
-        public ServiceInstance newServiceInstance() {
-            return new TestServiceInstance();
+        public Service newService() {
+            return new TestService();
         }
 
         /**
          * A service instance intended for testing the <code>DefaultActiveServiceLookup</code> class.
          */
-        public class TestServiceInstance implements ServiceInstance {
-            
+        public class TestService implements Service{
+
             /**
              * Retrieves the data and converts it to an <code>int</code> and multiplies it by two.
              * The number sent through the <code>InputStream</code> should be defined as an <code>Integer</code>.
-             * 
+             *
              * @param ctx contains the cloud context.
-             * @param from describes who sent the original request.
+             * @param origin describes who sent the original request.
              * @param data the number to be multiplied.
              * @param to describes where the service should redirect the request before returning the number.
-             * 
+             *
              * @return the incoming number multiplied by 2.
              */
             @Override
-            public Serializable consumeServiceOrder(CloudContext ctx, ServiceConnection from, InputStream data, ServiceChain to) {
-                int number = convertInputStream(data);
-                
+            public byte[] execute(CloudContext ctx, Origin origin, byte[] data, ServiceChain to) {
+                int number = ByteBuffer.wrap(data).getInt();
                 number *= 2;
-                
-                return number;
-            }
-
-            /**
-             * Converts the data in the <code>InputStream</code> to an <code>int</code> and returns it.
-             * The data written to the <code>InputStream</code> needs to have been an <code>Integer</code> 
-             * to successfully convert.
-             * 
-             * @param data a <code>Integer</code> to convert to <code>int</code>.
-             * @return the number read from the <code>InputStream</code>.
-             */
-            private int convertInputStream(InputStream data) {
-                Integer number = -1;
-
-                ObjectInputStream inStream;
-                try {
-                    inStream = new ObjectInputStream(data);
-                    number = (Integer)inStream.readObject();
-
-                } catch (IOException ex) {
-                    Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-                }catch (ClassNotFoundException ex) {
-                        Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-                }
-
-                return number;
+                return ByteBuffer.allocate(4).putInt(number).array();
             }
         }
     }
@@ -104,7 +102,7 @@ public class TestDASL {
      */
     @Test
     public void testCapacity() {
-        ActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        ServiceLookup dasl = new ServiceLookup();
         dasl.registerService("Coloring", null, 10);
 
         assertEquals(10, dasl.getService("Coloring").getMaxCapacity());
@@ -119,7 +117,7 @@ public class TestDASL {
      */
     @Test
     public void testWrongCapacity() {
-        ActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        ServiceLookup dasl = new ServiceLookup();
         dasl.registerService("Coloring", new TestServiceFactory(), 10);
         int maxCapacity = dasl.getService("Coloring").getMaxCapacity();
         assertTrue(9 != maxCapacity);
@@ -132,7 +130,7 @@ public class TestDASL {
      */
     @Test
     public void testHashMapKeys() {
-        ActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        ServiceLookup dasl = new ServiceLookup();
 
         String[] services = new String[3];
         services[0] = "Coloring";
@@ -161,7 +159,7 @@ public class TestDASL {
      */
     @Test
     public void testRemove() {
-        ActiveServiceLookup dasl = new DefaultActiveServiceLookup();
+        ServiceLookup dasl = new ServiceLookup();
 
         String[] services = new String[3];
         services[0] = "Coloring";
@@ -191,19 +189,12 @@ public class TestDASL {
     @Test
     public void testFactory() throws IOException {
         ServiceFactory sf = new TestServiceFactory();
-        TestServiceInstance si = (TestServiceInstance)sf.newServiceInstance();
-        
-        // Pipe connections
-        PipedInputStream in = new PipedInputStream();
-        PipedOutputStream outStream = new PipedOutputStream(in);
-        ObjectOutputStream objectOutStream = new ObjectOutputStream(outStream);
-        
-        // Number for the service to multiply
-        objectOutStream.writeObject(new Integer(2));
-        
-        objectOutStream.close();
-        
-        assertEquals(4,si.consumeServiceOrder(null, null, in, null));
-        in.close();
+        TestServiceFactory.TestService si = (TestServiceFactory.TestService)sf.newService();
+
+        byte[] res = si.execute(null, null, ByteBuffer.allocate(4).putInt(2).array(), null);
+
+        int result = ByteBuffer.wrap(res).getInt();
+
+        assertEquals(4, result);
     }
 }
