@@ -58,6 +58,8 @@ import cotton.internalRouting.DefaultInternalRouting;
 import cotton.internalRouting.InternalRoutingClient;
 import java.util.Random;
 import cotton.requestqueue.RequestQueueManager;
+import cotton.systemsupport.Console;
+import cotton.systemsupport.StatisticsProvider;
 
 /**
  *
@@ -72,6 +74,7 @@ public class Cotton {
     private ServiceHandler services;
     private ServiceDiscovery discovery;
     private DefaultInternalRouting internalRouting;
+    private Console console = new Console();
 
     public Cotton(boolean globalServiceDiscovery) throws java.net.UnknownHostException {
         Random rnd = new Random();
@@ -158,6 +161,14 @@ public class Cotton {
         internalRouting.start();
         new Thread(services).start();
         discovery.announce();
+        this.console.setServiceDiscvery(this.discovery);
+        this.console.setServiceHandler(services);
+    }
+
+    public Console getConsole() {
+        this.console.setServiceDiscvery(this.discovery);
+        this.console.setServiceHandler(services);
+        return console;
     }
 
     public void shutdown() {
@@ -182,6 +193,7 @@ public class Cotton {
 
     public void setRequestQueueManager(RequestQueueManager requestQueueManager){
         this.internalRouting.setRequestQueueManager(requestQueueManager);
+        this.console.setQueueManager(requestQueueManager);
     }
     public static void main(String[] args) {
         Cotton c = null;

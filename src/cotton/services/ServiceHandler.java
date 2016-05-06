@@ -88,12 +88,12 @@ public class ServiceHandler implements Runnable,StatisticsProvider{
         return ret;
     }
 
-    public StatisticsData getStatistics(String name){
-        ServiceMetaData metaData = serviceLookup.getService(name);
+    public StatisticsData getStatistics(String[] name){
+        ServiceMetaData metaData = serviceLookup.getService(name[0]);
         if(metaData == null)
             return null;
         int[] data = {metaData.getMaxCapacity(),metaData.getCurrentThreadCount()};
-        return new StatisticsData(StatType.SERVICEHANDLER,name,data);
+        return new StatisticsData(StatType.SERVICEHANDLER,name[0],data);
         
     }
 

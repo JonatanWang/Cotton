@@ -112,4 +112,10 @@ public class DestinationMetaData implements Serializable {
    	public boolean compareAddress(SocketAddress other){
       	return ((InetSocketAddress)socketAddress).equals((InetSocketAddress)other);
   	}
+
+    @Override
+    public String toString() {
+        return "DestinationMetaData{" + "socketAddress=" + (InetSocketAddress)socketAddress + ", pathType=" + pathType + '}';
+    }
+        
 }

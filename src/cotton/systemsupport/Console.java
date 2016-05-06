@@ -29,31 +29,58 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
-package cotton.servicediscovery;
-
-import cotton.internalRouting.InternalRoutingServiceDiscovery;
-import cotton.network.DestinationMetaData;
-import cotton.network.Origin;
-import cotton.network.ServiceChain;
-import cotton.services.ActiveServiceLookup;
-import cotton.systemsupport.StatisticsProvider;
-import java.net.SocketAddress;
+package cotton.systemsupport;
 
 /**
- *
- * @author Magnus
+ * 
+ * @author Magnus ,Tony
  */
-public interface ServiceDiscovery extends StatisticsProvider {
-    public void setNetwork(InternalRoutingServiceDiscovery network, SocketAddress localAddress);
-    public void setLocalServiceTable(ActiveServiceLookup serviceTable);
-    public RouteSignal getDestination(DestinationMetaData destination, Origin origin, ServiceChain to); // outgoinging package
-    public RouteSignal getLocalInterface(Origin origin, ServiceChain to); // incoming packaged
-    public boolean announce();
-    public void stop();
-    public void discoveryUpdate(Origin origin, byte[] data);
-    public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName);
-    public boolean announceQueues(String[] queueList);
-    public DestinationMetaData destinationUnreachable(DestinationMetaData dest,String serviceName);
+public class Console {
+    private StatisticsProvider queueManager;
+    private StatisticsProvider serviceDiscvery;
+    private StatisticsProvider serviceHandler;
+
+    /**
+     * 
+     * @param serviceDiscovery
+     * @param queueManager
+     * @param serviceHandler 
+     */
+    public Console(StatisticsProvider serviceDiscovery, StatisticsProvider queueManager, StatisticsProvider serviceHandler) {
+        this.queueManager = queueManager;
+        this.serviceDiscvery = serviceDiscvery;
+        this.serviceHandler = serviceHandler;
+    }
+    
+    public Console() {
+        this.queueManager = null;
+        this.serviceDiscvery = null;
+        this.serviceHandler = null;
+    }
+
+    public void setQueueManager(StatisticsProvider queueManager) {
+        this.queueManager = queueManager;
+    }
+
+    public void setServiceDiscvery(StatisticsProvider serviceDiscvery) {
+        this.serviceDiscvery = serviceDiscvery;
+    }
+
+    public void setServiceHandler(StatisticsProvider serviceHandler) {
+        this.serviceHandler = serviceHandler;
+    }
+
+    public StatisticsProvider getQueueManager() {
+        return queueManager;
+    }
+
+    public StatisticsProvider getServiceDiscvery() {
+        return serviceDiscvery;
+    }
+
+    public StatisticsProvider getServiceHandler() {
+        return serviceHandler;
+    }
+    
+    
 }
