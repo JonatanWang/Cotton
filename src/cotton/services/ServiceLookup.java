@@ -36,7 +36,8 @@ package cotton.services;
 import java.util.Enumeration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentHashMap.KeySetView;
-
+import java.util.Set;
+import java.util.Map;
 /**
 *
 * @author Tony 
@@ -96,7 +97,15 @@ public class ServiceLookup implements ActiveServiceLookup{
   	public ConcurrentHashMap.KeySetView<String, ServiceMetaData> getKeySet(){
   		return hashMap.keySet();
   	}
-
+    /**
+     * Returns a set of key value pairs. The order of the key value pairs will be
+     * unpredictable
+     * @return the entrys of the hash map.
+     */
+    public Set<Map.Entry<String,ServiceMetaData>> getEntrySet(){
+        return hashMap.entrySet();
+    }
+    
     /**
      * Removes a service entry from the lookup table.
      *

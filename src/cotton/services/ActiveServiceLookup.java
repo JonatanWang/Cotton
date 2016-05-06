@@ -35,7 +35,8 @@ package cotton.services;
 
 import java.util.Enumeration;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.Set;
+import java.util.Map;
 /**
  * The <code>ActiveServiceLookup</code> acts as a lookup table for services. The
  * class implementing the interface is intended to be used by the 
@@ -84,6 +85,12 @@ public interface ActiveServiceLookup {
      */
     public ConcurrentHashMap.KeySetView<String, ServiceMetaData> getKeySet();
 
+    /**
+     * Returns a set of key value pairs. The order of the key value pairs will be
+     * unpredictable
+     * @return the entrys of the hash map.
+     */
+    public Set<Map.Entry<String,ServiceMetaData>> getEntrySet();
     /**
      * Removes a service entry from the lookup table.
      * 
