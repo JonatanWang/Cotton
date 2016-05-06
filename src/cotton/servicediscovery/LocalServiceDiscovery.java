@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.io.Serializable;
 import cotton.internalRouting.ServiceRequest;
 import cotton.network.DestinationMetaData;
+import cotton.requestqueue.RequestQueueManager;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import java.util.Map;
@@ -390,6 +391,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.ANNOUNCE);
         packet.setAnnonce(announce);
         printAnnounceList(nameList);
+        
         //DestinationMetaData dest = new DestinationMetaData(destAddr, PathType.DISCOVERY);
         try {
             byte[] bytes = serializeToBytes(packet);
@@ -524,17 +526,18 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         }
     }
 
-    public boolean announceQueues(String[] queueList){
+    public boolean announceQueues(RequestQueueManager queueManager){
+        String[] nameList = queueManager.getActiveQueues();
         DestinationMetaData dest = discoveryCache.getAddress();
         if(dest == null){
             System.out.println("dest is null in announceQueues localServiceDiscovery");
             return false;
         }
-        if(queueList == null){
+        if(queueManager == null){
             System.out.println("queue list is null in announceQueues localServiceDiscovery");
             return false;
         }
-        QueuePacket queuePacket = new QueuePacket(localAddress,queueList);
+        QueuePacket queuePacket = new QueuePacket(localAddress,nameList);
         DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
         discoveryPacket.setQueue(queuePacket);
         

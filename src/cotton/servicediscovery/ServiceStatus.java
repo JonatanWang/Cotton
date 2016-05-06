@@ -29,32 +29,13 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
 package cotton.servicediscovery;
-
-import cotton.internalRouting.InternalRoutingServiceDiscovery;
-import cotton.network.DestinationMetaData;
-import cotton.network.Origin;
-import cotton.network.ServiceChain;
-import cotton.requestqueue.RequestQueueManager;
-import cotton.services.ActiveServiceLookup;
-import cotton.systemsupport.StatisticsProvider;
-import java.net.SocketAddress;
 
 /**
  *
- * @author Magnus
+ * @author tony
+ * @author magnus
  */
-public interface ServiceDiscovery extends StatisticsProvider {
-    public void setNetwork(InternalRoutingServiceDiscovery network, SocketAddress localAddress);
-    public void setLocalServiceTable(ActiveServiceLookup serviceTable);
-    public RouteSignal getDestination(DestinationMetaData destination, Origin origin, ServiceChain to); // outgoinging package
-    public RouteSignal getLocalInterface(Origin origin, ServiceChain to); // incoming packaged
-    public boolean announce();
-    public void stop();
-    public void discoveryUpdate(Origin origin, byte[] data);
-    public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName);
-    public boolean announceQueues(RequestQueueManager queueManager);
-    public DestinationMetaData destinationUnreachable(DestinationMetaData dest,String serviceName);
+public enum ServiceStatus{
+    ACTIVE,PREFERRED,POSSIBLE,NOTAVAILABLE
 }

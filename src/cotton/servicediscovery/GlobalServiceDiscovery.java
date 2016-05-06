@@ -38,6 +38,7 @@ import cotton.network.DestinationMetaData;
 import cotton.network.Origin;
 import cotton.network.PathType;
 import cotton.network.ServiceChain;
+import cotton.requestqueue.RequestQueueManager;
 import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
 import cotton.services.ActiveServiceLookup;
 import java.io.ByteArrayInputStream;
@@ -520,11 +521,12 @@ public class GlobalServiceDiscovery implements ServiceDiscovery{
      * Announces active queues 
      * @param queueList a list of names for the queues.
      */
-    public boolean announceQueues(String[] queueList){
+    public boolean announceQueues(RequestQueueManager queueManager){
+        String[] nameList = queueManager.getActiveQueues();
         DestinationMetaData dest = discoveryCache.getAddress();
         if(dest == null)
             return false;
-        QueuePacket queuePacket = new QueuePacket(localAddress,queueList);
+        QueuePacket queuePacket = new QueuePacket(localAddress,nameList);
         DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
         discoveryPacket.setQueue(queuePacket);
         boolean success = false;

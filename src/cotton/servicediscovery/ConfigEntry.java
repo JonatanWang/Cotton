@@ -29,32 +29,60 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
 package cotton.servicediscovery;
 
-import cotton.internalRouting.InternalRoutingServiceDiscovery;
-import cotton.network.DestinationMetaData;
-import cotton.network.Origin;
-import cotton.network.ServiceChain;
-import cotton.requestqueue.RequestQueueManager;
-import cotton.services.ActiveServiceLookup;
-import cotton.systemsupport.StatisticsProvider;
+import cotton.network.PathType;
 import java.net.SocketAddress;
 
 /**
  *
+ * @author Tony
  * @author Magnus
  */
-public interface ServiceDiscovery extends StatisticsProvider {
-    public void setNetwork(InternalRoutingServiceDiscovery network, SocketAddress localAddress);
-    public void setLocalServiceTable(ActiveServiceLookup serviceTable);
-    public RouteSignal getDestination(DestinationMetaData destination, Origin origin, ServiceChain to); // outgoinging package
-    public RouteSignal getLocalInterface(Origin origin, ServiceChain to); // incoming packaged
-    public boolean announce();
-    public void stop();
-    public void discoveryUpdate(Origin origin, byte[] data);
-    public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName);
-    public boolean announceQueues(RequestQueueManager queueManager);
-    public DestinationMetaData destinationUnreachable(DestinationMetaData dest,String serviceName);
-}
+
+public class ConfigEntry{
+
+        private String name;
+        private int maxCapacity;
+        private PathType pathType;
+        private ServiceStatus serviceStatus;
+        
+        public ConfigEntry(String name, int maxCapacity, PathType pathType, ServiceStatus serviceStatus) {
+            this.name = name;
+            this.maxCapacity = maxCapacity;
+            this.pathType = pathType;
+            this.serviceStatus = serviceStatus;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public int getMaxCapacity() {
+            return maxCapacity;
+        }
+
+        public void setMaxCapacity(int maxCapacity) {
+            this.maxCapacity = maxCapacity;
+        }
+
+        public PathType getPathType() {
+            return pathType;
+        }
+
+        public void setPathType(PathType pathType) {
+            this.pathType = pathType;
+        }
+
+        public ServiceStatus getServiceStatus() {
+            return serviceStatus;
+        }
+
+        public void setServiceStatus(ServiceStatus serviceStatus) {
+            this.serviceStatus = serviceStatus;
+        }
+    }
