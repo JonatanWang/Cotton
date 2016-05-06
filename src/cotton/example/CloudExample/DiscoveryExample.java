@@ -6,22 +6,7 @@
 package cotton.example.cloudexample;
 
 import cotton.Cotton;
-import cotton.internalRouting.InternalRoutingClient;
-import cotton.internalRouting.ServiceRequest;
-import cotton.network.DummyServiceChain;
-import cotton.network.ServiceChain;
-import cotton.requestqueue.RequestQueueManager;
-import cotton.test.services.GlobalDnsStub;
-import cotton.test.services.MathPowV2;
-import cotton.test.services.MathResult;
-import java.net.Inet4Address;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertTrue;
 
 /**
  *
