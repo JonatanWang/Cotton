@@ -128,7 +128,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     }
 
     private boolean fallBackSend(NetworkPacket packet, SocketAddress sockerAddr) {
-        if(sockerAddr == null) return false;
+        if(sockerAddr == null || packet == null) return false;
         try {
             networkHandler.send(packet, sockerAddr);
         } catch (IOException e) {
@@ -138,7 +138,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     }
 
     private boolean fallbackSendKeepAlive(NetworkPacket packet, SocketAddress sockerAddr) {
-        if(sockerAddr == null) return false;
+        if(sockerAddr == null || packet == null) return false;
         try {
             this.networkHandler.sendKeepAlive(packet, sockerAddr);
         } catch (IOException e) {

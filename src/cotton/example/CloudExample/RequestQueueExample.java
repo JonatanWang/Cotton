@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  */
 public class RequestQueueExample {
     public static void main(String[] args) throws UnknownHostException {
-        GlobalDnsStub gDns = getDnsStub("127.0.0.1", 9546);
+        GlobalDnsStub gDns = getDnsStub("127.0.01", 9546);
         Cotton queueInstance = new Cotton(false, gDns);
         RequestQueueManager requestQueueManager = new RequestQueueManager();
         requestQueueManager.startQueue("mathpow21");
@@ -27,7 +27,7 @@ public class RequestQueueExample {
         queueInstance.setRequestQueueManager(requestQueueManager);
         queueInstance.start();
         try {
-            Thread.sleep(30000);
+            Thread.sleep(80000);
         } catch (InterruptedException ex) {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
