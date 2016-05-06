@@ -62,7 +62,7 @@ public class RequestQueueManager implements StatisticsProvider{
     private ConcurrentHashMap<String,RequestQueue> internalQueueMap;
     private ExecutorService threadPool;    
     private NetworkHandler networkHandler;
-
+    private int maxAmountOfQueues;
     public RequestQueueManager(){
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();
@@ -153,6 +153,11 @@ public class RequestQueueManager implements StatisticsProvider{
         return queue.getStatistics();
     }
 
+    public int getMaxCapacity(String serviceName){
+        RequestQueue queue = internalQueueMap.get(serviceName);
+        return queue.getMaxCapacity();
+    }
+    
     private class RequestQueue implements Runnable{
         private ConcurrentLinkedQueue<NetworkPacket> processQueue;
         private ConcurrentLinkedQueue<Origin> processingNodes;
@@ -211,5 +216,10 @@ public class RequestQueueManager implements StatisticsProvider{
                 }
             }
         }
+        
+        public int getMaxCapacity(){
+            return this.maxCapacity;
+        }
+        
     }
 }

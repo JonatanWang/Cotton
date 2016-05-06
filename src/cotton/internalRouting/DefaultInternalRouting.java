@@ -508,7 +508,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         new Thread(this.dispatcher).start();
         if (requestQueueManager != null) {
             String[] nameList = requestQueueManager.getActiveQueues();
-            discovery.announceQueues(nameList);
+            discovery.announceQueues(requestQueueManager);
             System.out.println("REQUEST QUEUE NAMELIST: " + Arrays.toString(nameList));
         }
 
