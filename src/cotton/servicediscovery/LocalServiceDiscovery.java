@@ -56,6 +56,9 @@ import java.util.ArrayList;
 import java.io.Serializable;
 import cotton.internalRouting.ServiceRequest;
 import cotton.network.DestinationMetaData;
+import cotton.systemsupport.StatType;
+import cotton.systemsupport.StatisticsData;
+import java.util.Map;
 
 /**
  *
@@ -282,7 +285,89 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             System.out.println("\t" + s);
         }
     }
+    private DestinationMetaData[] connectedDiscoveryNodes() {
+        return this.discoveryCache.copyPoolData();
+    }
+    
+    private DestinationMetaData[] connectedServiceNode(String serviceName) {
+        AddressPool pool = this.serviceCache.get(serviceName);
+        if(pool == null) return new DestinationMetaData[0];
+        return pool.copyPoolData();
+    }
+    
+    private DestinationMetaData[] connectedRequestQueueNode(String serviceName) {
+        AddressPool pool = this.activeQueue.get(serviceName);
+        if(pool == null) return new DestinationMetaData[0];
+        return pool.copyPoolData();
+    }
+    
+    @Override
+    public StatisticsData[] getStatisticsForSubSystem(String name) {
+        if(name.equals("discoveryNodes")) {
+            DestinationMetaData[] discoveryNodes = connectedDiscoveryNodes();
+            if(discoveryNodes.length <= 0) return new StatisticsData[0];
+            StatisticsData[] ret = new StatisticsData[1];
+            ret[0] = new StatisticsData<DestinationMetaData>(StatType.SERVICEDISCOVERY,name,discoveryNodes);
+            return ret;
+        }
+        
+        if (name.equals("requestQueueNodes")) {
+            ArrayList<StatisticsData> result = new ArrayList<>();
+            for(Map.Entry<String,AddressPool>  entry: this.activeQueue.entrySet()) {
+                DestinationMetaData[] nodes = connectedRequestQueueNode(entry.getKey());
+                result.add(new StatisticsData(StatType.SERVICEDISCOVERY,entry.getKey(),nodes));
+            }
+            StatisticsData[] ret = result.toArray(new StatisticsData[result.size()]);
+            return ret;
+        }
+        
+        if (name.equals("serviceNodes")) {
+            ArrayList<StatisticsData> result = new ArrayList<>();
+            for(Map.Entry<String,AddressPool>  entry: this.serviceCache.entrySet()) {
+                DestinationMetaData[] nodes = connectedServiceNode(entry.getKey());
+                result.add(new StatisticsData(StatType.SERVICEDISCOVERY,entry.getKey(),nodes));
+            }
+            StatisticsData[] ret = result.toArray(new StatisticsData[result.size()]);
+            return ret;
+        }
+        
+        return new StatisticsData[0];
+    }
 
+    @Override
+    public StatisticsData getStatistics(String[] name) {
+        if(name[0].equals("discoveryNodes")) {
+            DestinationMetaData[] discoveryNodes = connectedDiscoveryNodes();
+            if(discoveryNodes.length <= 0) return new StatisticsData();
+            return new StatisticsData(StatType.SERVICEDISCOVERY,name[0],discoveryNodes);
+            
+        }
+
+        if(name.length <= 1)return new StatisticsData();
+        if(name[0].equals("requestQueueNodes")) {
+            DestinationMetaData[] reqQueueNodes = connectedRequestQueueNode(name[1]);
+            if(reqQueueNodes.length <= 0) return new StatisticsData();
+            return new StatisticsData(StatType.SERVICEDISCOVERY,name[1],reqQueueNodes);
+            
+        }
+        
+        if(name[0].equals("requestQueueNodes")) {
+            DestinationMetaData[] reqQueueNodes = connectedRequestQueueNode(name[1]);
+            if(reqQueueNodes.length <= 0) return new StatisticsData();
+            return new StatisticsData(StatType.SERVICEDISCOVERY,name[1],reqQueueNodes);
+            
+        }
+        
+        if(name[0].equals("serviceNodes")) {
+            DestinationMetaData[] servNodes = connectedServiceNode(name[1]);
+            if(servNodes.length <= 0) return new StatisticsData();
+            return new StatisticsData(StatType.SERVICEDISCOVERY,name[1],servNodes);
+            
+        }
+        
+        return new StatisticsData();
+    }
+    
     @Override
     public boolean announce() {
         if (localServiceTable == null) {

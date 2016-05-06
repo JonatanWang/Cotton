@@ -29,77 +29,105 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
 package cotton.systemsupport;
+
+import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * @author Magnus
  * @author Tony
+ * @param <T>
  */
-public class StatisticsData {
+
+public class  StatisticsData<T extends Serializable> {
+
     private StatType type;
     private String name;
-    private int[] data;
+    private int[] numberArray = new int[0];
+    private T[] data;
 
-    public StatisticsData(){
+    public StatisticsData() {
         this.type = StatType.UNKNOWN;
         this.name = "";
-        this.data = new int[0];
+        this.numberArray = new int[0];
     }
 
-    public StatisticsData(StatType type,String name, int[] data){
+    public StatisticsData(StatType type, String name, int[] numSeq) {
+        this.type = type;
+        this.name = name;
+        this.numberArray = numSeq;
+    }
+    
+    public StatisticsData(StatType type, String name, T[] data) {
         this.type = type;
         this.name = name;
         this.data = data;
     }
 
+    /**
+     * Returns value of type
+     *
+     * @return
+     */
+    public StatType getType() {
+        return this.type;
+    }
 
-	/**
-	* Returns value of type
-	* @return
-	*/
-	public StatType getType() {
-		return this.type;
-	}
+    public int[] getNumberArray() {
+        return numberArray;
+    }
 
-	/**
-	* Returns value of name
-	* @return
-	*/
-	public String getName() {
-		return this.name;
-	}
+    /**
+     * Returns value of name
+     *
+     * @return
+     */
+    public String getName() {
+        return this.name;
+    }
 
-	/**
-	* Returns the data
-	* @return data
-	*/
-	public int[] getData() {
-		return this.data;
-	}
+    /**
+     * Sets new value of type
+     *
+     * @param type the type of the component that the statistics is requested
+     * for
+     */
+    public void setType(StatType type) {
+        this.type = type;
+    }
 
-	/**
-	* Sets new value of type
-	* @param type the type of the component that the statistics is requested for
-	*/
-	public void setType(StatType type) {
-		this.type = type;
-	}
+    /**
+     * Sets new value of name
+     *
+     * @param
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	/**
-	* Sets new value of name
-	* @param
-	*/
-	public void setName(String name) {
-		this.name = name;
-	}
+    public T[] getData() {
+        return data;
+    }
 
-	/**
-	* Sets new value of the data
-	* @param
-	*/
-	public void setData(int[] data) {
-		this.data = data;
-	}
+    public void setData(T[] data) {
+        this.data = data;
+    }
+
+    private String dataArrToStr(String prefix) {
+        if(data == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < data.length; i++) {
+            sb.append("\n" + prefix + "\t" + data[i].toString());
+            
+        }
+        return sb.toString();
+    }
+    
+    @Override
+    public String toString() {
+        return "StatisticsData{" + "\n\ttype=" + type.toString() + "\n\tname=" + name + "\n\tnumberArray=" + Arrays.toString(numberArray) + "\n\tdata:" + dataArrToStr("\t\t") + '}';
+    }
+    
 
 }

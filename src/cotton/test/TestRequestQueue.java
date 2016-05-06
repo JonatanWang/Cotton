@@ -53,7 +53,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import cotton.requestqueue.RequestQueueManager;
+import cotton.systemsupport.Console;
+import cotton.systemsupport.StatisticsData;
+import cotton.systemsupport.StatisticsProvider;
 import cotton.test.services.MathResult;
+import java.util.Arrays;
 
 /**
  *
@@ -172,6 +176,16 @@ public class TestRequestQueue {
         assertTrue(65536 == num);
     }
     
+    static <T> String dataArrToStr(T[] data) {
+        if(data == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < data.length; i++) {
+            sb.append("\n" + data[i].toString());
+            
+        }
+        return sb.toString();
+    }
+    
     @Test
     public void TestWorkFloodRequestQueue() throws UnknownHostException {
         Cotton discovery = new Cotton(true, 8265);
@@ -209,10 +223,10 @@ public class TestRequestQueue {
         ser3.start();
 
         try {
-            Thread.sleep(1000);
+            Thread.sleep(100);
         } catch (InterruptedException ex) {
             Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        }      
         Cotton cCotton = new Cotton(false, gDns);
         cCotton.start();
 
@@ -227,7 +241,7 @@ public class TestRequestQueue {
             chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
             client.sendToService(data, chain);
         }
-
+  
         chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21");
         ServiceRequest req = client.sendWithResponse(data, chain);
         data = req.getData();
@@ -242,5 +256,90 @@ public class TestRequestQueue {
         ser3.shutdown();
         cCotton.shutdown();
         assertTrue(65536 == num);
+    }
+    
+    @Test
+    public void TestStatistics() throws UnknownHostException {
+        Cotton discovery = new Cotton(true, 8165);
+        GlobalDnsStub gDns = new GlobalDnsStub();
+
+        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 8165);
+        InetSocketAddress[] arr = new InetSocketAddress[1];
+        arr[0] = gdAddr;
+        gDns.setGlobalDiscoveryAddress(arr);
+
+        discovery.start();
+
+        Cotton queueInstance = new Cotton(false, gDns);
+        RequestQueueManager requestQueueManager = new RequestQueueManager();
+        requestQueueManager.startQueue("mathpow21");
+        requestQueueManager.startQueue("mathpow2");
+        queueInstance.setRequestQueueManager(requestQueueManager);
+        queueInstance.start();
+
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        Cotton ser1 = new Cotton(false, gDns);
+        Cotton ser2 = new Cotton(false, gDns);
+        Cotton ser3 = new Cotton(false, gDns);
+
+        ser1.getServiceRegistation().registerService("ser01", MathPowV2.getFactory(), 10);
+        ser2.getServiceRegistation().registerService("ser02", MathPowV2.getFactory(), 142);
+        ser2.getServiceRegistation().registerService("ser03", MathResult.getFactory(), 11);
+        ser1.getServiceRegistation().registerService("ser04", MathPowV2.getFactory(), 10);
+        ser2.getServiceRegistation().registerService("ser05", MathPowV2.getFactory(), 140);
+        ser2.getServiceRegistation().registerService("ser06", MathResult.getFactory(), 10);
+        ser1.getServiceRegistation().registerService("ser07", MathPowV2.getFactory(), 11);
+        ser2.getServiceRegistation().registerService("ser08", MathPowV2.getFactory(), 10);
+        ser2.getServiceRegistation().registerService("ser09", MathResult.getFactory(), 10);
+        ser1.start();
+        ser2.start();
+        ser3.start();
+
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }      
+        StatisticsProvider sd = discovery.getConsole().getServiceDiscvery();
+        StatisticsProvider qm = queueInstance.getConsole().getQueueManager();
+        StatisticsProvider sh1 = ser1.getConsole().getServiceHandler();
+        StatisticsProvider sh2 = ser2.getConsole().getServiceHandler();
+        StatisticsProvider sh3 = ser3.getConsole().getServiceHandler();
+        StatisticsData s1 = qm.getStatistics(new String[]{"mathpow21"});
+        StatisticsData s2 = qm.getStatistics(new String[]{"mathpow21"});
+        
+        System.out.println("\tRequestQueue:");
+        System.out.println("\nStats: " + s1.getName() + " : " + "max/current/nodesWaiting" + Arrays.toString(s1.getNumberArray()) );
+        System.out.println("Stats: " + s2.getName() + " : " + "max/current/nodesWaiting" + Arrays.toString(s2.getNumberArray()) );
+        System.out.println("\tServiceHandler:");
+        System.out.println(Arrays.toString(sh1.getStatisticsForSubSystem(null)));
+        System.out.println(Arrays.toString(sh2.getStatisticsForSubSystem(null)));
+        System.out.println(Arrays.toString(sh3.getStatisticsForSubSystem(null)));
+        System.out.println("\tDiscovery:");
+        
+        System.out.println(dataArrToStr(sd.getStatisticsForSubSystem("discoveryNodes")));
+        System.out.println(dataArrToStr(sd.getStatisticsForSubSystem("requestQueueNodes")));
+        System.out.println(dataArrToStr(sd.getStatisticsForSubSystem("serviceNodes")));
+        
+        StatisticsData[] stat = sh1.getStatisticsForSubSystem(null);
+        boolean success = false;
+        for (int i = 0; i < stat.length; i++) {
+            success = stat[i].getName().equals("ser07");
+            if(success) break;
+            
+        }
+        //Cotton discovery = new Cotton(true,3333);
+        //Cotton discovery = new Cotton(true,3333);
+        queueInstance.shutdown();
+        discovery.shutdown();
+        ser1.shutdown();
+        ser2.shutdown();
+        ser3.shutdown();
+        assertTrue(success);
     }
 }

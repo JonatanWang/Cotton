@@ -147,8 +147,8 @@ public class RequestQueueManager implements StatisticsProvider{
         return data;
     }
 
-    public StatisticsData getStatistics(String serviceName){
-        RequestQueue queue = internalQueueMap.get(serviceName);
+    public StatisticsData getStatistics(String[] serviceName){
+        RequestQueue queue = internalQueueMap.get(serviceName[0]);
         if(queue == null)
             return new StatisticsData();
         return queue.getStatistics();
