@@ -60,6 +60,7 @@ import cotton.requestqueue.RequestQueueManager;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
@@ -74,6 +75,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     private ConcurrentHashMap<String, AddressPool> serviceCache;
     private ActiveServiceLookup localServiceTable = null;
     private ConcurrentHashMap<String, AddressPool> activeQueue;
+    private ConcurrentHashMap<DestinationMetaData,AtomicInteger> destFailStat = new ConcurrentHashMap();
 
     /**
      * Fills in a list of all pre set globalServiceDiscovery addresses
@@ -120,6 +122,20 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         this.localServiceTable = serviceTable;
     }
 
+ private DestinationMetaData destinationRemove(DestinationMetaData dest, String serviceName) {
+        if (serviceName != null) {
+            AddressPool pool = serviceCache.get(serviceName);
+            if (pool != null) {
+                pool.remove(dest);
+                return pool.getAddress();
+            }
+        }
+        if (dest.getPathType() == PathType.DISCOVERY) {
+            discoveryCache.remove(dest);
+            return discoveryCache.getAddress();
+        }
+        return null;
+    }
     /**
      * Notifyes ServiceDiscovery that a destination cant be reached
      * @param dest the faulty destination
@@ -127,20 +143,29 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
      * @return a new destiantion if 
      */
     @Override
-    public DestinationMetaData destinationUnreachable(DestinationMetaData dest,String serviceName){
-        if(serviceName != null){
+    public DestinationMetaData destinationUnreachable(DestinationMetaData dest, String serviceName) {
+        AtomicInteger failCount = new AtomicInteger(1);
+        failCount = this.destFailStat.putIfAbsent(dest, failCount);
+        int value = 1;
+        if(failCount != null ) {
+             value = failCount.incrementAndGet();
+        }
+        
+        // TODO: change to threashold over time
+        if(value > 5) {
+            return destinationRemove(dest,serviceName);
+        }
+        if (serviceName != null) {
             AddressPool pool = serviceCache.get(serviceName);
-            if(pool != null){
-                pool.remove(dest);
-                return pool.getAddress();  
+            if (pool != null) {
+                return pool.getAddress();
             }
         }
-        if(dest.getPathType() == PathType.DISCOVERY){
-            discoveryCache.remove(dest);
+        if (dest.getPathType() == PathType.DISCOVERY) {
             return discoveryCache.getAddress();
         }
         return null;
-  	}
+    }
 
     /**
      * Search globaly for a destination with a service named serviceName
@@ -211,19 +236,19 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             return signal;
         }
         // this is a GlobalServiceDiscovery so check cache first
-        /*        AddressPool pool = this.serviceCache.get(serviceName);
-        if (pool == null) {
-            return searchForService(destination, serviceName);
-            }*/
+//               AddressPool pool = this.serviceCache.get(serviceName);
+//        if (pool == null) {
+//            return searchForService(destination, serviceName);
+//            }
         return searchForService(destination, serviceName);
-        /*   SocketAddress addr = pool.getAddress();
-        if (addr != null) {
-            destination.setSocketAddress(addr);
-            destination.setPathType(PathType.SERVICE); // default pathType for now
-            signal = RouteSignal.NETWORKDESTINATION;
-        }
-
-        return signal;*/
+//           DestinationMetaData addr = pool.getAddress();
+//        if (addr != null) {
+//            destination.setSocketAddress(addr.getSocketAddress());
+//            destination.setPathType(addr.getPathType()); // default pathType for now
+//            signal = RouteSignal.NETWORKDESTINATION;
+//        }
+//
+//        return signal;
     }
 
     /**

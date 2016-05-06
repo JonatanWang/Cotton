@@ -161,7 +161,7 @@ public class TestNH {
 
         clientNH.sendKeepAlive(sendPacket, new InetSocketAddress(Inet4Address.getLocalHost(),5577));
 
-        Thread.sleep(4000);
+        Thread.sleep(1000);
 
         NetworkPacket receivedPacket = clientIR.getNetworkPacket();
 

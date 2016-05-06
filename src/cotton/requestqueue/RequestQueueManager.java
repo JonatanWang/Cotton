@@ -138,12 +138,11 @@ public class RequestQueueManager implements StatisticsProvider{
     }
 
     public StatisticsData[] getStatisticsForSubSystem(String serviceName){
-        StatisticsData[] data= new StatisticsData[internalQueueMap.size()];
-        int i =0;
+        ArrayList<StatisticsData> tdata =new ArrayList<>();
         for(Map.Entry<String,RequestQueue> rq: internalQueueMap.entrySet()){
-            data[i++] = rq.getValue().getStatistics();
+           tdata.add(rq.getValue().getStatistics());
         }
-        return data;
+        return tdata.toArray(new StatisticsData[tdata.size()]);
     }
 
     public StatisticsData getStatistics(String[] serviceName){

@@ -33,6 +33,7 @@ package cotton.test;
 
 import cotton.network.DefaultNetworkHandler;
 import cotton.network.DummyServiceChain;
+import cotton.network.DummyServiceChain.ServiceChainBuilder;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import cotton.Cotton;
@@ -86,13 +87,12 @@ public class TestRequestQueue {
     public void tearDown() {
     }
 
-
-    @Test
+    //@Test
     public void TestRequestQueue() throws UnknownHostException {
-        Cotton discovery = new Cotton(true, 8765);
+        Cotton discovery = new Cotton(true, 11765);
         GlobalDnsStub gDns = new GlobalDnsStub();
 
-        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 8765);
+        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 11765);
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = gdAddr;
         gDns.setGlobalDiscoveryAddress(arr);
@@ -107,7 +107,7 @@ public class TestRequestQueue {
         queueInstance.start();
 
         try {
-            Thread.sleep(1000);
+            Thread.sleep(100);
         } catch (InterruptedException ex) {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -121,7 +121,7 @@ public class TestRequestQueue {
         ser2.start();
 
         try {
-            Thread.sleep(1000);
+            Thread.sleep(100);
         } catch (InterruptedException ex) {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -162,17 +162,19 @@ public class TestRequestQueue {
         cCotton.shutdown();
         assertTrue(65536 == num);
     }
-    
+
     static <T> String dataArrToStr(T[] data) {
-        if(data == null) return "";
+        if (data == null) {
+            return "";
+        }
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < data.length; i++) {
             sb.append("\n" + data[i].toString());
-            
+
         }
         return sb.toString();
     }
-    
+
     @Test
     public void TestWorkFloodRequestQueue() throws UnknownHostException {
         Cotton discovery = new Cotton(true, 8265);
@@ -184,11 +186,12 @@ public class TestRequestQueue {
         gDns.setGlobalDiscoveryAddress(arr);
 
         discovery.start();
-        
+
         Cotton queueInstance = new Cotton(false, gDns);
         RequestQueueManager requestQueueManager = new RequestQueueManager();
         requestQueueManager.startQueue("mathpow21");
         requestQueueManager.startQueue("mathpow2");
+        requestQueueManager.startQueue("result");
         queueInstance.setRequestQueueManager(requestQueueManager);
         queueInstance.start();
 
@@ -198,37 +201,51 @@ public class TestRequestQueue {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+        StatisticsProvider queueManager = queueInstance.getConsole().getQueueManager();
         Cotton ser1 = new Cotton(false, gDns);
         Cotton ser2 = new Cotton(false, gDns);
         Cotton ser3 = new Cotton(false, gDns);
 
-        ser1.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
-        ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
-        ser2.getServiceRegistation().registerService("result", MathResult.getFactory(), 10);
-        ser1.start();
-        ser2.start();
-        ser3.start();
+        ser1.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 100);
+        ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 100);
+        ser3.getServiceRegistation().registerService("result", MathResult.getFactory(), 1000);
 
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException ex) {
-            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-        }      
         Cotton cCotton = new Cotton(false, gDns);
         cCotton.start();
 
         InternalRoutingClient client = cCotton.getClient();
         ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
-
+        //ServiceChainBuilder builder = new ServiceChainBuilder();
+        ServiceChainBuilder builder = new ServiceChainBuilder().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
 
         //ServiceRequest req = client.sendWithResponse(data, chain);
+        //chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
         for (int i = 0; i < 1000; i++) {
-            chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
+            //chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
+            chain = builder.build();
             client.sendToService(data, chain);
+            if (i % 200 == 0) {
+                StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
+                System.out.println(dataArrToStr(stats));
+            }
+            if (i == 600) {
+                ser1.start();
+                ser2.start();
+                ser3.start();
+            }
         }
-  
+
+        StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
+        System.out.println(dataArrToStr(stats));
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        stats = queueManager.getStatisticsForSubSystem("");
+        System.out.println(dataArrToStr(stats));
         chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21");
         ServiceRequest req = client.sendWithResponse(data, chain);
         data = req.getData();
@@ -244,13 +261,13 @@ public class TestRequestQueue {
         cCotton.shutdown();
         assertTrue(65536 == num);
     }
-    
+
     @Test
     public void TestStatistics() throws UnknownHostException {
-        Cotton discovery = new Cotton(true, 8165);
+        Cotton discovery = new Cotton(true, 8161);
         GlobalDnsStub gDns = new GlobalDnsStub();
 
-        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 8165);
+        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 8161);
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = gdAddr;
         gDns.setGlobalDiscoveryAddress(arr);
@@ -295,7 +312,7 @@ public class TestRequestQueue {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-        }      
+        }
         StatisticsProvider sd = discovery.getConsole().getServiceDiscvery();
         StatisticsProvider qm = queueInstance.getConsole().getQueueManager();
         StatisticsProvider sh1 = ser1.getConsole().getServiceHandler();
@@ -303,26 +320,28 @@ public class TestRequestQueue {
         StatisticsProvider sh3 = ser3.getConsole().getServiceHandler();
         StatisticsData s1 = qm.getStatistics(new String[]{"mathpow21"});
         StatisticsData s2 = qm.getStatistics(new String[]{"mathpow21"});
-        
+
         System.out.println("\tRequestQueue:");
-        System.out.println("\nStats: " + s1.getName() + " : " + "max/current/nodesWaiting" + Arrays.toString(s1.getNumberArray()) );
-        System.out.println("Stats: " + s2.getName() + " : " + "max/current/nodesWaiting" + Arrays.toString(s2.getNumberArray()) );
+        System.out.println("\nStats: " + s1.getName() + " : " + "max/current/nodesWaiting" + Arrays.toString(s1.getNumberArray()));
+        System.out.println("Stats: " + s2.getName() + " : " + "max/current/nodesWaiting" + Arrays.toString(s2.getNumberArray()));
         System.out.println("\tServiceHandler:");
         System.out.println(Arrays.toString(sh1.getStatisticsForSubSystem(null)));
         System.out.println(Arrays.toString(sh2.getStatisticsForSubSystem(null)));
         System.out.println(Arrays.toString(sh3.getStatisticsForSubSystem(null)));
         System.out.println("\tDiscovery:");
-        
+
         System.out.println(dataArrToStr(sd.getStatisticsForSubSystem("discoveryNodes")));
         System.out.println(dataArrToStr(sd.getStatisticsForSubSystem("requestQueueNodes")));
         System.out.println(dataArrToStr(sd.getStatisticsForSubSystem("serviceNodes")));
-        
+
         StatisticsData[] stat = sh1.getStatisticsForSubSystem(null);
         boolean success = false;
         for (int i = 0; i < stat.length; i++) {
             success = stat[i].getName().equals("ser07");
-            if(success) break;
-            
+            if (success) {
+                break;
+            }
+
         }
         //Cotton discovery = new Cotton(true,3333);
         //Cotton discovery = new Cotton(true,3333);
@@ -332,5 +351,97 @@ public class TestRequestQueue {
         ser2.shutdown();
         ser3.shutdown();
         assertTrue(success);
+    }
+    
+    
+    //@Test
+    public void TestMassInstances() throws UnknownHostException {
+        Cotton discovery = new Cotton(true, 7159);
+        GlobalDnsStub gDns = new GlobalDnsStub();
+
+        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 7159);
+        InetSocketAddress[] arr = new InetSocketAddress[1];
+        arr[0] = gdAddr;
+        gDns.setGlobalDiscoveryAddress(arr);
+
+        discovery.start();
+        
+        int clientCount = 5;
+        Cotton[] clientArr =new Cotton[clientCount];
+        System.out.println("Starting clients:");
+        for (int i = 0; i < clientCount; i++) {
+            clientArr[i] = new Cotton(false, gDns);
+            clientArr[i].start();
+        }
+        System.out.print("done\n");
+        int num = 2;
+        byte[] data = ByteBuffer.allocate(4).putInt(num).array();
+        
+        Cotton queueInstance = new Cotton(false, gDns);
+        RequestQueueManager requestQueueManager = new RequestQueueManager();
+        requestQueueManager.startQueue("mathpow21");
+        requestQueueManager.startQueue("mathpow2");
+        queueInstance.setRequestQueueManager(requestQueueManager);
+        queueInstance.start();
+        ServiceChainBuilder builder1 = new ServiceChainBuilder().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
+        ServiceChainBuilder builder2 = new ServiceChainBuilder().into("mathpow21").into("mathpow2").into("mathpow21").into("mathpow2").into("result");
+        
+        StatisticsProvider queueManager = queueInstance.getConsole().getQueueManager();
+        int countInst = 10;
+        Cotton[] serArr1 = new Cotton[countInst];
+        Cotton[] serArr2 = new Cotton[countInst];
+        Cotton[] serArr3 = new Cotton[countInst];
+        
+        System.out.println("Starting services:");
+        for (int i = 0; i < countInst; i++) {
+            serArr1[i] = new Cotton(false, gDns);
+            serArr2[i] = new Cotton(false, gDns);
+            serArr3[i] = new Cotton(false, gDns);
+            serArr1[i].getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
+            serArr2[i].getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
+            serArr3[i].getServiceRegistation().registerService("result", MathResult.getFactory(), 10);
+                      
+        }
+        System.out.print("done\n");
+        System.out.println("Starting fill work queue:");
+        for (int i = 0; i < 500; i++) {
+            for (int j = 0; j < clientArr.length; j++) {
+                clientArr[j].getClient().sendToService(data, builder1.build());
+            clientArr[j].getClient().sendToService(data, builder2.build());    
+                
+            }
+            if (i % 200 == 0) {
+                StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
+                System.out.println(dataArrToStr(stats));
+            }            
+        }
+        System.out.print("done\n");
+        
+        for (int i = 0; i < countInst; i++) {
+            serArr1[i].start();
+            serArr2[i].start();
+            serArr3[i].start();
+            if (i % 5 == 0) {
+                StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
+                System.out.println(dataArrToStr(stats));
+            }
+        }
+        
+        
+        ServiceRequest req = clientArr[0].getClient().sendWithResponse(data, builder2.build());
+        data = req.getData();
+        num = ByteBuffer.wrap(data).getInt();
+        System.out.println("result:  : " + num);
+        for (int i = 0; i < 10; i++) {
+            clientArr[i].shutdown();
+        }
+        for (int i = 0; i < countInst; i++) {
+            serArr1[i].shutdown();
+            serArr2[i].shutdown();
+            serArr3[i].shutdown();
+        }
+        discovery.shutdown();
+        assertTrue(65536 == num);
+        
     }
 }
