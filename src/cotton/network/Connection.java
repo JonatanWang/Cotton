@@ -30,31 +30,72 @@ POSSIBILITY OF SUCH DAMAGE.
 
  */
 
+package cotton.network;
 
-package cotton.servicediscovery;
-
-import cotton.internalRouting.InternalRoutingServiceDiscovery;
-import cotton.network.DestinationMetaData;
-import cotton.network.Origin;
-import cotton.network.ServiceChain;
-import cotton.requestqueue.RequestQueueManager;
-import cotton.services.ActiveServiceLookup;
-import cotton.systemsupport.StatisticsProvider;
-import java.net.SocketAddress;
+import java.net.Socket;
 
 /**
+ * Keeps track of socket uptime in the network handler
  *
- * @author Magnus
+ * @author Jonathan Kåhre
  */
-public interface ServiceDiscovery extends StatisticsProvider {
-    public void setNetwork(InternalRoutingServiceDiscovery network, SocketAddress localAddress);
-    public void setLocalServiceTable(ActiveServiceLookup serviceTable);
-    public RouteSignal getDestination(DestinationMetaData destination, Origin origin, ServiceChain to); // outgoinging package
-    public RouteSignal getLocalInterface(Origin origin, ServiceChain to); // incoming packaged
-    public boolean announce();
-    public void stop();
-    public void discoveryUpdate(Origin origin, byte[] data);
-    public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName);
-    public boolean announceQueues(RequestQueueManager queueManager);
-    public DestinationMetaData destinationUnreachable(DestinationMetaData dest,String serviceName);
+public class Connection {
+    private Socket socket;
+    private long timestamp;
+    private long limit;
+
+    public Connection(Socket socket){
+        updateTime();
+        this.socket = socket;
+        limit = 20000;
+    }
+
+    public Connection(Socket socket, long limit){
+        this.limit = limit;
+        this.socket = socket;
+        updateTime();
+    }
+
+    /**
+     * Returns the socket and resets the timestamp to indicate activity
+     *
+     * @return The socket contained in this connection
+     */
+    public Socket getSocket(){
+        updateTime();
+        return socket;
+    }
+
+    /**
+     * Manually resets the timestamp to indicate activity
+     */
+    public void updateTime(){
+        timestamp = System.currentTimeMillis();
+    }
+
+    /**
+     * Returns how long ago this socket was accessed in milliseconds.
+     *
+     * @return Time since last interaction in milliseconds.
+     */
+    public long lastConnectionTime(){
+        return System.currentTimeMillis() - timestamp;
+    }
+
+    /**
+     * Returns the time limit for this connection
+     *
+     * @return
+     */
+    public long limit(){
+        return limit;
+    }
+
+    /**
+     * Closes this connection
+     */
+    public void close() throws java.io.IOException{
+        socket.close();
+    }
+
 }
