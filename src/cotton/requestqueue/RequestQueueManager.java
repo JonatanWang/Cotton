@@ -40,49 +40,147 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import cotton.network.NetworkHandler;
+import java.io.IOException;
+import cotton.network.PathType;
+import java.util.Set;
+import java.util.ArrayList;
 /**
  * @author Tony
  * @author Magnus
  */
-public class RequestQueueManager implements Runnable{
+/**
+ * Manages the requestqueues.
+ */
+public class RequestQueueManager{
 
     private ConcurrentHashMap<String,RequestQueue> internalQueueMap;
-    private ExecutorService threadPool;
+    private ExecutorService threadPool;    
+    private NetworkHandler networkHandler;
 
     public RequestQueueManager(){
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();
-
     }
 
-    private void startQueue(String serviceName){
+    public RequestQueueManager(NetworkHandler networkHandler){
+        this.internalQueueMap = new ConcurrentHashMap<>();
+        threadPool = Executors.newCachedThreadPool();
+        this.networkHandler = networkHandler;
+    }
+
+    /**
+     * Sets the netorkhandler so that the request queues can forward data for processing.
+     * @param networkHandler sets the networkHandler 
+     */
+    public void setNetworkHandler(NetworkHandler networkHandler){
+        this.networkHandler = networkHandler;
+    }
+
+
+    /**
+     * A array of names on different queues.
+     * @return activeQueues
+     */
+    public String[] getActiveQueues(){
+        Set<String> keys = internalQueueMap.keySet();
+        ArrayList<String> names = new ArrayList<>();
+        names.addAll(keys);
+        String[] nameList = names.toArray(new String[names.size()]);
+        return nameList;
+    }
+
+    /**
+     * initializes a specific queue for a specific service
+     * @param serviceName the name for a specific service.
+     */
+    public void startQueue(String serviceName){
         RequestQueue queuePool = new RequestQueue();
         internalQueueMap.putIfAbsent(serviceName,queuePool);
         
     }
+
+    /**
+     * Buffers data for processing
+     * 
+     * @param packet A network packet containing the data to be processed 
+     * @param serviceName the name of the service that is supposed to process this data.
+     */
     public void queueService(NetworkPacket packet,String serviceName){
         RequestQueue queue = internalQueueMap.get(serviceName);
         if(queue == null)
             return;
-        queue.queueService(packet);
+        queue.queueService(packet); 
+        threadPool.execute(queue);
     }
+    /**
+     * Adds an available instance to the internal queue
+     * 
+     * @param origin the instance that sent the message 
+     * @param serviceName the name of the service that is supposed to process this data.
+     */
 
     public void addAvailableInstance(Origin origin,String serviceName){
-        
+        RequestQueue queue = internalQueueMap.get(serviceName);
+        if(queue == null)
+            return;
+        //System.out.println("AvailableInstance: " + origin.getAddress().toString() + " :: " + serviceName);
+        queue.addInstance(origin);
+        threadPool.execute(queue);
     }
 
-    public void run(){
-        
+    public void stop(){
+        threadPool.shutdown();
     }
 
-    private class RequestQueue{
+    private class RequestQueue implements Runnable{
         private ConcurrentLinkedQueue<NetworkPacket> processQueue;
+        private ConcurrentLinkedQueue<Origin> processingNodes;
         public RequestQueue(){
             processQueue = new ConcurrentLinkedQueue<>();
-        }
+            processingNodes = new ConcurrentLinkedQueue<>();
 
+        }
+        /**
+         * buffers networkpackets to be processed
+         *
+         * @param packet a networkpacket to be processed
+         */
         public void queueService(NetworkPacket packet){
             processQueue.add(packet);
+        } 
+
+        /**
+         * Adds an available instance to the internal queue
+         * 
+         * @param origin the instance that sent the message 
+         */
+        public void addInstance(Origin origin){
+            processingNodes.add(origin);
+        }
+
+        /**
+         * polls data and sents it to available instances. 
+         *
+         */
+        public void run(){
+            Origin origin = null;
+            while((origin = processingNodes.poll()) != null){
+                NetworkPacket packet = processQueue.poll();
+                if(packet == null){
+                    processingNodes.add(origin);
+                    return;
+                }
+                packet.setPathType(PathType.SERVICE);
+                try{
+                    //networkHandler.send(packet,origin.getAddress());
+                    networkHandler.sendOverActiveLink(packet, origin.getAddress());
+                    //System.out.println("Queue sent work to " + origin.getAddress().toString());
+                }catch(IOException e){
+                    processQueue.add(packet);
+                    // TODO: LOGGING
+                }
+            }
         }
     }
 }

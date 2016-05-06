@@ -114,7 +114,7 @@ public class TestPackageInteraction {
         ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
         ser1.start();
         ser2.start();
-        
+
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {

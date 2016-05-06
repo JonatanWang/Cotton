@@ -117,6 +117,28 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     }
 
     /**
+     * Notifyes ServiceDiscovery that a destination cant be reached
+     * @param dest the faulty destination
+     * @param serviceName optional name for the service that the address was for
+     * @return a new destiantion if 
+     */
+    @Override
+    public DestinationMetaData destinationUnreachable(DestinationMetaData dest,String serviceName){
+        if(serviceName != null){
+            AddressPool pool = serviceCache.get(serviceName);
+            if(pool != null){
+                pool.remove(dest);
+                return pool.getAddress();  
+            }
+        }
+        if(dest.getPathType() == PathType.DISCOVERY){
+            discoveryCache.remove(dest);
+            return discoveryCache.getAddress();
+        }
+        return null;
+  	}
+
+    /**
      * Search globaly for a destination with a service named serviceName
      *
      * @param destination in/out gets filled in with the address and pathtype
@@ -315,24 +337,27 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         DiscoveryPacket packet = packetUnpack(data);
         DiscoveryPacketType type = packet.getPacketType();
         //to do: switch not functioning properly with enums
-        System.out.println("DefaultGlobalServiceDiscovery: " + type
-                + " from: " + ((InetSocketAddress) origin.getAddress()).toString());
+        // System.out.println("DefaultGlobalServiceDiscovery: " + type
+        //      + " from: " + ((InetSocketAddress) origin.getAddress()).toString());
         switch (type) {
-            case DISCOVERYREQUEST:
-                //processProbeRequest(origin, packet.getProbe());
-                break;
-            case DISCOVERYRESPONSE:
-                //localDiscovery.updateHandling(from, packet);
-                break;
-            case ANNOUNCE:
-                //processAnnouncePacket(packet.getAnnounce());
-                break;
-            default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
-                System.out.println("DefaultGlobalServiceDiscovery updateHandling recieved, not yet implemented: " + type);
-                break;
+        case DISCOVERYREQUEST:
+            //processProbeRequest(origin, packet.getProbe());
+            break;
+        case DISCOVERYRESPONSE:
+            //localDiscovery.updateHandling(from, packet);
+            break;
+        case ANNOUNCE:
+            //processAnnouncePacket(packet.getAnnounce());
+            break;
+        case REQUESTQUEUE:
+            processQueuePacket(packet.getQueue());
+            break;
+        default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
+            System.out.println("DefaultGlobalServiceDiscovery updateHandling recieved, not yet implemented: " + type);
+            break;
         }
     }
-
+    
     private DiscoveryPacket packetUnpack(byte[] data) {
         DiscoveryPacket probe = null;
         try {
@@ -381,16 +406,61 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         }
     }
 
+    private void notifyQueue(int numInstances,String serviceName,DestinationMetaData address) {
+        for (int i = 0; i < numInstances; i++) {
+            this.internalRouting.notifyRequestQueue(address, RouteSignal.NETWORKDESTINATION, serviceName);
+        }
+    }
+    
     private void processQueuePacket(QueuePacket packet) {
+        if(packet == null){
+            System.out.println("ERROR in processQueuePacket");
+            return;
+        }
         String[] queueList = packet.getRequestQueueList();
+        if(queueList == null){
+            System.out.println("queuelist is null in processQueuePacket");
+            return;
+            
+        }
         SocketAddress addr = packet.getInstanceAddress();
         DestinationMetaData qAddr = new DestinationMetaData(addr,PathType.REQUESTQUEUE); 
-        if (addr == null) {
+        if (qAddr == null) {
             return;
         }
         for (String s : queueList) {
             addQueue(qAddr, s);
+            ServiceMetaData service = this.localServiceTable.getService(s);
+            if(service != null) {
+                int num = service.getMaxCapacity() - service.getCurrentThreadCount();
+                //this.internalRouting.notifyRequestQueue(qAddr, RouteSignal.NETWORKDESTINATION, s);
+                notifyQueue(num,s,qAddr);
+            }
         }
+    }
+
+    public boolean announceQueues(String[] queueList){
+        DestinationMetaData dest = discoveryCache.getAddress();
+        if(dest == null){
+            System.out.println("dest is null in announceQueues localServiceDiscovery");
+            return false;
+        }
+        if(queueList == null){
+            System.out.println("queue list is null in announceQueues localServiceDiscovery");
+            return false;
+        }
+        QueuePacket queuePacket = new QueuePacket(localAddress,queueList);
+        DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
+        discoveryPacket.setQueue(queuePacket);
+        
+        try{
+            byte[] data = serializeToBytes(discoveryPacket);
+            internalRouting.SendToDestination(dest,data);
+        }catch(IOException e){
+            e.printStackTrace();
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -410,7 +480,8 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             return RouteSignal.NOTFOUND;
         }
         InetSocketAddress socketAddress = (InetSocketAddress)addr.getSocketAddress();
-        if(!socketAddress.equals((InetSocketAddress) localAddress)) {
+        if(socketAddress.equals((InetSocketAddress) localAddress)) {
+            destination.setPathType(addr.getPathType());
             return RouteSignal.LOCALDESTINATION;
         }
     

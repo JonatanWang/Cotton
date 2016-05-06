@@ -29,7 +29,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
 package cotton.internalRouting;
 
 import cotton.network.DestinationMetaData;
@@ -54,6 +53,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.servicediscovery.GlobalServiceDiscovery;
+import cotton.requestqueue.RequestQueueManager;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 /**
  *
@@ -69,6 +71,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     private ConcurrentLinkedQueue<NetworkPacket> routingQueue;
     private ServiceBuffer serviceHandlerBridge;
     private RouteDispatcher dispatcher = null;
+    private RequestQueueManager requestQueueManager = null;
 
     public DefaultInternalRouting(NetworkHandler networkHandler, ServiceDiscovery discovery) {
         this.networkHandler = networkHandler;
@@ -80,6 +83,16 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         this.connectionTable = new ConcurrentHashMap<>();
         this.routingQueue = new ConcurrentLinkedQueue<>();
         this.serviceHandlerBridge = new BridgeServiceBuffer();
+    }
+
+    /**
+     * initialiazes the RequestQueueManager
+     *
+     * @param requestQueueManager sets the requestQueueManager
+     */
+    public void setRequestQueueManager(RequestQueueManager requestQueueManager) {
+        this.requestQueueManager = requestQueueManager;
+        this.requestQueueManager.setNetworkHandler(networkHandler);
     }
 
     /**
@@ -112,6 +125,26 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         routingQueue.add(networkPacket);
 
         //  throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private boolean fallBackSend(NetworkPacket packet, SocketAddress sockerAddr) {
+        if(sockerAddr == null) return false;
+        try {
+            networkHandler.sendOverActiveLink(packet, sockerAddr);
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean fallbackSendKeepAlive(NetworkPacket packet, SocketAddress sockerAddr) {
+        if(sockerAddr == null) return false;
+        try {
+            this.networkHandler.sendKeepAlive(packet, sockerAddr);
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -148,6 +181,13 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         return null;
     }
 
+    /**
+     * Sends client data to the cloud for processing and returns a request so
+     * that the result can be retrieved.
+     *
+     * @param data a byte array of data to forward for processing
+     * @param serviceChain
+     */
     @Override
     public ServiceRequest sendWithResponse(byte[] data, ServiceChain serviceChain) {
         Origin origin = new Origin();
@@ -176,7 +216,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     public boolean SendBackToOrigin(Origin origin, PathType pathType, byte[] data) {
         NetworkPacket packet = prepareForTransmission(origin, null, data, pathType);
         try {
-            networkHandler.send(packet, origin.getAddress());
+            //networkHandler.send(packet, origin.getAddress());
+            networkHandler.sendOverActiveLink(packet, origin.getAddress());
             return true;
         } catch (IOException ex) {
             //TODO FIX
@@ -196,7 +237,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     public boolean SendToDestination(DestinationMetaData dest, byte[] data) {
         NetworkPacket packet = prepareForTransmission(new Origin(), null, data, dest.getPathType());
         try {
-            networkHandler.send(packet, dest.getSocketAddress());
+            //networkHandler.send(packet, dest.getSocketAddress());
+            networkHandler.sendOverActiveLink(packet, dest.getSocketAddress());
             return true;
         } catch (IOException ex) {
             //TODO Fix
@@ -220,15 +262,47 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
 
         NetworkPacket packet = prepareForTransmission(origin, null, data, dest.getPathType());
         try {
-            networkHandler.send(packet, dest.getSocketAddress());
+            //networkHandler.send(packet, dest.getSocketAddress());
+            networkHandler.sendOverActiveLink(packet, dest.getSocketAddress());
         } catch (IOException ex) {
             removeServiceRequest(origin);
             return null;
             // TODO Logging
         }
-        
+
         return request;
 
+    }
+
+    /**
+     * Notifies the requestQueue that this instance is available
+     *
+     * @param serviceName a serviceName to find a given queue by.
+     */
+    @Override
+    public boolean notifyRequestQueue(DestinationMetaData destination, RouteSignal route, String serviceName) {
+        // TODO: actually notify the queue
+        Origin origin = new Origin();
+        origin.setAddress(this.localAddress);
+        byte[] data = serviceName.getBytes(StandardCharsets.UTF_8);
+        //String tt = new String(data,StandardCharsets.UTF_8);
+        //System.out.println("ServiceDiscovery::notifyRequestQueue:" + tt);
+        NetworkPacket packet = prepareForTransmission(origin, null, data, destination.getPathType());
+        if (route == RouteSignal.LOCALDESTINATION) {
+            routingQueue.add(packet);
+        } else if (route == RouteSignal.NETWORKDESTINATION) {
+            try {
+                //networkHandler.send(packet,destination.getSocketAddress());
+                networkHandler.sendOverActiveLink(packet, destination.getSocketAddress());
+            } catch (IOException e) {
+                // TODO: logging
+                destination = discovery.destinationUnreachable(destination, serviceName);
+                fallBackSend(packet, destination.getSocketAddress());
+                e.printStackTrace();
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -252,28 +326,36 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         return serviceHandlerBridge;
     }
 
+    /**
+     * Notifies the requestQueue that this instance is available
+     *
+     * @param serviceName a serviceName to find a given queue by.
+     */
     @Override
-    public boolean notifyRequestQueue(String serviceName){
+    public boolean notifyRequestQueue(String serviceName) {
         // TODO: actually notify the queue
         DestinationMetaData destination = new DestinationMetaData();
-        RouteSignal route = discovery.getRequestQueueDestination(destination,serviceName);
+        RouteSignal route = discovery.getRequestQueueDestination(destination, serviceName);
         Origin origin = new Origin();
-        ServiceRequest request = newServiceRequest(origin);
         origin.setAddress(this.localAddress);
-        
-        NetworkPacket packet = prepareForTransmission(origin,null,serviceName.getBytes(),destination.getPathType());
-        if(route == RouteSignal.LOCALDESTINATION){
+        byte[] data = serviceName.getBytes(StandardCharsets.UTF_8);
+        //String tt = new String(data,StandardCharsets.UTF_8);
+        //System.out.println("ServiceHandler::notifyRequestQueue:" + tt);
+        NetworkPacket packet = prepareForTransmission(origin, null, data, destination.getPathType());
+        if (route == RouteSignal.LOCALDESTINATION) {
             routingQueue.add(packet);
-        }else if(route == RouteSignal.NETWORKDESTINATION){ 
-            try{
-                networkHandler.send(packet,destination.getSocketAddress());
-            }catch(IOException e){
+        } else if (route == RouteSignal.NETWORKDESTINATION) {
+            try {
+                //networkHandler.send(packet,destination.getSocketAddress());
+                networkHandler.sendOverActiveLink(packet, destination.getSocketAddress());
+            } catch (IOException e) {
                 // TODO: logging
                 return false;
-            }   
+            }
         }
         return true;
     }
+
     /**
      * The InternalRouting helper methods implementation
      */
@@ -325,11 +407,11 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
             path = new DummyServiceChain();
         }
         NetworkPacket packet = NetworkPacket.newBuilder()
-            .setData(data)
-            .setOrigin(origin)
-            .setPath(path)
-            .setPathType(pathType)
-            .build();
+                .setData(data)
+                .setOrigin(origin)
+                .setPath(path)
+                .setPathType(pathType)
+                .build();
 
         return packet;
     }
@@ -358,15 +440,24 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 break;
             case NETWORKDESTINATION:
                 packet = prepareForTransmission(origin, serviceChain, data, dest.getPathType());
-                try {
-                    if (keepAlive) {
+                if (keepAlive) {
+                    try {
                         this.networkHandler.sendKeepAlive(packet, dest.getSocketAddress());
-                    } else {
-                        this.networkHandler.send(packet, dest.getSocketAddress());
+                        success = true;
+                    } catch (IOException e) {
+                        dest = discovery.destinationUnreachable(dest, serviceChain.peekNextServiceName());
+                        success = fallbackSendKeepAlive(packet, dest.getSocketAddress());
+                        e.printStackTrace();
                     }
-                    success = true;
-                } catch(IOException e) {
-                    //TODO Fix
+                } else {
+                    try {
+                        this.networkHandler.sendOverActiveLink(packet, dest.getSocketAddress());
+                        success = true;
+                    } catch (IOException e) {
+                        dest = discovery.destinationUnreachable(dest, serviceChain.peekNextServiceName());
+                        success = fallBackSend(packet, dest.getSocketAddress());
+                        e.printStackTrace();
+                    }
                 }
                 break;
             case BRIDGELATCH:
@@ -383,10 +474,12 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
             case RETURNTOORIGIN:
                 packet = prepareForTransmission(origin, serviceChain, data, dest.getPathType());
                 try {
-                    this.networkHandler.send(packet, origin.getAddress());
+                    //this.networkHandler.send(packet, origin.getAddress());
+                    this.networkHandler.sendOverActiveLink(packet, origin.getAddress());
                     success = true;
                 } catch (IOException ex) {
                     //TODO Fix
+                    ex.printStackTrace();
                 }
                 break;
             case ENDPOINT:
@@ -413,6 +506,12 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     public void start() {
         this.dispatcher = new RouteDispatcher();
         new Thread(this.dispatcher).start();
+        if (requestQueueManager != null) {
+            String[] nameList = requestQueueManager.getActiveQueues();
+            discovery.announceQueues(nameList);
+            System.out.println("REQUEST QUEUE NAMELIST: " + Arrays.toString(nameList));
+        }
+
     }
 
     /**
@@ -471,35 +570,47 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
             } else if (signal == RouteSignal.BRIDGELATCH) {
                 UUID latchID = packet.getOrigin().getSocketLatchID();
                 SocketLatch latch = keepAliveTable.get(latchID);
-                if(latch != null) {
+                if (latch != null) {
                     latch.setData(packet);
                 }
                 return;
             }
 
             switch (packet.getType()) {
-            case RELAY:
-                break;
-            case DISCOVERY:
-                discovery.discoveryUpdate(packet.getOrigin(), packet.getData());
-                break;
-            case SERVICE:
-                ServicePacket servicePacket = new ServicePacket(packet.getOrigin(), packet.getData(), packet.getPath());
-                serviceHandlerBridge.add(servicePacket);
-                break;
-            case REQUESTQUEUE:
-                
-                break;
-            case UNKNOWN:
-                System.out.println("PacketType unknown in process packet");
-                break;
-            case NOTFOUND:
-                System.out.println("PacketType NOT found in process packet");
-                break;
-            default:
-                System.out.println("PacketType invalid in process packet");
-                //TODO: logg error
-                break;
+                case RELAY:
+                    break;
+                case DISCOVERY:
+                    discovery.discoveryUpdate(packet.getOrigin(), packet.getData());
+                    break;
+                case SERVICE:
+                    ServicePacket servicePacket = new ServicePacket(packet.getOrigin(), packet.getData(), packet.getPath());
+                    serviceHandlerBridge.add(servicePacket);
+                    break;
+                case REQUESTQUEUE:
+                    ServiceChain pathChain = packet.getPath();
+                    byte[] data = packet.getData();
+                    String serviceName = null;
+                    if (requestQueueManager == null) {
+                        break; // TODO: give error
+                    }
+                    if (pathChain != null && (serviceName = pathChain.peekNextServiceName()) != null) {
+                        requestQueueManager.queueService(packet, serviceName);
+                    } else {
+                        serviceName = new String(data, StandardCharsets.UTF_8);
+                        //System.out.println("serviceName: " + serviceName);
+                        requestQueueManager.addAvailableInstance(packet.getOrigin(), serviceName);
+                    }
+                    break;
+                case UNKNOWN:
+                    System.out.println("PacketType unknown in process packet");
+                    break;
+                case NOTFOUND:
+                    System.out.println("PacketType NOT found in process packet");
+                    break;
+                default:
+                    System.out.println("PacketType invalid in process packet");
+                    //TODO: logg error
+                    break;
             }
         }
     }

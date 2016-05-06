@@ -64,6 +64,17 @@ public class AddressPool {
     }
 
     /**
+     * removes an address from the addresspool
+     * @param dest The address of the invalid destination.
+     */
+    public boolean remove(DestinationMetaData dest) {
+        boolean flag = false;
+        synchronized (this) {
+            flag = pool.remove(dest);
+        }
+        return flag;
+    }
+    /**
      * Returns the next <code>SocketAddress</code> in the <code>AddressPool</code>. 
      * If the <code>AddressPool</code> is empty the function will reply <code>null</code>.
      * 

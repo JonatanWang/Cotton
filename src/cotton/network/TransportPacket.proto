@@ -50,7 +50,7 @@ enum PathType{
 	optional bytes data = 3;
 	optional Origin origin = 4;
   repeated string path = 6;
-
+optional bool activelink = 7;
 }
 
 message Origin{

@@ -50,9 +50,9 @@ public class DiscoveryPacket implements Serializable {
     private AnnouncePacket announce = null;
     private DiscoveryPacketType type;
     private QueuePacket queue;
-
+    private TopologyPacket topology;
     public enum DiscoveryPacketType {
-        DISCOVERYREQUEST, DISCOVERYRESPONSE, ANNOUNCE,REQUESTQUEUE
+        DISCOVERYREQUEST, DISCOVERYRESPONSE, ANNOUNCE,REQUESTQUEUE,TOPOLOGY
     }
 
     /**
@@ -136,5 +136,13 @@ public class DiscoveryPacket implements Serializable {
      */
     public void setProbe(DiscoveryProbe probe) {
         this.probe = probe;
-    }    
+    }
+
+    public TopologyPacket getTopology(){
+        return topology;
+    }
+
+    public void setTopologyPacket(TopologyPacket topology){
+        this.topology = topology;
+    }
 }

@@ -56,7 +56,7 @@ public class QueuePacket implements Serializable {
      */
     public QueuePacket(SocketAddress instanceAddress, String[] serviceList) {
         this.instanceAddress = instanceAddress;
-        this.requestQueueList = requestQueueList;
+        this.requestQueueList = serviceList;
     }
 
     /**

@@ -31,58 +31,46 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 
 
-package cotton.servicediscovery;
 
+package cotton.test.services;
+
+import cotton.network.Origin;
+import cotton.services.CloudContext;
+import cotton.network.ServiceChain;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.net.SocketAddress;
+import java.io.ByteArrayInputStream;
+import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import cotton.services.Service;
+import cotton.services.ServiceFactory;
 
 /**
- * The <code>AnnouncePacket</code> wraps the service list and <code>SocketAddress</code> 
- * of a <code>Cotton</code> instance.
- * 
+ *
  * @author Magnus
- * @see SocketAddress
  */
-public class AnnouncePacket implements Serializable {
-    private SocketAddress instanceAddress;
-    private String[] serviceList;
-    private boolean isGlobalDiscovery;
+public class MathResult implements Service{
 
-    /**
-     * Constructs a <code>AnnouncePacket</code> containing the current <code>Cotton</code> 
-     * instance <code>SocketAddress</code> and the service list.
-     * 
-     * @param instanceAddress the <code>Cotton</code> instance address.
-     * @param serviceList the <code>Cotton</code> instance service list.
-     */
-    public AnnouncePacket(SocketAddress instanceAddress, String[] serviceList) {
-        this.instanceAddress = instanceAddress;
-        this.serviceList = serviceList;
+    @Override
+    public byte[] execute(CloudContext ctx, Origin origin, byte[] data, ServiceChain to) {
+        int num = 0;
+        num = ByteBuffer.wrap(data).getInt();
+        System.out.print(".");
+        return data;
     }
 
-    /**
-     * Returns the containing <code>SocketAddress</code> of the 
-     * <code>AnnouncePacket</code>.
-     * 
-     * @return the containing <code>SocketAddress</code>.
-     */
-    public SocketAddress getInstanceAddress() {
-        return instanceAddress;
+    public static ServiceFactory getFactory() {
+        return new Factory();
     }
 
-    /**
-     * Returns the containing <code>serviceList</code> of the 
-     * <code>AnnouncePacket</code>.
-     * 
-     * @return the containing <code>serviceList</code>.
-     */
-    public String[] getServiceList() {
-        return serviceList;
+    public static class Factory implements ServiceFactory {
+
+        @Override
+        public Service newService() {
+            return new MathResult();
+        }
     }
-    public boolean isGlobalDiscovery(){
-        return isGlobalDiscovery;
-    }
-    public void setGlobalDiscovery(boolean globalDiscovery){
-        this.isGlobalDiscovery = globalDiscovery;
-  }
 }
