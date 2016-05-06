@@ -182,16 +182,10 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
 
     @Override
     public void run(){
-        //ServerSocket serverSocket = null;
         ServerSocketChannel serverSocketChannel = null;
-        //Selector selector = null;
 
         try{
-            //serverSocket = new ServerSocket();
-            //serverSocket.bind(getLocalAddress());
-            //serverSocket.setSoTimeout(80);
             serverSocketChannel = ServerSocketChannel.open();
-            //selector = Selector.open();
 
             serverSocketChannel.bind(getLocalAddress());
             serverSocketChannel.configureBlocking(false);
@@ -240,22 +234,6 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
             }catch(NullPointerException e){
                 e.printStackTrace();
             }
-
-            /*
-            try {
-                if( (clientSocket = serverSocket.accept()) != null ){
-                    NetworkUnpacker pck = new NetworkUnpacker(clientSocket);
-                    threadPool.execute(pck);
-                }
-            } catch (SocketTimeoutException ignore) {
-            } catch (SocketException e) {
-                System.out.println("SocketException " + e.getMessage());
-                e.printStackTrace();
-                break;
-            } catch (Throwable e) {
-                System.out.println("Error " + e.getMessage());
-                e.printStackTrace();
-                }*/
         }
 
         try {
@@ -301,128 +279,6 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         System.out.println("Network exception, " + error); // TODO: MAKE THIS ACTUALLY LOG
     }
 
-    private ConcurrentHashMap<InetSocketAddress, Socket> liveSockets = new ConcurrentHashMap<InetSocketAddress, Socket>();
-    
-    private boolean storeSocket(SocketAddress dest,Socket socket) {
-        return liveSockets.putIfAbsent((InetSocketAddress)dest, socket) == null;
-    }
-    
-    private Socket removeSocket(SocketAddress dest) {
-        return liveSockets.remove((InetSocketAddress)dest);
-    }
-    
-    private Socket reuseSocket(SocketAddress dest) {
-        return liveSockets.get((InetSocketAddress)dest);
-    }
-    
-    private void fallbackSend(TransportPacket.Packet tp, SocketAddress dest) throws IOException {
-        Socket socket = null;
-        boolean keepSocket = false;
-        try {
-            socket = new Socket();
-            socket.connect(dest);
-            keepSocket = storeSocket(dest, socket);
-            tp.writeDelimitedTo(socket.getOutputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-            logError("fallbackSend: " + e.getMessage());
-            throw e;
-        }finally {
-            try {
-                if(!keepSocket && socket != null) {
-                    socket.close();
-                }
-            } catch (Throwable e) {
-                logError("fallbackSend socket close: " + e.getMessage());
-            }
-        }
-    }
-    
-    /**
-     * Sends data wrapped in a <code>NetworkPacket</code> over the network.
-     * It creates a oneway link to the destination, the link is reused every call afterwards.
-     * 
-     * @param netPacket contains the data and the <code>metadata</code> needed to send the packet.
-     * @param dest defines the <code>SocketAddress</code> to send through.
-     * @throws java.io.IOException
-     */
-    /*public void sendOverActiveLink(NetworkPacket packet, SocketAddress dest) throws IOException {
-        if(packet == null) throw new NullPointerException("Null data");
-        if(dest == null) throw new NullPointerException("Null destination");
-
-        TransportPacket.Packet tp = buildTransportPacket(packet);
-        Socket socket = reuseSocket(dest);
-
-        boolean keepSocket = true;
-        try {
-            if(socket == null) {
-                socket = new Socket();
-                socket.connect(dest);
-                keepSocket = storeSocket(dest,socket);
-            }
-            tp.writeDelimitedTo(socket.getOutputStream());
-        }catch(SocketException e){
-            Socket removeSocket = removeSocket(dest);
-            if(removeSocket != null)
-                removeSocket.close();
-            socket.close();
-            fallbackSend(tp,dest);
-        }catch (IOException e) {
-            e.printStackTrace();
-            logError("send: " + e.getMessage());
-            throw e;
-        }finally{
-            try {
-                if(!keepSocket) {
-                    socket.close();
-                }
-            } catch (Throwable e) {
-                logError("send socket close: " + e.getMessage());
-            }
-        }
-        }*/
-
-    @Override
-    public synchronized void sendOverActiveLink(NetworkPacket packet, SocketAddress dest) throws IOException{
-        if(packet == null) throw new NullPointerException("Null data");
-        if(dest == null) throw new NullPointerException("Null destination");
-
-        TransportPacket.Packet tp = buildTransportPacket(packet);
-
-        ByteBuffer output = writeOutput(tp);
-
-        SocketChannel sendChannel = null;
-
-        System.out.println(packet.getType()+" packet of "+output.capacity()+" bytes outgoing from: "+getLocalAddress()+" active link send.");
-
-        if((sendChannel = openChannels.get((InetSocketAddress) dest)) != null){
-            ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity()); 
-            sendChannel.write(size);
-            // String s = "";
-            // for(byte b: size.array())
-            //     s = s+" "+b;
-            // System.out.println(s);
-
-            sendChannel.write(output);
-        } else {
-            sendChannel = SocketChannel.open();
-            sendChannel.connect(dest);
-            sendChannel.configureBlocking(false);
-
-            ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity()); 
-            sendChannel.write(size);
-            // String s = "";
-            // for(byte b: size.array())
-            //     s = s+" "+b;
-            // System.out.println(s);
-
-            sendChannel.write(output);
-            registerChannel(sendChannel);
-            selector.wakeup();
-            openChannels.putIfAbsent((InetSocketAddress)dest, sendChannel);
-        }
-    }
-
     @Override
     public void send(NetworkPacket packet, SocketAddress dest) throws IOException{
         if(packet == null) throw new NullPointerException("Null data");
@@ -439,10 +295,7 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         if((sendChannel = openChannels.get((InetSocketAddress) dest)) != null){
             ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity()); 
             sendChannel.write(size);
-            // String s = "";
-            // for(byte b: size.array())
-            //     s = s+" "+b;
-            // System.out.println(s);
+            //printBytes(size.array());
 
             sendChannel.write(output);
         } else {
@@ -452,10 +305,7 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
 
             ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity()); 
             sendChannel.write(size);
-            // String s = "";
-            // for(byte b: size.array())
-            //     s = s+" "+b;
-            // System.out.println(s);
+            //printBytes(size.array());
 
             sendChannel.write(output);
             registerChannel(sendChannel);
@@ -463,30 +313,6 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
             openChannels.putIfAbsent((InetSocketAddress)dest, sendChannel);
         }
     }
-
-    /*@Override
-    public void send(NetworkPacket packet, SocketAddress dest) throws IOException {
-        if(packet == null) throw new NullPointerException("Null data");
-        if(dest == null) throw new NullPointerException("Null destination");
-
-        TransportPacket.Packet tp = buildTransportPacket(packet);
-
-        Socket socket = new Socket();
-        try {
-            socket.connect(dest);
-            tp.writeDelimitedTo(socket.getOutputStream());
-        }catch (IOException e) {
-            e.printStackTrace();
-            logError("send: " + e.getMessage());
-            throw e;
-        }finally{
-            try {
-                socket.close();
-            } catch (Throwable e) {
-                logError("send socket close: " + e.getMessage());
-            }
-        }
-    }*/
 
     @Override
     public void sendKeepAlive(NetworkPacket packet, SocketAddress dest) throws IOException{
@@ -498,7 +324,7 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         TransportPacket.Packet tp = buildTransportPacket(packet, true);
 
         ByteBuffer output = writeOutput(tp);
-        
+
         SocketChannel sendChannel = null;
 
         System.out.println(packet.getType()+" packet of "+output.capacity()+" bytes outgoing from: "+getLocalAddress()+" keepalive send.");
@@ -506,10 +332,7 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         if((sendChannel = openChannels.get((InetSocketAddress) dest)) != null){
             ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity());
             sendChannel.write(size);
-            // String s = "";
-            // for(byte b: size.array())
-            //     s = s+" "+b;
-            // System.out.println(s);
+            //printBytes(size.array());
 
             sendChannel.write(output);
         } else {
@@ -519,30 +342,13 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
 
             ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity());
             sendChannel.write(size);
-            // String s = "";
-            // for(byte b: size.array())
-            //     s = s+" "+b;
-            // System.out.println(s);
+            //printBytes(size.array());
 
             sendChannel.write(output);
             registerChannel(sendChannel);
             selector.wakeup();
             openChannels.putIfAbsent((InetSocketAddress)dest, sendChannel);
         }
-
-        /*TransportPacket.Packet tp = buildTransportPacket(packet, true);
-
-        Socket socket = new Socket();
-        try {
-            socket.connect(dest);
-            tp.writeDelimitedTo(socket.getOutputStream());
-            //NetworkUnpacker nu = new NetworkUnpacker(socket);
-
-            //threadPool.execute(nu);
-        }catch (IOException e) {
-            logError("send: " + e.getMessage());
-            throw e;
-            }*/
     }
 
     private InputStream readInput(SocketChannel sc){
@@ -550,13 +356,11 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
 
         try {
             sc.read(bb);
-            /*String s = "";
-                for(byte b: bb.array())
-                    s = s+" "+b;
-                    System.out.println(s);*/
+            //printBytes(bb.array());
 
             int size = bb.getInt(0);
             if(size <= 0){
+                // TODO: handle invalid packets properly
                 //openChannels.remove(sc);
                 //sc.close();
                 return null;
@@ -586,18 +390,6 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         return b;
     }
 
-    /*private class NetworkUnpacker implements Runnable {
-        Socket clientSocket = null;
-        public NetworkUnpacker(Socket clientSocket){
-            this.clientSocket = clientSocket;
-        }
-
-        @Override
-        public void run(){
-            // TODO: Turn debugging messages on or off
-            //System.out.println("Incoming connection to: " + clientSocket.getLocalSocketAddress() +" from" + clientSocket.getRemoteSocketAddress());
-            try {
-            while(running.get == true){*/
     private void handleRequest(SocketChannel channel) throws IOException{
         InputStream inStream = readInput(channel);
 
@@ -636,15 +428,6 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
             internalRouting.pushNetworkPacket(np);
         }
     }
-    /*
-      } catch(IOException e) {
-      e.printStackTrace();
-      logError(e.toString());
-      } finally {
-      try {clientSocket.close();} catch (IOException ex) {}
-      }
-      }
-      }*/
 
     private Origin parseOrigin(TransportPacket.Packet input) throws java.net.UnknownHostException{
         TransportPacket.Origin origin = input.getOrigin();
@@ -734,6 +517,13 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
         builder.setKeepalive(keepAlive);
         return builder.build();
+    }
+
+    private void printBytes(byte[] bytes){
+        String s = "";
+        for(byte b: bytes)
+            s = s+" "+b;
+        System.out.println(s);
     }
 
 }

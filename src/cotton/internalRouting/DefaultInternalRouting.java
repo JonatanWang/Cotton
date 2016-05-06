@@ -130,7 +130,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     private boolean fallBackSend(NetworkPacket packet, SocketAddress sockerAddr) {
         if(sockerAddr == null) return false;
         try {
-            networkHandler.sendOverActiveLink(packet, sockerAddr);
+            networkHandler.send(packet, sockerAddr);
         } catch (IOException e) {
             return false;
         }
@@ -217,7 +217,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         NetworkPacket packet = prepareForTransmission(origin, null, data, pathType);
         try {
             //networkHandler.send(packet, origin.getAddress());
-            networkHandler.sendOverActiveLink(packet, origin.getAddress());
+            networkHandler.send(packet, origin.getAddress());
             return true;
         } catch (IOException ex) {
             //TODO FIX
@@ -238,7 +238,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         NetworkPacket packet = prepareForTransmission(new Origin(), null, data, dest.getPathType());
         try {
             //networkHandler.send(packet, dest.getSocketAddress());
-            networkHandler.sendOverActiveLink(packet, dest.getSocketAddress());
+            networkHandler.send(packet, dest.getSocketAddress());
             return true;
         } catch (IOException ex) {
             //TODO Fix
@@ -263,7 +263,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         NetworkPacket packet = prepareForTransmission(origin, null, data, dest.getPathType());
         try {
             //networkHandler.send(packet, dest.getSocketAddress());
-            networkHandler.sendOverActiveLink(packet, dest.getSocketAddress());
+            networkHandler.send(packet, dest.getSocketAddress());
         } catch (IOException ex) {
             removeServiceRequest(origin);
             return null;
@@ -293,7 +293,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         } else if (route == RouteSignal.NETWORKDESTINATION) {
             try {
                 //networkHandler.send(packet,destination.getSocketAddress());
-                networkHandler.sendOverActiveLink(packet, destination.getSocketAddress());
+                networkHandler.send(packet, destination.getSocketAddress());
             } catch (IOException e) {
                 // TODO: logging
                 destination = discovery.destinationUnreachable(destination, serviceName);
@@ -347,7 +347,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         } else if (route == RouteSignal.NETWORKDESTINATION) {
             try {
                 //networkHandler.send(packet,destination.getSocketAddress());
-                networkHandler.sendOverActiveLink(packet, destination.getSocketAddress());
+                networkHandler.send(packet, destination.getSocketAddress());
             } catch (IOException e) {
                 // TODO: logging
                 return false;
@@ -451,7 +451,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                     }
                 } else {
                     try {
-                        this.networkHandler.sendOverActiveLink(packet, dest.getSocketAddress());
+                        this.networkHandler.send(packet, dest.getSocketAddress());
                         success = true;
                     } catch (IOException e) {
                         dest = discovery.destinationUnreachable(dest, serviceChain.peekNextServiceName());
@@ -475,7 +475,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 packet = prepareForTransmission(origin, serviceChain, data, dest.getPathType());
                 try {
                     //this.networkHandler.send(packet, origin.getAddress());
-                    this.networkHandler.sendOverActiveLink(packet, origin.getAddress());
+                    this.networkHandler.send(packet, origin.getAddress());
                     success = true;
                 } catch (IOException ex) {
                     //TODO Fix

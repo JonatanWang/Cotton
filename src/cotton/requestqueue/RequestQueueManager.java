@@ -208,7 +208,7 @@ public class RequestQueueManager implements StatisticsProvider{
                 packet.setPathType(PathType.SERVICE);
                 try{
                     //networkHandler.send(packet,origin.getAddress());
-                    networkHandler.sendOverActiveLink(packet, origin.getAddress());
+                    networkHandler.send(packet, origin.getAddress());
                     //System.out.println("Queue sent work to " + origin.getAddress().toString());
                 }catch(IOException e){
                     processQueue.add(packet);
