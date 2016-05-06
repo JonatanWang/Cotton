@@ -368,7 +368,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
 
                     if (input == null) {
                         System.out.println("TransportPacket null");
-                        break;
+                        return;
                     }
                     //// TODO: ablility  to turn on and off debug msg
                     //System.out.println("Pathtype is: "+input.getPathtype());

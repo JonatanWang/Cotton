@@ -197,7 +197,7 @@ public class TestRequestQueue {
         gDns.setGlobalDiscoveryAddress(arr);
 
         discovery.start();
-
+        
         Cotton queueInstance = new Cotton(false, gDns);
         RequestQueueManager requestQueueManager = new RequestQueueManager();
         requestQueueManager.startQueue("mathpow21");
@@ -223,7 +223,7 @@ public class TestRequestQueue {
         ser3.start();
 
         try {
-            Thread.sleep(100);
+            Thread.sleep(1000);
         } catch (InterruptedException ex) {
             Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }      
@@ -269,7 +269,11 @@ public class TestRequestQueue {
         gDns.setGlobalDiscoveryAddress(arr);
 
         discovery.start();
-
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
         Cotton queueInstance = new Cotton(false, gDns);
         RequestQueueManager requestQueueManager = new RequestQueueManager();
         requestQueueManager.startQueue("mathpow21");
@@ -278,7 +282,7 @@ public class TestRequestQueue {
         queueInstance.start();
 
         try {
-            Thread.sleep(100);
+            Thread.sleep(1000);
         } catch (InterruptedException ex) {
             Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -301,7 +305,7 @@ public class TestRequestQueue {
         ser3.start();
 
         try {
-            Thread.sleep(100);
+            Thread.sleep(1000);
         } catch (InterruptedException ex) {
             Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }      
