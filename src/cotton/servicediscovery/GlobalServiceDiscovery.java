@@ -56,13 +56,15 @@ import java.util.ArrayList;
 import java.io.Serializable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
+import cotton.systemsupport.StatisticsProvider;
+import cotton.systemsupport.StatisticsData;
+import cotton.systemsupport.StatType;
 /**
  *
  * @author magnus
  * @author Tony
  */
-public class GlobalServiceDiscovery implements ServiceDiscovery {
+public class GlobalServiceDiscovery implements ServiceDiscovery{
 
     private SocketAddress localAddress;
     private InternalRoutingServiceDiscovery internalRouting;

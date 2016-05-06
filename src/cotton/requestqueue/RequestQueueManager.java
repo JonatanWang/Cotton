@@ -45,6 +45,11 @@ import java.io.IOException;
 import cotton.network.PathType;
 import java.util.Set;
 import java.util.ArrayList;
+import cotton.systemsupport.StatisticsProvider;
+import cotton.systemsupport.StatType;
+import cotton.systemsupport.StatisticsData;
+import java.util.Map;
+import java.util.Set;
 /**
  * @author Tony
  * @author Magnus
@@ -52,7 +57,7 @@ import java.util.ArrayList;
 /**
  * Manages the requestqueues.
  */
-public class RequestQueueManager{
+public class RequestQueueManager implements StatisticsProvider{
 
     private ConcurrentHashMap<String,RequestQueue> internalQueueMap;
     private ExecutorService threadPool;    
@@ -95,7 +100,7 @@ public class RequestQueueManager{
      * @param serviceName the name for a specific service.
      */
     public void startQueue(String serviceName){
-        RequestQueue queuePool = new RequestQueue();
+        RequestQueue queuePool = new RequestQueue(serviceName,100);
         internalQueueMap.putIfAbsent(serviceName,queuePool);
         
     }
@@ -133,14 +138,40 @@ public class RequestQueueManager{
         threadPool.shutdown();
     }
 
+    public StatisticsData[] getStatisticsForSubSystem(String serviceName){
+        StatisticsData[] data= new StatisticsData[internalQueueMap.size()];
+        int i =0;
+        for(Map.Entry<String,RequestQueue> rq: internalQueueMap.entrySet()){
+            data[i++] = rq.getValue().getStatistics();
+        }
+        return data;
+    }
+
+    public StatisticsData getStatistics(String serviceName){
+        RequestQueue queue = internalQueueMap.get(serviceName);
+        if(queue == null)
+            return new StatisticsData();
+        return queue.getStatistics();
+    }
+
     private class RequestQueue implements Runnable{
         private ConcurrentLinkedQueue<NetworkPacket> processQueue;
         private ConcurrentLinkedQueue<Origin> processingNodes;
-        public RequestQueue(){
+        private final String queueName;
+        private int maxCapacity;
+
+        public RequestQueue(String queueName,int maxCapacity){
             processQueue = new ConcurrentLinkedQueue<>();
             processingNodes = new ConcurrentLinkedQueue<>();
-
+            this.queueName = queueName;
+            this.maxCapacity = maxCapacity;
         }
+
+        public StatisticsData getStatistics(){
+            int[] data = {maxCapacity,processQueue.size(),processingNodes.size()};
+            return new StatisticsData(StatType.REQUESTQUEUE,queueName,data);
+        }
+
         /**
          * buffers networkpackets to be processed
          *
@@ -149,7 +180,6 @@ public class RequestQueueManager{
         public void queueService(NetworkPacket packet){
             processQueue.add(packet);
         } 
-
         /**
          * Adds an available instance to the internal queue
          * 

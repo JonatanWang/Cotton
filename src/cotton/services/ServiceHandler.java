@@ -37,8 +37,13 @@ import cotton.internalRouting.InternalRoutingServiceHandler;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.io.Serializable;
-
-public class ServiceHandler implements Runnable{
+import cotton.systemsupport.StatisticsProvider;
+import cotton.systemsupport.StatisticsData;
+import cotton.systemsupport.StatType;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
+public class ServiceHandler implements Runnable,StatisticsProvider{
     private ActiveServiceLookup serviceLookup;
     private InternalRoutingServiceHandler internalRouting;
     private ServiceBuffer workBuffer;
@@ -56,10 +61,10 @@ public class ServiceHandler implements Runnable{
         while(active){
             ServicePacket packet = workBuffer.nextPacket();
             if(packet == null){
-//                try{
-//                    Thread.sleep(5); //change to exponential fallback strategy.
-//                }catch(InterruptedException ex){
-//                }
+                try{
+                    Thread.sleep(5); //change to exponential fallback strategy.
+                }catch(InterruptedException ex){
+                }
             }else{
                 ServiceDispatcher th = new ServiceDispatcher(packet);
                 threadPool.execute(th);
@@ -71,6 +76,27 @@ public class ServiceHandler implements Runnable{
     public void stop(){
         this.active = false;
     }
+
+    public StatisticsData[] getStatisticsForSubSystem(String name){
+        ArrayList<StatisticsData> result = new ArrayList<>();
+        for(Map.Entry<String,ServiceMetaData>  entry: serviceLookup.getEntrySet()){
+            ServiceMetaData metaData = entry.getValue();
+            int[] data = {metaData.getMaxCapacity(),metaData.getCurrentThreadCount()};
+            result.add(new StatisticsData(StatType.SERVICEHANDLER,entry.getKey(),data));
+        }
+        StatisticsData[] ret = result.toArray(new StatisticsData[result.size()]);
+        return ret;
+    }
+
+    public StatisticsData getStatistics(String name){
+        ServiceMetaData metaData = serviceLookup.getService(name);
+        if(metaData == null)
+            return null;
+        int[] data = {metaData.getMaxCapacity(),metaData.getCurrentThreadCount()};
+        return new StatisticsData(StatType.SERVICEHANDLER,name,data);
+        
+    }
+
 
     private class ServiceDispatcher implements Runnable{
         private ServiceFactory serviceFactory;
