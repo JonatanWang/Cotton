@@ -100,7 +100,7 @@ public class  StatisticsData<T extends Serializable> {
     /**
      * Sets new value of name
      *
-     * @param
+     * @param name
      */
     public void setName(String name) {
         this.name = name;

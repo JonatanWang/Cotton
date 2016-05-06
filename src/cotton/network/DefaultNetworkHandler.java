@@ -251,7 +251,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
      * Sends data wrapped in a <code>NetworkPacket</code> over the network.
      * It creates a oneway link to the destination, the link is reused every call afterwards.
      * 
-     * @param netPacket contains the data and the <code>metadata</code> needed to send the packet.
+     * @param packet contains the data and the <code>metadata</code> needed to send the packet.
      * @param dest defines the <code>SocketAddress</code> to send through.
      * @throws java.io.IOException
      */
