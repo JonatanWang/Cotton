@@ -3,10 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package cotton.example.CloudExample;
+package cotton.example.cloudexample;
 
 import cotton.Cotton;
-import cotton.test.UnitTest;
 import cotton.test.services.GlobalDnsStub;
 import cotton.test.services.MathPowV2;
 import java.net.InetSocketAddress;
@@ -27,7 +26,7 @@ public class ServiceExample2 {
         try {
             Thread.sleep(30000);
         } catch (InterruptedException ex) {
-            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
         cotton.shutdown();
     }

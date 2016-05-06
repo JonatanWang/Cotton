@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package cotton.example.CloudExample;
+package cotton.example.cloudexample;
 
 import cotton.Cotton;
 import cotton.internalRouting.InternalRoutingClient;
@@ -11,7 +11,6 @@ import cotton.internalRouting.ServiceRequest;
 import cotton.network.DummyServiceChain;
 import cotton.network.ServiceChain;
 import cotton.requestqueue.RequestQueueManager;
-import cotton.test.UnitTest;
 import cotton.test.services.GlobalDnsStub;
 import cotton.test.services.MathPowV2;
 import cotton.test.services.MathResult;
@@ -34,6 +33,11 @@ public class DiscoveryExample {
         
 
         discovery.start();
+        try {
+            Thread.sleep(40000);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
         discovery.shutdown();
     }
 }

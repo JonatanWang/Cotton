@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package cotton.example.CloudExample;
+package cotton.example.cloudexample;
 
 import cotton.Cotton;
 import cotton.test.services.GlobalDnsStub;
@@ -12,6 +12,8 @@ import cotton.test.services.MathResult;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -24,6 +26,11 @@ public class ServiceExample1 {
         cotton.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
         cotton.getServiceRegistation().registerService("result", MathResult.getFactory(), 10);
         cotton.start();
+        try {
+            Thread.sleep(30000);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
         cotton.shutdown();
     }
 

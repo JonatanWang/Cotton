@@ -118,7 +118,7 @@ public class TestPackageInteraction {
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
-            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
         Cotton cCotton = new Cotton(false, gDns);
         cCotton.start();

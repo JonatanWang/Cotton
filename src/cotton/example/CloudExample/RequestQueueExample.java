@@ -3,11 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package cotton.example.CloudExample;
+package cotton.example.cloudexample;
 
 import cotton.Cotton;
 import cotton.requestqueue.RequestQueueManager;
-import cotton.test.UnitTest;
 import cotton.test.services.GlobalDnsStub;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -30,7 +29,7 @@ public class RequestQueueExample {
         try {
             Thread.sleep(30000);
         } catch (InterruptedException ex) {
-            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
         queueInstance.shutdown();
     }
