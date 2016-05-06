@@ -58,6 +58,7 @@ import cotton.internalRouting.InternalRoutingClient;
 import cotton.services.Service;
 import cotton.services.ServiceFactory;
 import cotton.services.ServiceHandler;
+import cotton.services.ServiceMetaData;
 
 /**
  *
@@ -110,6 +111,24 @@ public class TestServiceDiscovery {
             Origin origin, ServiceChain to) {
         RouteSignal sig = gd.getLocalInterface(origin, to);
         assertTrue(check == sig);
+    }
+    
+    @Test
+    public void ActiveServiceLookupGetCapacity(){
+        ActiveServiceLookup lookup = new ServiceLookup();
+        lookup.registerService("hej", null, 10);
+        ServiceMetaData service = lookup.getService("hej");
+        assertEquals(10,service.getMaxCapacity());
+    }
+
+    @Test
+    public void ActiveServiceLookupRemove(){
+        ActiveServiceLookup lookup = new ServiceLookup();
+
+        lookup.registerService("test", null, 10);
+
+        lookup.removeServiceEntry("test");
+        assertNull(lookup.getService("test"));
     }
 
     /**

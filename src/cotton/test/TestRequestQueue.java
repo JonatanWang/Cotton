@@ -56,6 +56,7 @@ import cotton.requestqueue.RequestQueueManager;
 import cotton.systemsupport.Console;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatisticsProvider;
+import cotton.test.services.GlobalDnsStub;
 import cotton.test.services.MathResult;
 import java.util.Arrays;
 
@@ -85,20 +86,6 @@ public class TestRequestQueue {
     public void tearDown() {
     }
 
-    private class GlobalDnsStub extends GlobalDiscoveryDNS {
-
-        private SocketAddress[] addressArray = null;
-
-        @Override
-        public void setGlobalDiscoveryAddress(SocketAddress[] addresses) {
-            this.addressArray = addresses;
-        }
-
-        @Override
-        public SocketAddress[] getGlobalDiscoveryAddress() {
-            return this.addressArray;
-        }
-    }
 
     @Test
     public void TestRequestQueue() throws UnknownHostException {
@@ -122,7 +109,7 @@ public class TestRequestQueue {
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
-            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         Cotton ser1 = new Cotton(false, gDns);
@@ -136,7 +123,7 @@ public class TestRequestQueue {
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
-            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
         Cotton cCotton = new Cotton(false, gDns);
         cCotton.start();
@@ -208,7 +195,7 @@ public class TestRequestQueue {
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
-            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         Cotton ser1 = new Cotton(false, gDns);
@@ -225,7 +212,7 @@ public class TestRequestQueue {
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
-            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }      
         Cotton cCotton = new Cotton(false, gDns);
         cCotton.start();
@@ -272,7 +259,7 @@ public class TestRequestQueue {
         try {
             Thread.sleep(500);
         } catch (InterruptedException ex) {
-            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
         Cotton queueInstance = new Cotton(false, gDns);
         RequestQueueManager requestQueueManager = new RequestQueueManager();
@@ -284,7 +271,7 @@ public class TestRequestQueue {
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
-            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         Cotton ser1 = new Cotton(false, gDns);
@@ -307,7 +294,7 @@ public class TestRequestQueue {
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
-            Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }      
         StatisticsProvider sd = discovery.getConsole().getServiceDiscvery();
         StatisticsProvider qm = queueInstance.getConsole().getQueueManager();
