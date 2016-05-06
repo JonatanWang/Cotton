@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
  */
 public class ClientExample {
     public static void main(String[] args) throws UnknownHostException {
-        GlobalDnsStub gDns = getDnsStub("127.0.0.1", 9546);
+        GlobalDnsStub gDns = getDnsStub("127.0.01", 9546);
         Cotton cotton = new Cotton(false, gDns);
         cotton.start();
 
