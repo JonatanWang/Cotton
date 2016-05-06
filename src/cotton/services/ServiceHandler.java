@@ -56,10 +56,10 @@ public class ServiceHandler implements Runnable{
         while(active){
             ServicePacket packet = workBuffer.nextPacket();
             if(packet == null){
-//                try{
-//                    Thread.sleep(5); //change to exponential fallback strategy.
-//                }catch(InterruptedException ex){
-//                }
+                try{
+                    Thread.sleep(5); //change to exponential fallback strategy.
+                }catch(InterruptedException ex){
+                }
             }else{
                 ServiceDispatcher th = new ServiceDispatcher(packet);
                 threadPool.execute(th);
