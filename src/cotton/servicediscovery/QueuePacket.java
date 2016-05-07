@@ -46,7 +46,17 @@ import java.net.SocketAddress;
 public class QueuePacket implements Serializable {
     private SocketAddress instanceAddress;
     private String[] requestQueueList;
-
+    /**
+     * Constructs a <code>AnnouncePacket</code> containing the current <code>Cotton</code> 
+     * instance <code>SocketAddress</code> and the service list.
+     * 
+     * @param instanceAddress the <code>Cotton</code> instance address.
+     */
+    public QueuePacket(SocketAddress instanceAddress,String name) {
+        this.instanceAddress = instanceAddress;
+        String[] serviceName = new String[]{name};
+        this.requestQueueList = serviceName;
+    }
     /**
      * Constructs a <code>AnnouncePacket</code> containing the current <code>Cotton</code> 
      * instance <code>SocketAddress</code> and the service list.

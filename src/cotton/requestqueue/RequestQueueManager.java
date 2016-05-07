@@ -29,9 +29,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
-
 package cotton.requestqueue;
 
 import cotton.network.NetworkPacket;
@@ -50,6 +47,7 @@ import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import java.util.Map;
 import java.util.Set;
+
 /**
  * @author Tony
  * @author Magnus
@@ -57,37 +55,41 @@ import java.util.Set;
 /**
  * Manages the requestqueues.
  */
-public class RequestQueueManager implements StatisticsProvider{
+public class RequestQueueManager implements StatisticsProvider {
 
-    private ConcurrentHashMap<String,RequestQueue> internalQueueMap;
-    private ExecutorService threadPool;    
+    private ConcurrentHashMap<String, RequestQueue> internalQueueMap;
+    private ExecutorService threadPool;
     private NetworkHandler networkHandler;
-    private int maxAmountOfQueues;
-    public RequestQueueManager(){
+    private int maxAmountOfQueues = 10;
+
+    public RequestQueueManager() {
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();
+
     }
 
-    public RequestQueueManager(NetworkHandler networkHandler){
+    public RequestQueueManager(NetworkHandler networkHandler) {
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();
         this.networkHandler = networkHandler;
     }
 
     /**
-     * Sets the netorkhandler so that the request queues can forward data for processing.
-     * @param networkHandler sets the networkHandler 
+     * Sets the netorkhandler so that the request queues can forward data for
+     * processing.
+     *
+     * @param networkHandler sets the networkHandler
      */
-    public void setNetworkHandler(NetworkHandler networkHandler){
+    public void setNetworkHandler(NetworkHandler networkHandler) {
         this.networkHandler = networkHandler;
     }
-
 
     /**
      * A array of names on different queues.
+     *
      * @return activeQueues
      */
-    public String[] getActiveQueues(){
+    public String[] getActiveQueues() {
         Set<String> keys = internalQueueMap.keySet();
         ArrayList<String> names = new ArrayList<>();
         names.addAll(keys);
@@ -97,82 +99,98 @@ public class RequestQueueManager implements StatisticsProvider{
 
     /**
      * initializes a specific queue for a specific service
+     *
      * @param serviceName the name for a specific service.
      */
-    public void startQueue(String serviceName){
-        RequestQueue queuePool = new RequestQueue(serviceName,100);
-        internalQueueMap.putIfAbsent(serviceName,queuePool);
+    public void startQueue(String serviceName) {
+        RequestQueue queuePool = new RequestQueue(serviceName, 100);
+        internalQueueMap.putIfAbsent(serviceName, queuePool);
     }
 
     /**
      * Buffers data for processing
-     * 
-     * @param packet A network packet containing the data to be processed 
-     * @param serviceName the name of the service that is supposed to process this data.
+     *
+     * @param packet A network packet containing the data to be processed
+     * @param serviceName the name of the service that is supposed to process
+     * this data.
      */
-    public void queueService(NetworkPacket packet,String serviceName){
+    public void queueService(NetworkPacket packet, String serviceName) {
         RequestQueue queue = internalQueueMap.get(serviceName);
-        if(queue == null)
+        if (queue == null) {
             return;
-        queue.queueService(packet); 
+        }
+        queue.queueService(packet);
         threadPool.execute(queue);
     }
+
     /**
      * Adds an available instance to the internal queue
-     * 
-     * @param origin the instance that sent the message 
-     * @param serviceName the name of the service that is supposed to process this data.
+     *
+     * @param origin the instance that sent the message
+     * @param serviceName the name of the service that is supposed to process
+     * this data.
      */
 
-    public void addAvailableInstance(Origin origin,String serviceName){
+    public void addAvailableInstance(Origin origin, String serviceName) {
         RequestQueue queue = internalQueueMap.get(serviceName);
-        if(queue == null)
+        if (queue == null) {
             return;
+        }
         //System.out.println("AvailableInstance: " + origin.getAddress().toString() + " :: " + serviceName);
         queue.addInstance(origin);
         threadPool.execute(queue);
     }
 
-    public void stop(){
+    public void stop() {
         threadPool.shutdown();
     }
 
-    public StatisticsData[] getStatisticsForSubSystem(String serviceName){
-        ArrayList<StatisticsData> tdata =new ArrayList<>();
-        for(Map.Entry<String,RequestQueue> rq: internalQueueMap.entrySet()){
-           tdata.add(rq.getValue().getStatistics());
+    public StatisticsData[] getStatisticsForSubSystem(String serviceName) {
+        ArrayList<StatisticsData> tdata = new ArrayList<>();
+        for (Map.Entry<String, RequestQueue> rq : internalQueueMap.entrySet()) {
+            tdata.add(rq.getValue().getStatistics());
         }
         return tdata.toArray(new StatisticsData[tdata.size()]);
     }
 
-    public StatisticsData getStatistics(String[] serviceName){
+    public StatisticsData getStatistics(String[] serviceName) {
         RequestQueue queue = internalQueueMap.get(serviceName[0]);
-        if(queue == null)
+        if (queue == null) {
             return new StatisticsData();
+        }
         return queue.getStatistics();
     }
 
-    public int getMaxCapacity(String serviceName){
+    public int getMaxCapacity(String serviceName) {
         RequestQueue queue = internalQueueMap.get(serviceName);
         return queue.getMaxCapacity();
     }
-    
-    private class RequestQueue implements Runnable{
+
+    public int getMaxAmountOfQueues() {
+        return maxAmountOfQueues;
+    }
+
+    public void setMaxAmountOfQueues(int maxAmountOfQueues) {
+        this.maxAmountOfQueues = maxAmountOfQueues;
+    }
+
+    private class RequestQueue implements Runnable {
+
         private ConcurrentLinkedQueue<NetworkPacket> processQueue;
         private ConcurrentLinkedQueue<Origin> processingNodes;
         private final String queueName;
         private int maxCapacity;
 
-        public RequestQueue(String queueName,int maxCapacity){
+        public RequestQueue(String queueName, int maxCapacity) {
             processQueue = new ConcurrentLinkedQueue<>();
             processingNodes = new ConcurrentLinkedQueue<>();
             this.queueName = queueName;
             this.maxCapacity = maxCapacity;
         }
 
-        public StatisticsData getStatistics(){
-            int[] data = {maxCapacity,processQueue.size(),processingNodes.size()};
-            return new StatisticsData(StatType.REQUESTQUEUE,queueName,data);
+        public StatisticsData getStatistics() {
+            int[] data = {maxCapacity, processQueue.size(), processingNodes.size()};
+            return new StatisticsData(StatType.REQUESTQUEUE, queueName, data);
         }
 
         /**
@@ -180,45 +198,46 @@ public class RequestQueueManager implements StatisticsProvider{
          *
          * @param packet a networkpacket to be processed
          */
-        public void queueService(NetworkPacket packet){
+        public void queueService(NetworkPacket packet) {
             processQueue.add(packet);
         }
+
         /**
          * Adds an available instance to the internal queue
-         * 
-         * @param origin the instance that sent the message 
+         *
+         * @param origin the instance that sent the message
          */
-        public void addInstance(Origin origin){
+        public void addInstance(Origin origin) {
             processingNodes.add(origin);
         }
 
         /**
-         * polls data and sents it to available instances. 
+         * polls data and sents it to available instances.
          *
          */
-        public void run(){
+        public void run() {
             Origin origin = null;
-            while((origin = processingNodes.poll()) != null){
+            while ((origin = processingNodes.poll()) != null) {
                 NetworkPacket packet = processQueue.poll();
-                if(packet == null){
+                if (packet == null) {
                     processingNodes.add(origin);
                     return;
                 }
                 packet.setPathType(PathType.SERVICE);
-                try{
+                try {
                     //networkHandler.send(packet,origin.getAddress());
                     networkHandler.send(packet, origin.getAddress());
                     //System.out.println("Queue sent work to " + origin.getAddress().toString());
-                }catch(IOException e){
+                } catch (IOException e) {
                     processQueue.add(packet);
                     // TODO: LOGGING
                 }
             }
         }
-        
-        public int getMaxCapacity(){
+
+        public int getMaxCapacity() {
             return this.maxCapacity;
         }
-        
+
     }
 }

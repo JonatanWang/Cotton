@@ -51,8 +51,9 @@ public class DiscoveryPacket implements Serializable {
     private DiscoveryPacketType type;
     private QueuePacket queue;
     private TopologyPacket topology;
+    private ConfigurationPacket configPacket;
     public enum DiscoveryPacketType {
-        DISCOVERYREQUEST, DISCOVERYRESPONSE, ANNOUNCE,REQUESTQUEUE,TOPOLOGY
+        DISCOVERYREQUEST, DISCOVERYRESPONSE, ANNOUNCE,REQUESTQUEUE,TOPOLOGY,CONFIG
     }
 
     /**
@@ -73,6 +74,23 @@ public class DiscoveryPacket implements Serializable {
         this.queue = queue;
     }
     
+    /**
+     * Returns the <code>ConfigurationPacket</code> connected to the <code>DiscoveryPacket</code>.
+     * 
+     * @return the connected <code>ConfigurationPacket</code>.
+     */
+    public ConfigurationPacket getConfigPacket() {
+        return configPacket;
+    }
+
+    /**
+     * Sets the containing <code>ConfigurationPacket</code> to the incoming packet.
+     * 
+     * @param configPacket new <code>ConfigurationPacket</code>.
+     */
+    public void setConfigPacket(ConfigurationPacket configPacket) {
+        this.configPacket = configPacket;
+    }
     /**
      * Constructs an empty <code>DiscoveryPacket</code> consisting only of the 
      * <code>DiscoveryPacketType</code>.

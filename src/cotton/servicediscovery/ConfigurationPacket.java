@@ -32,6 +32,7 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.servicediscovery;
 
 import cotton.network.PathType;
+import java.io.Serializable;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 
@@ -40,7 +41,7 @@ import java.util.ArrayList;
  * @author Tony
  * @author Magnus
  */
-public class ConfigurationPacket {
+public class ConfigurationPacket implements Serializable {
 
     private SocketAddress instanceAddress;
     private int maxTotalRequestQueues;
