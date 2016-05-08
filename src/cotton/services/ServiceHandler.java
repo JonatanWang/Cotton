@@ -77,6 +77,17 @@ public class ServiceHandler implements Runnable,StatisticsProvider{
         this.active = false;
     }
 
+    public void setServiceConfig(String name,int amount){
+        ServiceMetaData service = serviceLookup.getService(name);
+        if(service == null)
+            return;
+        int diff = amount - service.getMaxCapacity();
+        service.setMaxCapacity(amount);
+        for(int i = 0; i<diff; i++){
+            internalRouting.notifyRequestQueue(name);
+        }
+    }
+    
     public StatisticsData[] getStatisticsForSubSystem(String name){
         ArrayList<StatisticsData> result = new ArrayList<>();
         for(Map.Entry<String,ServiceMetaData>  entry: serviceLookup.getEntrySet()){

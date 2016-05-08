@@ -32,56 +32,94 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.systemsupport;
 
 import cotton.network.NetworkPacket;
+import cotton.servicediscovery.DiscoveryPacket;
+import cotton.servicediscovery.GlobalServiceDiscovery;
+import cotton.services.ServiceHandler;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
- * 
+ *
  * @author Magnus ,Tony
  */
 public class Console {
+
     private ArrayList<StatisticsProvider> subSystems;
+
     /**
-     * 
+     *
      * @param serviceDiscovery
      * @param queueManager
-     * @param serviceHandler 
+     * @param serviceHandler
      */
     public Console(StatisticsProvider[] subSystems) {
         this.subSystems = new ArrayList<>();
         this.subSystems.addAll(Arrays.asList(subSystems));
     }
-    
+
     public Console(ArrayList<StatisticsProvider> subSystems) {
         this.subSystems = subSystems;
     }
-    
+
     public Console() {
         this.subSystems = new ArrayList<>();
     }
 
-    public void addSubSystem(StatisticsProvider system){
+    public void addSubSystem(StatisticsProvider system) {
         this.subSystems.add(system);
     }
-    
-    public StatisticsProvider getProvider(StatType type){
-        for(StatisticsProvider p : subSystems){
-            if(p.getStatType() == type){
+
+    public StatisticsProvider getProvider(StatType type) {
+        for (StatisticsProvider p : subSystems) {
+            if (p.getStatType() == type) {
                 return p;
             }
         }
         return new EmptyProvider("Unknown provider: " + type.toString());
     }
-    
+
     public void processCommand(NetworkPacket packet) {
-        
+        if (packet == null) {
+            return;
+        }
+        Command command = packetUnpack(packet.getData());
+        switch(command.getType()){
+            case SERVICEHANDLER:
+                ServiceHandler serviceHandler = (ServiceHandler)getProvider(StatType.SERVICEHANDLER);
+                serviceHandler.setServiceConfig(command.getName(), command.getAmount());
+                break;
+            default:
+                System.out.println("WRONG COMMAND TYPE IN CLASS CONSOLE PROCESSCOMMAND" + command.getType());
+                break;
+        }
     }
     
-    private class EmptyProvider implements StatisticsProvider{
-        private StatisticsData tempData;
-        public EmptyProvider(String message){
-            tempData = new StatisticsData(StatType.UNKNOWN,message,new Integer[0]);
+    private Command packetUnpack(byte[] data) {
+        Command command = null;
+        try {
+            ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
+            command = (Command) input.readObject();
+        } catch (IOException ex) {
+            Logger.getLogger(Console.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(Console.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+        return command;
+    }
+
+    private class EmptyProvider implements StatisticsProvider {
+
+        private StatisticsData tempData;
+
+        public EmptyProvider(String message) {
+            tempData = new StatisticsData(StatType.UNKNOWN, message, new Integer[0]);
+        }
+
         @Override
         public StatisticsData[] getStatisticsForSubSystem(String name) {
             return new StatisticsData[0];
@@ -101,6 +139,6 @@ public class Console {
         public StatType getStatType() {
             return StatType.UNKNOWN;
         }
-        
+
     }
 }

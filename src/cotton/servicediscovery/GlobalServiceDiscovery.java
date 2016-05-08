@@ -619,7 +619,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         ArrayList<QueuePacket> availableQueues = new ArrayList<>();
         for (int i = 0; i < entry.length; i++) {
             ConfigEntry configEntry = entry[i];
-            System.out.println("configEntry: " + configEntry.getName() + " pathtype" + configEntry.getPathType());
+            System.out.println("configEntry: " + i + " " + configEntry.getName() + " pathtype" + configEntry.getPathType());
             if (configEntry.getPathType() == PathType.REQUESTQUEUE) {
                 DestinationMetaData qAddr = new DestinationMetaData(addr, PathType.REQUESTQUEUE);
                 addQueue(qAddr, configEntry.getName());

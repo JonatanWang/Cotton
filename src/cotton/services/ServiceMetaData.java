@@ -110,4 +110,12 @@ public class ServiceMetaData {
             return serviceFactory;
     }
     
+    /**
+     * Sets the current maxCapacity
+     * @param maxCapacity 
+     */
+    public void setMaxCapacity(int maxCapacity){
+        this.maxCapacity = maxCapacity;
+    }
+    
 }
