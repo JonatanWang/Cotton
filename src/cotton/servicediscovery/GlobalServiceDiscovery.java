@@ -33,6 +33,7 @@ package cotton.servicediscovery;
 
 import cotton.internalRouting.InternalRoutingServiceDiscovery;
 import cotton.network.DestinationMetaData;
+import cotton.network.NetworkPacket;
 import cotton.network.Origin;
 import cotton.network.PathType;
 import cotton.network.ServiceChain;
@@ -51,6 +52,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.util.concurrent.ConcurrentHashMap.KeySetView;
 import cotton.services.ServiceMetaData;
+import cotton.systemsupport.Command;
 import java.util.ArrayList;
 import java.io.Serializable;
 import java.util.concurrent.ExecutorService;
@@ -344,10 +346,10 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         boolean success = false;
         try {
             byte[] bytes = serializeToBytes(packet);
-            success = internalRouting.SendToDestination(dest, bytes);
+            success = internalRouting.sendToDestination(dest, bytes);
             if (!success) {
                 dest = destinationUnreachable(dest, null);
-                success = internalRouting.SendToDestination(dest, bytes);
+                success = internalRouting.sendToDestination(dest, bytes);
             }
         } catch (IOException ex) {
             return false;
@@ -415,7 +417,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             boolean success = false;
             try {
                 byte[] data = serializeToBytes(discPack);
-                success = internalRouting.SendToDestination(nextHop, data);
+                success = internalRouting.sendToDestination(nextHop, data);
                 if (!success) {
                     destinationUnreachable(nextHop, null);
                 }
@@ -479,7 +481,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             discoveryPacket.setQueue(queuePacket);
             try {
                 byte[] data = serializeToBytes(discoveryPacket);
-                if (!internalRouting.SendToDestination(dest, data)) {
+                if (!internalRouting.sendToDestination(dest, data)) {
                     break;
                 }
             } catch (IOException e) {
@@ -504,7 +506,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                 data = serializeToBytes(new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE));
             } catch (IOException e) {
             }
-            internalRouting.SendBackToOrigin(origin, PathType.DISCOVERY, data);
+            internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, data);
             return;
         }
         DestinationMetaData addr = pool.getAddress();
@@ -517,7 +519,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         } catch (IOException ex) {
 
         }
-        internalRouting.SendBackToOrigin(origin, PathType.DISCOVERY, data);
+        internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, data);
 
     }
 
@@ -588,26 +590,46 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     public boolean announceQueues(RequestQueueManager queueManager) {
         this.queueManager = queueManager;
         return true;
-        /* String[] nameList = queueManager.getActiveQueues();
-        DestinationMetaData dest = discoveryCache.getAddress();
-        if(dest == null)
-            return false;
-        QueuePacket queuePacket = new QueuePacket(localAddress,nameList);
-        DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
-        discoveryPacket.setQueue(queuePacket);
-        boolean success = false;
-        try{
-            byte[] data = serializeToBytes(discoveryPacket);
-            success = internalRouting.SendToDestination(dest,data);
-            if(!success){
-                DestinationMetaData destination = destinationUnreachable(dest,null);
-            	success = internalRouting.SendToDestination(destination,data);
+    }
+
+    private void triggeredCircuitBreaker(Origin origin, CircuitBreakerPacket circuit) {
+        AddressPool pool;
+        if (circuit.getCircuitName().equals("mathpow21")) {
+            System.out.println("INCOMMING CIRCUITBREAKER MESSAGE IN GLOBAL SERVICE DISCOVERY");
+            pool = serviceCache.get(circuit.getCircuitName());
+            if (pool == null) {
+                return;
             }
-        }catch(IOException e){
-            e.printStackTrace();
+            DestinationMetaData dest = pool.getAddress();
+            dest.setPathType(PathType.COMMANDCONTROL);
+            Command command = new Command(StatType.SERVICEHANDLER, circuit.getCircuitName(), 100);
+            Command com = new Command(StatType.SERVICEHANDLER, "mathpow21", 100);
+            sendCommandPacket(dest, com);
+        }
+    }
+
+    private boolean sendCommandPacket(DestinationMetaData destination, Command command) {
+        byte[] data;
+        try {
+            data = serializeToBytes(command);
+        } catch (IOException e) {
             return false;
         }
-        return success;*/
+        //destination.setPathType(PathType.COMMANDCONTROL);
+        this.internalRouting.sendToDestination(destination, data);
+        return true;
+    }
+
+    private boolean processLocalCommand(Command command) {
+        byte[] data;
+        try {
+            data = serializeToBytes(command);
+        } catch (IOException e) {
+            return false;
+        }
+        DestinationMetaData destination = new DestinationMetaData(localAddress, PathType.COMMANDCONTROL);
+        this.internalRouting.sendLocal(destination, RouteSignal.LOCALDESTINATION, data);
+        return true;
     }
 
     private void processConfigPacket(ConfigurationPacket packet) {
@@ -640,14 +662,14 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         if (packet.isGlobalServiceDiscovery()) {
             discoveryCache.addAddress(new DestinationMetaData(addr, PathType.DISCOVERY));
         }
-        
-        DestinationMetaData  returnAddress = new DestinationMetaData(addr,PathType.DISCOVERY);
+
+        DestinationMetaData returnAddress = new DestinationMetaData(addr, PathType.DISCOVERY);
         for (QueuePacket queues : availableQueues) {
             DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
             discoveryPacket.setQueue(queues);
             try {
                 byte[] data = serializeToBytes(discoveryPacket);
-                if (!internalRouting.SendToDestination(returnAddress, data)) {
+                if (!internalRouting.sendToDestination(returnAddress, data)) {
                     break;
                 }
             } catch (IOException e) {
@@ -758,6 +780,44 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         return StatType.SERVICEDISCOVERY;
     }
 
+    @Override
+    public void requestQueueMessage(DiscoveryPacket packet) {
+        Origin origin = new Origin();
+        origin.setAddress(localAddress);
+        decodeDiscoveryPacket(origin, packet);
+    }
+
+    private void decodeDiscoveryPacket(Origin origin, DiscoveryPacket packet) {
+        DiscoveryPacketType type = packet.getPacketType();
+        //to do: switch not functioning properly with enums
+//            System.out.println("DefaultGlobalServiceDiscovery: " + type
+//                    + " from: " + ((InetSocketAddress) origin.getAddress()).toString());
+        switch (type) {
+            case DISCOVERYREQUEST:
+                processProbeRequest(origin, packet.getProbe());
+                break;
+            case DISCOVERYRESPONSE:
+                //localDiscovery.updateHandling(from, packet);
+                break;
+            case ANNOUNCE:
+                processAnnouncePacket(packet.getAnnounce());
+                break;
+            case REQUESTQUEUE:
+                processQueuePacket(packet.getQueue());
+                break;
+            case CONFIG:
+                System.out.println("Incomming config packet");
+                processConfigPacket(packet.getConfigPacket());
+                break;
+            case CIRCUITBREAKER:
+                triggeredCircuitBreaker(origin, packet.getCircuitBreakerPacket());
+                break;
+            default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
+                System.out.println("DefaultGlobalServiceDiscovery updateHandling recieved, not yet implemented: " + type);
+                break;
+        }
+    }
+
     private class DiscoveryLookup implements Runnable {
 
         private Origin origin;
@@ -771,31 +831,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         @Override
         public void run() {
             DiscoveryPacket packet = packetUnpack(data);
-            DiscoveryPacketType type = packet.getPacketType();
-            //to do: switch not functioning properly with enums
-//            System.out.println("DefaultGlobalServiceDiscovery: " + type
-//                    + " from: " + ((InetSocketAddress) origin.getAddress()).toString());
-            switch (type) {
-                case DISCOVERYREQUEST:
-                    processProbeRequest(origin, packet.getProbe());
-                    break;
-                case DISCOVERYRESPONSE:
-                    //localDiscovery.updateHandling(from, packet);
-                    break;
-                case ANNOUNCE:
-                    processAnnouncePacket(packet.getAnnounce());
-                    break;
-                case REQUESTQUEUE:
-                    processQueuePacket(packet.getQueue());
-                    break;
-                case CONFIG:
-                    System.out.println("Incomming config packet");
-                    processConfigPacket(packet.getConfigPacket());
-                    break;
-                default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
-                    System.out.println("DefaultGlobalServiceDiscovery updateHandling recieved, not yet implemented: " + type);
-                    break;
-            }
+            decodeDiscoveryPacket(origin,packet);
         }
 
     }

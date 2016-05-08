@@ -166,14 +166,14 @@ public class TestCommandControl {
                 System.out.println(dataArrToStr(stats));
             } catch (InterruptedException ex) {
                 //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            }/*
             if (i == 50) {
                 Command com = new Command(StatType.SERVICEHANDLER, "mathpow21", 100);
                 Console console = ser2.getConsole();
                 byte[] data1 = serializeToBytes(com);
                 NetworkPacket packet = NetworkPacket.newBuilder().setData(data1).build();
                 console.processCommand(packet);
-            }
+            }*/
         }
         StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
         System.out.println(dataArrToStr(stats));

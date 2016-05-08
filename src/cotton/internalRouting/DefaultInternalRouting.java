@@ -54,6 +54,7 @@ import java.util.logging.Logger;
 import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.servicediscovery.GlobalServiceDiscovery;
 import cotton.requestqueue.RequestQueueManager;
+import cotton.servicediscovery.DiscoveryPacket;
 import cotton.systemsupport.Console;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -62,7 +63,7 @@ import java.util.Arrays;
  *
  * @author Magnus
  */
-public class DefaultInternalRouting implements InternalRoutingNetwork, InternalRoutingClient, InternalRoutingServiceDiscovery, InternalRoutingServiceHandler {
+public class DefaultInternalRouting implements InternalRoutingNetwork, InternalRoutingClient, InternalRoutingServiceDiscovery, InternalRoutingServiceHandler, InternalRoutingRequestQueue {
 
     private NetworkHandler networkHandler;
     private SocketAddress localAddress;
@@ -94,13 +95,13 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      */
     public void setRequestQueueManager(RequestQueueManager requestQueueManager) {
         this.requestQueueManager = requestQueueManager;
-        this.requestQueueManager.setNetworkHandler(networkHandler);
+        this.requestQueueManager.setInternalRouting(this);
     }
 
     public void setCommandControl(Console commandConsole) {
         this.commandConsole = commandConsole;
     }
-    
+
     /**
      * The InternalRoutingNetwork implementation
      */
@@ -134,7 +135,9 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     }
 
     private boolean fallBackSend(NetworkPacket packet, SocketAddress sockerAddr) {
-        if(sockerAddr == null || packet == null) return false;
+        if (sockerAddr == null || packet == null) {
+            return false;
+        }
         try {
             networkHandler.send(packet, sockerAddr);
         } catch (IOException e) {
@@ -144,7 +147,9 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     }
 
     private boolean fallbackSendKeepAlive(NetworkPacket packet, SocketAddress sockerAddr) {
-        if(sockerAddr == null || packet == null) return false;
+        if (sockerAddr == null || packet == null) {
+            return false;
+        }
         try {
             this.networkHandler.sendKeepAlive(packet, sockerAddr);
         } catch (IOException e) {
@@ -219,7 +224,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      * @return true if it succeeded
      */
     @Override
-    public boolean SendBackToOrigin(Origin origin, PathType pathType, byte[] data) {
+    public boolean sendBackToOrigin(Origin origin, PathType pathType, byte[] data) {
         NetworkPacket packet = prepareForTransmission(origin, null, data, pathType);
         try {
             //networkHandler.send(packet, origin.getAddress());
@@ -232,6 +237,26 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     }
 
     /**
+     * Sends data internally within the cloud node.
+     *
+     * @param destination
+     * @param route
+     * @param data
+     * @return
+     */
+    public boolean sendLocal(DestinationMetaData destination, RouteSignal route, byte[] data) {
+        boolean success = false;
+        if (RouteSignal.LOCALDESTINATION == route) {
+            NetworkPacket packet = prepareForTransmission(new Origin(), null, data, destination.getPathType());
+            routingQueue.add(packet);
+            success = true;
+        } else {
+            sendToDestination(destination, data);
+        }
+        return success;
+    }
+
+    /**
      * Sends the data directly to destination without calling ServiceDiscovery
      * again
      *
@@ -240,7 +265,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      * @return
      */
     @Override
-    public boolean SendToDestination(DestinationMetaData dest, byte[] data) {
+    public boolean sendToDestination(DestinationMetaData dest, byte[] data) {
         NetworkPacket packet = prepareForTransmission(new Origin(), null, data, dest.getPathType());
         try {
             //networkHandler.send(packet, dest.getSocketAddress());
@@ -362,6 +387,19 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
             }
         }
         return true;
+    }
+
+    /**
+     * InternalRoutingQueue methods
+     */
+    @Override
+    public void sendWork(NetworkPacket netPacket, SocketAddress dest) throws IOException {
+        networkHandler.send(netPacket, dest);
+    }
+
+    @Override
+    public void notifyDiscovery(DiscoveryPacket packet) {
+        discovery.requestQueueMessage(packet);
     }
 
     /**
@@ -590,8 +628,9 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 case RELAY:
                     break;
                 case COMMANDCONTROL:
-                    if(commandConsole != null)
+                    if (commandConsole != null) {
                         commandConsole.processCommand(packet);
+                    }
                     break;
                 case DISCOVERY:
                     discovery.discoveryUpdate(packet.getOrigin(), packet.getData());

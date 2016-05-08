@@ -55,6 +55,7 @@ import java.io.Serializable;
 import cotton.internalRouting.ServiceRequest;
 import cotton.network.DestinationMetaData;
 import cotton.requestqueue.RequestQueueManager;
+import cotton.systemsupport.Command;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatisticsProvider;
@@ -469,10 +470,10 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         boolean success = false;
         try {
             byte[] bytes = serializeToBytes(packet);
-            success = internalRouting.SendToDestination(dest, bytes);
+            success = internalRouting.sendToDestination(dest, bytes);
             if (!success) {
                 dest = destinationUnreachable(dest, null);
-                success = internalRouting.SendToDestination(dest, bytes);
+                success = internalRouting.sendToDestination(dest, bytes);
             }
         } catch (IOException ex) {
             return false;
@@ -501,6 +502,18 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     @Override
     public void discoveryUpdate(Origin origin, byte[] data) {
         DiscoveryPacket packet = packetUnpack(data);
+        decodeDiscoveryPacket(origin, packet);
+
+    }
+
+    @Override
+    public void requestQueueMessage(DiscoveryPacket packet) {
+        Origin origin = new Origin();
+        origin.setAddress(localAddress);
+        decodeDiscoveryPacket(origin, packet);
+    }
+
+    private void decodeDiscoveryPacket(Origin origin, DiscoveryPacket packet) {
         DiscoveryPacketType type = packet.getPacketType();
         //to do: switch not functioning properly with enums
         // System.out.println("DefaultGlobalServiceDiscovery: " + type
@@ -520,6 +533,9 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
                 break;
             case CONFIG:
                 processConfigPacket(packet.getConfigPacket());
+                break;
+            case CIRCUITBREAKER:
+                triggeredCircuitBreaker(origin, packet.getCircuitBreakerPacket());
                 break;
             default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
                 System.out.println("DefaultGlobalServiceDiscovery updateHandling recieved, not yet implemented: " + type);
@@ -578,6 +594,27 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     private void notifyQueue(int numInstances, String serviceName, DestinationMetaData address) {
         for (int i = 0; i < numInstances; i++) {
             this.internalRouting.notifyRequestQueue(address, RouteSignal.NETWORKDESTINATION, serviceName);
+        }
+    }
+
+    private void triggeredCircuitBreaker(Origin origin, CircuitBreakerPacket circuit) {
+        if (circuit.getCircuitName().equals("mathpow21")) {
+            System.out.println("INCOMMING CIRCUITBREAKER MESSAGE");
+            DestinationMetaData dest = discoveryCache.getAddress();
+            if (dest == null) {
+                return;
+            }
+            DiscoveryPacket discPacket = new DiscoveryPacket(DiscoveryPacketType.CIRCUITBREAKER);
+            circuit.setInstanceAddress(localAddress);
+            discPacket.setCircuitBreakerPacket(circuit);
+            try {
+                byte[] data = serializeToBytes(discPacket);
+                internalRouting.sendToDestination(dest, data);
+            } catch (IOException e) {
+                e.printStackTrace();
+                //TODO: logg errors
+            }
+
         }
     }
 

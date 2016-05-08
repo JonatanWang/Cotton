@@ -29,24 +29,28 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
 package cotton.internalRouting;
 
-import cotton.network.DestinationMetaData;
-import cotton.network.Origin;
-import cotton.network.PathType;
-import cotton.internalRouting.ServiceRequest;
-import cotton.servicediscovery.RouteSignal;
-
+import cotton.network.NetworkPacket;
+import cotton.servicediscovery.DiscoveryPacket;
+import java.io.IOException;
+import java.net.SocketAddress;
 
 /**
  *
- * @author tony
+ * @author Tony
+ * @author Magnus
  */
-public interface InternalRoutingServiceDiscovery {
-    public boolean sendBackToOrigin(Origin origin,PathType pathType,byte[] data);
-    public boolean sendToDestination(DestinationMetaData dest,byte[] data);
-    public ServiceRequest sendWithResponse(DestinationMetaData dest, byte[] data);
-    public boolean notifyRequestQueue(DestinationMetaData destination,RouteSignal route, String serviceName);
-    public boolean sendLocal(DestinationMetaData destination,RouteSignal route,byte[] data);
+public interface InternalRoutingRequestQueue {
+
+    /**
+     * Sends data wrapped in a <code>NetworkPacket</code> over the network.
+     *
+     * @param netPacket contains the data and the <code>metadata</code> needed
+     * to send the packet.
+     * @param dest defines the <code>SocketAddress</code> to send through.
+     * @throws java.io.IOException
+     */
+    public void sendWork(NetworkPacket netPacket, SocketAddress dest) throws IOException;
+    public void notifyDiscovery(DiscoveryPacket packet);
 }

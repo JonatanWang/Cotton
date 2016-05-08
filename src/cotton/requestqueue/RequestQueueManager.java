@@ -31,6 +31,7 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.requestqueue;
 
+import cotton.internalRouting.InternalRoutingRequestQueue;
 import cotton.network.NetworkPacket;
 import cotton.network.Origin;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,6 +41,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import cotton.network.NetworkHandler;
 import java.io.IOException;
 import cotton.network.PathType;
+import cotton.servicediscovery.CircuitBreakerPacket;
+import cotton.servicediscovery.DiscoveryPacket;
+import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
 import java.util.Set;
 import java.util.ArrayList;
 import cotton.systemsupport.StatisticsProvider;
@@ -59,7 +63,7 @@ public class RequestQueueManager implements StatisticsProvider {
 
     private ConcurrentHashMap<String, RequestQueue> internalQueueMap;
     private ExecutorService threadPool;
-    private NetworkHandler networkHandler;
+    private InternalRoutingRequestQueue internalRouting;
     private int maxAmountOfQueues = 10;
 
     public RequestQueueManager() {
@@ -68,21 +72,12 @@ public class RequestQueueManager implements StatisticsProvider {
 
     }
 
-    public RequestQueueManager(NetworkHandler networkHandler) {
+    public RequestQueueManager(InternalRoutingRequestQueue internalRouting) {
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();
-        this.networkHandler = networkHandler;
+        this.internalRouting = internalRouting;
     }
 
-    /**
-     * Sets the netorkhandler so that the request queues can forward data for
-     * processing.
-     *
-     * @param networkHandler sets the networkHandler
-     */
-    public void setNetworkHandler(NetworkHandler networkHandler) {
-        this.networkHandler = networkHandler;
-    }
 
     /**
      * A array of names on different queues.
@@ -183,6 +178,10 @@ public class RequestQueueManager implements StatisticsProvider {
         this.maxAmountOfQueues = maxAmountOfQueues;
     }
 
+    public void setInternalRouting(InternalRoutingRequestQueue internalRouting){
+        this.internalRouting = internalRouting;
+    }
+    
     private class RequestQueue implements Runnable {
 
         private ConcurrentLinkedQueue<NetworkPacket> processQueue;
@@ -208,6 +207,11 @@ public class RequestQueueManager implements StatisticsProvider {
          * @param packet a networkpacket to be processed
          */
         public void queueService(NetworkPacket packet) {
+            if(maxCapacity < processQueue.size() && (processQueue.size()%100)==0){
+                DiscoveryPacket discPacket = new DiscoveryPacket(DiscoveryPacketType.CIRCUITBREAKER);
+                discPacket.setCircuitBreakerPacket(new CircuitBreakerPacket(queueName));
+                internalRouting.notifyDiscovery(discPacket);
+            }
             processQueue.add(packet);
         }
 
@@ -235,7 +239,7 @@ public class RequestQueueManager implements StatisticsProvider {
                 packet.setPathType(PathType.SERVICE);
                 try {
                     //networkHandler.send(packet,origin.getAddress());
-                    networkHandler.send(packet, origin.getAddress());
+                    internalRouting.sendWork(packet, origin.getAddress());
                     //System.out.println("Queue sent work to " + origin.getAddress().toString());
                 } catch (IOException e) {
                     processQueue.add(packet);
