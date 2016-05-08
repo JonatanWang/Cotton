@@ -54,6 +54,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import cotton.requestqueue.RequestQueueManager;
+import cotton.services.ServiceFactory;
 import cotton.systemsupport.Console;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
@@ -61,6 +62,7 @@ import cotton.systemsupport.StatisticsProvider;
 import cotton.test.services.GlobalDnsStub;
 import cotton.test.services.MathResult;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
@@ -88,7 +90,7 @@ public class TestRequestQueue {
     public void tearDown() {
     }
 
-    @Test
+    //@Test
     public void TestRequestQueue() throws UnknownHostException {
         Cotton discovery = new Cotton(true, 11765);
         GlobalDnsStub gDns = new GlobalDnsStub();
@@ -207,9 +209,12 @@ public class TestRequestQueue {
         Cotton ser2 = new Cotton(false, gDns);
         Cotton ser3 = new Cotton(false, gDns);
 
+        AtomicInteger counter = new AtomicInteger(0);
+        MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
+        
         ser1.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 100);
         ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 100);
-        ser3.getServiceRegistation().registerService("result", MathResult.getFactory(), 1000);
+        ser3.getServiceRegistation().registerService("result", resFactory, 1000);
 
         Cotton cCotton = new Cotton(false, gDns);
         cCotton.start();
@@ -221,9 +226,10 @@ public class TestRequestQueue {
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
 
+        int sentChains = 1000;
         //ServiceRequest req = client.sendWithResponse(data, chain);
         //chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < sentChains; i++) {
             //chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
             chain = builder.build();
             client.sendToService(data, chain);
@@ -247,16 +253,17 @@ public class TestRequestQueue {
         }
         stats = queueManager.getStatisticsForSubSystem("");
         System.out.println(dataArrToStr(stats));
-        chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21");
-        ServiceRequest req = client.sendWithResponse(data, chain);
-        if (req != null) {
-            data = req.getData();
-            num = ByteBuffer.wrap(data).getInt();
-            System.out.println("result:  : " + num);
-        } else {
-            System.out.println("req:  : " + req);
-        }
-
+//        chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21");
+//        ServiceRequest req = client.sendWithResponse(data, chain);
+//        if (req != null) {
+//            data = req.getData();
+//            num = ByteBuffer.wrap(data).getInt();
+//            System.out.println("result:  : " + num);
+//        } else {
+//            System.out.println("req:  : " + req);
+//        }
+        int completedChains = resFactory.getCounter().intValue();
+        System.out.println("Completed chains: " + completedChains);
         //Cotton discovery = new Cotton(true,3333);
         //Cotton discovery = new Cotton(true,3333);
         queueInstance.shutdown();
@@ -265,10 +272,10 @@ public class TestRequestQueue {
         ser2.shutdown();
         ser3.shutdown();
         cCotton.shutdown();
-        assertTrue(65536 == num);
+        assertTrue(sentChains == completedChains);
     }
 
-    @Test
+    //@Test
     public void TestStatistics() throws UnknownHostException {
         Cotton discovery = new Cotton(true, 8161);
         GlobalDnsStub gDns = new GlobalDnsStub();
@@ -300,16 +307,17 @@ public class TestRequestQueue {
         Cotton ser1 = new Cotton(false, gDns);
         Cotton ser2 = new Cotton(false, gDns);
         Cotton ser3 = new Cotton(false, gDns);
-
+        AtomicInteger counter = new AtomicInteger(0);
+        MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
         ser1.getServiceRegistation().registerService("ser01", MathPowV2.getFactory(), 10);
         ser2.getServiceRegistation().registerService("ser02", MathPowV2.getFactory(), 142);
-        ser2.getServiceRegistation().registerService("ser03", MathResult.getFactory(), 11);
+        ser2.getServiceRegistation().registerService("ser03", resFactory, 11);
         ser1.getServiceRegistation().registerService("ser04", MathPowV2.getFactory(), 10);
         ser2.getServiceRegistation().registerService("ser05", MathPowV2.getFactory(), 140);
-        ser2.getServiceRegistation().registerService("ser06", MathResult.getFactory(), 10);
+        ser2.getServiceRegistation().registerService("ser06", resFactory, 10);
         ser1.getServiceRegistation().registerService("ser07", MathPowV2.getFactory(), 11);
         ser2.getServiceRegistation().registerService("ser08", MathPowV2.getFactory(), 10);
-        ser2.getServiceRegistation().registerService("ser09", MathResult.getFactory(), 10);
+        ser2.getServiceRegistation().registerService("ser09", resFactory, 10);
         ser1.start();
         ser2.start();
         ser3.start();
@@ -349,6 +357,7 @@ public class TestRequestQueue {
             }
 
         }
+        System.out.println("Completed chains: " + resFactory.getCounter().intValue());
         //Cotton discovery = new Cotton(true,3333);
         //Cotton discovery = new Cotton(true,3333);
         queueInstance.shutdown();
@@ -397,6 +406,9 @@ public class TestRequestQueue {
         Cotton[] serArr2 = new Cotton[countInst];
         Cotton[] serArr3 = new Cotton[countInst];
 
+        AtomicInteger counter = new AtomicInteger(0);
+        MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
+        
         System.out.println("Starting services:");
         for (int i = 0; i < countInst; i++) {
             serArr1[i] = new Cotton(false, gDns);
@@ -404,7 +416,7 @@ public class TestRequestQueue {
             serArr3[i] = new Cotton(false, gDns);
             serArr1[i].getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
             serArr2[i].getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
-            serArr3[i].getServiceRegistation().registerService("result", MathResult.getFactory(), 10);
+            serArr3[i].getServiceRegistation().registerService("result", resFactory, 10);
 
         }
         System.out.print("done\n");
@@ -444,6 +456,7 @@ public class TestRequestQueue {
             serArr2[i].shutdown();
             serArr3[i].shutdown();
         }
+        System.out.println("Completed chains: " + resFactory.getCounter().intValue());
         discovery.shutdown();
         assertTrue(65536 == num);
 

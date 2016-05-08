@@ -6,12 +6,14 @@
 package cotton.example.cloudexample;
 
 import cotton.Cotton;
+import cotton.services.ServiceFactory;
 import cotton.test.services.GlobalDnsStub;
 import cotton.test.services.MathPowV2;
 import cotton.test.services.MathResult;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,8 +25,9 @@ public class ServiceExample1 {
     public static void main(String[] args) throws UnknownHostException {
         GlobalDnsStub gDns = getDnsStub("127.0.01", 9546);
         Cotton cotton = new Cotton(false, gDns);
+        ServiceFactory factory = MathResult.getFactory(new AtomicInteger(0));
         cotton.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
-        cotton.getServiceRegistation().registerService("result", MathResult.getFactory(), 10);
+        cotton.getServiceRegistation().registerService("result", factory, 10);
         cotton.start();
         try {
             Thread.sleep(80000);

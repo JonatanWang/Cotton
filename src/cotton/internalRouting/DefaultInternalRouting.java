@@ -498,6 +498,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 }
                 break;
             case NOTFOUND:
+                System.out.println("resolveDestination: NOTFOUND");
                 break;
 
             default:

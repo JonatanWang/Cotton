@@ -47,6 +47,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import cotton.services.Service;
 import cotton.services.ServiceFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
@@ -54,23 +55,38 @@ import cotton.services.ServiceFactory;
  */
 public class MathResult implements Service{
 
+    public AtomicInteger resCount = new AtomicInteger(0);
+
+    public MathResult(AtomicInteger counter) {
+        this.resCount = counter;
+    }
+    
     @Override
     public byte[] execute(CloudContext ctx, Origin origin, byte[] data, ServiceChain to) {
         int num = 0;
         num = ByteBuffer.wrap(data).getInt();
         System.out.print(".");
+        resCount.incrementAndGet();
         return data;
     }
 
-    public static ServiceFactory getFactory() {
-        return new Factory();
+    public static ServiceFactory getFactory(AtomicInteger counter) {
+        return new Factory(counter);
     }
 
     public static class Factory implements ServiceFactory {
-
+        private  AtomicInteger resCount ;
+        public Factory(AtomicInteger counter) {
+            this.resCount = counter;
+        }
+        
+        public AtomicInteger getCounter() {
+            return resCount;
+        }
+        
         @Override
         public Service newService() {
-            return new MathResult();
+            return new MathResult(resCount);
         }
     }
 }

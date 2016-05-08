@@ -58,6 +58,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -122,9 +123,11 @@ public class TestCommandControl {
         Cotton ser2 = new Cotton(false, gDns);
         Cotton ser3 = new Cotton(false, gDns);
 
+        AtomicInteger counter = new AtomicInteger(0);
+        MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
         ser1.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 100);
         ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 1);
-        ser3.getServiceRegistation().registerService("result", MathResult.getFactory(), 1000);
+        ser3.getServiceRegistation().registerService("result", resFactory, 1000);
 
         Cotton cCotton = new Cotton(false, gDns);
         cCotton.start();
@@ -135,10 +138,10 @@ public class TestCommandControl {
         DummyServiceChain.ServiceChainBuilder builder = new DummyServiceChain.ServiceChainBuilder().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
-
+        int sentChains = 1000;
         //ServiceRequest req = client.sendWithResponse(data, chain);
         //chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < sentChains; i++) {
             //chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
             chain = builder.build();
             client.sendToService(data, chain);
@@ -184,13 +187,15 @@ public class TestCommandControl {
 
         //Cotton discovery = new Cotton(true,3333);
         //Cotton discovery = new Cotton(true,3333);
+        int completedChains = resFactory.getCounter().intValue();
+        System.out.println("Completed chains: " + completedChains);
         queueInstance.shutdown();
         discovery.shutdown();
         ser1.shutdown();
         ser2.shutdown();
         ser3.shutdown();
         cCotton.shutdown();
-        assertTrue(2 == num);
+        assertTrue(sentChains == completedChains);
     }
 
     //@Test
