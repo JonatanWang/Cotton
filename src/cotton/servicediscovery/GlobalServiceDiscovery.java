@@ -748,6 +748,16 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     }
 
+    @Override
+    public StatisticsProvider getProvider() {
+        return this;
+    }
+
+    @Override
+    public StatType getStatType() {
+        return StatType.SERVICEDISCOVERY;
+    }
+
     private class DiscoveryLookup implements Runnable {
 
         private Origin origin;

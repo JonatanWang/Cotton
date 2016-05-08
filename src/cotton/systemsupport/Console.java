@@ -31,56 +31,71 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.systemsupport;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 /**
  * 
  * @author Magnus ,Tony
  */
 public class Console {
-    private StatisticsProvider queueManager;
-    private StatisticsProvider serviceDiscvery;
-    private StatisticsProvider serviceHandler;
-
+    private ArrayList<StatisticsProvider> subSystems;
     /**
      * 
      * @param serviceDiscovery
      * @param queueManager
      * @param serviceHandler 
      */
-    public Console(StatisticsProvider serviceDiscovery, StatisticsProvider queueManager, StatisticsProvider serviceHandler) {
-        this.queueManager = queueManager;
-        this.serviceDiscvery = serviceDiscvery;
-        this.serviceHandler = serviceHandler;
+    public Console(StatisticsProvider[] subSystems) {
+        this.subSystems = new ArrayList<>();
+        this.subSystems.addAll(Arrays.asList(subSystems));
+    }
+    
+    public Console(ArrayList<StatisticsProvider> subSystems) {
+        this.subSystems = subSystems;
     }
     
     public Console() {
-        this.queueManager = null;
-        this.serviceDiscvery = null;
-        this.serviceHandler = null;
+        this.subSystems = new ArrayList<>();
     }
 
-    public void setQueueManager(StatisticsProvider queueManager) {
-        this.queueManager = queueManager;
-    }
-
-    public void setServiceDiscvery(StatisticsProvider serviceDiscvery) {
-        this.serviceDiscvery = serviceDiscvery;
-    }
-
-    public void setServiceHandler(StatisticsProvider serviceHandler) {
-        this.serviceHandler = serviceHandler;
-    }
-
-    public StatisticsProvider getQueueManager() {
-        return queueManager;
-    }
-
-    public StatisticsProvider getServiceDiscvery() {
-        return serviceDiscvery;
-    }
-
-    public StatisticsProvider getServiceHandler() {
-        return serviceHandler;
+    public void addSubSystem(StatisticsProvider system){
+        this.subSystems.add(system);
     }
     
+    public StatisticsProvider getProvider(StatType type){
+        for(StatisticsProvider p : subSystems){
+            if(p.getStatType() == type){
+                return p;
+            }
+        }
+        return new EmptyProvider("Unknown provider: " + type.toString());
+    }
     
+    private class EmptyProvider implements StatisticsProvider{
+        private StatisticsData tempData;
+        public EmptyProvider(String message){
+            tempData = new StatisticsData(StatType.UNKNOWN,message,new Integer[0]);
+        }
+        
+        @Override
+        public StatisticsData[] getStatisticsForSubSystem(String name) {
+            return new StatisticsData[0];
+        }
+
+        @Override
+        public StatisticsData getStatistics(String[] name) {
+            return new StatisticsData();
+        }
+
+        @Override
+        public StatisticsProvider getProvider() {
+            return this;
+        }
+
+        @Override
+        public StatType getStatType() {
+            return StatType.UNKNOWN;
+        }
+        
+    }
 }

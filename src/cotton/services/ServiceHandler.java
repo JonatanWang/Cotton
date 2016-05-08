@@ -97,6 +97,16 @@ public class ServiceHandler implements Runnable,StatisticsProvider{
         
     }
 
+    @Override
+    public StatisticsProvider getProvider() {
+        return this;
+    }
+
+    @Override
+    public StatType getStatType() {
+        return StatType.SERVICEHANDLER;
+    }
+
 
     private class ServiceDispatcher implements Runnable{
         private ServiceFactory serviceFactory;

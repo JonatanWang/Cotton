@@ -160,7 +160,16 @@ public class RequestQueueManager implements StatisticsProvider {
         }
         return queue.getStatistics();
     }
+    
+    @Override
+    public StatisticsProvider getProvider() {
+        return this;
+    }
 
+    @Override
+    public StatType getStatType() {
+        return StatType.REQUESTQUEUE;
+    }
     public int getMaxCapacity(String serviceName) {
         RequestQueue queue = internalQueueMap.get(serviceName);
         return queue.getMaxCapacity();

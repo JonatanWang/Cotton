@@ -57,6 +57,7 @@ import cotton.network.DestinationMetaData;
 import cotton.requestqueue.RequestQueueManager;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
+import cotton.systemsupport.StatisticsProvider;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -414,6 +415,16 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     }
 
     @Override
+    public StatisticsProvider getProvider() {
+        return this;
+    }
+
+    @Override
+    public StatType getStatType() {
+        return StatType.SERVICEDISCOVERY;
+    }
+
+    @Override
     public boolean announce() {
         if (localServiceTable == null) {
             return false;
@@ -671,4 +682,5 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             discoveryCache.addAddress(new DestinationMetaData(addr, PathType.DISCOVERY));
         }
     }
+
 }

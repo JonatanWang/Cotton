@@ -161,13 +161,11 @@ public class Cotton {
         internalRouting.start();
         new Thread(services).start();
         discovery.announce();
-        this.console.setServiceDiscvery(this.discovery);
-        this.console.setServiceHandler(services);
+        this.console.addSubSystem(discovery);
+        this.console.addSubSystem(services);
     }
 
     public Console getConsole() {
-        this.console.setServiceDiscvery(this.discovery);
-        this.console.setServiceHandler(services);
         return console;
     }
 
@@ -193,7 +191,7 @@ public class Cotton {
 
     public void setRequestQueueManager(RequestQueueManager requestQueueManager){
         this.internalRouting.setRequestQueueManager(requestQueueManager);
-        this.console.setQueueManager(requestQueueManager);
+        this.console.addSubSystem(requestQueueManager);
     }
     public static void main(String[] args) {
         Cotton c = null;

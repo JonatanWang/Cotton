@@ -55,6 +55,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import cotton.requestqueue.RequestQueueManager;
 import cotton.systemsupport.Console;
+import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatisticsProvider;
 import cotton.test.services.GlobalDnsStub;
@@ -201,7 +202,7 @@ public class TestRequestQueue {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        StatisticsProvider queueManager = queueInstance.getConsole().getQueueManager();
+        StatisticsProvider queueManager = queueInstance.getConsole().getProvider(StatType.REQUESTQUEUE);
         Cotton ser1 = new Cotton(false, gDns);
         Cotton ser2 = new Cotton(false, gDns);
         Cotton ser3 = new Cotton(false, gDns);
@@ -267,7 +268,7 @@ public class TestRequestQueue {
         assertTrue(65536 == num);
     }
 
-    //@Test
+    @Test
     public void TestStatistics() throws UnknownHostException {
         Cotton discovery = new Cotton(true, 8161);
         GlobalDnsStub gDns = new GlobalDnsStub();
@@ -318,11 +319,11 @@ public class TestRequestQueue {
         } catch (InterruptedException ex) {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        StatisticsProvider sd = discovery.getConsole().getServiceDiscvery();
-        StatisticsProvider qm = queueInstance.getConsole().getQueueManager();
-        StatisticsProvider sh1 = ser1.getConsole().getServiceHandler();
-        StatisticsProvider sh2 = ser2.getConsole().getServiceHandler();
-        StatisticsProvider sh3 = ser3.getConsole().getServiceHandler();
+        StatisticsProvider sd = discovery.getConsole().getProvider(StatType.SERVICEDISCOVERY);
+        StatisticsProvider qm = queueInstance.getConsole().getProvider(StatType.REQUESTQUEUE);
+        StatisticsProvider sh1 = ser1.getConsole().getProvider(StatType.SERVICEHANDLER);
+        StatisticsProvider sh2 = ser2.getConsole().getProvider(StatType.SERVICEHANDLER);
+        StatisticsProvider sh3 = ser3.getConsole().getProvider(StatType.SERVICEHANDLER);
         StatisticsData s1 = qm.getStatistics(new String[]{"mathpow21"});
         StatisticsData s2 = qm.getStatistics(new String[]{"mathpow21"});
 
@@ -390,7 +391,7 @@ public class TestRequestQueue {
         ServiceChainBuilder builder1 = new ServiceChainBuilder().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
         ServiceChainBuilder builder2 = new ServiceChainBuilder().into("mathpow21").into("mathpow2").into("mathpow21").into("mathpow2").into("result");
 
-        StatisticsProvider queueManager = queueInstance.getConsole().getQueueManager();
+        StatisticsProvider queueManager = queueInstance.getConsole().getProvider(StatType.REQUESTQUEUE);
         int countInst = 10;
         Cotton[] serArr1 = new Cotton[countInst];
         Cotton[] serArr2 = new Cotton[countInst];
