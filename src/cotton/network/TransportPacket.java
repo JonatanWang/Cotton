@@ -251,6 +251,10 @@ public final class TransportPacket {
        * <code>REQUESTQUEUE = 5;</code>
        */
       REQUESTQUEUE(5, 5),
+      /**
+       * <code>COMMANDCONTROL = 6;</code>
+       */
+      COMMANDCONTROL(6, 6),
       ;
 
       /**
@@ -277,6 +281,10 @@ public final class TransportPacket {
        * <code>REQUESTQUEUE = 5;</code>
        */
       public static final int REQUESTQUEUE_VALUE = 5;
+      /**
+       * <code>COMMANDCONTROL = 6;</code>
+       */
+      public static final int COMMANDCONTROL_VALUE = 6;
 
 
       public final int getNumber() { return value; }
@@ -289,6 +297,7 @@ public final class TransportPacket {
           case 3: return UNKNOWN;
           case 4: return NOTFOUND;
           case 5: return REQUESTQUEUE;
+          case 6: return COMMANDCONTROL;
           default: return null;
         }
       }
@@ -2029,15 +2038,16 @@ public final class TransportPacket {
   static {
     java.lang.String[] descriptorData = {
       "\n\025TransportPacket.proto\022\016cotton.network\"" +
-      "\206\002\n\006Packet\022\021\n\tkeepalive\030\001 \001(\010\0221\n\010pathtyp" +
+      "\232\002\n\006Packet\022\021\n\tkeepalive\030\001 \001(\010\0221\n\010pathtyp" +
       "e\030\002 \001(\0162\037.cotton.network.Packet.PathType" +
       "\022\014\n\004data\030\003 \001(\014\022&\n\006origin\030\004 \001(\0132\026.cotton." +
       "network.Origin\022\014\n\004path\030\006 \003(\t\022\022\n\nactiveli" +
-      "nk\030\007 \001(\010\"^\n\010PathType\022\t\n\005RELAY\020\000\022\r\n\tDISCO" +
+      "nk\030\007 \001(\010\"r\n\010PathType\022\t\n\005RELAY\020\000\022\r\n\tDISCO" +
       "VERY\020\001\022\013\n\007SERVICE\020\002\022\013\n\007UNKNOWN\020\003\022\014\n\010NOTF" +
-      "OUND\020\004\022\020\n\014REQUESTQUEUE\020\005\"F\n\006Origin\022\017\n\007la" +
-      "tchId\030\001 \001(\t\022\021\n\trequestId\030\002 \001(\t\022\n\n\002ip\030\003 \001" +
-      "(\t\022\014\n\004port\030\004 \001(\005B\021B\017TransportPacket"
+      "OUND\020\004\022\020\n\014REQUESTQUEUE\020\005\022\022\n\016COMMANDCONTR" +
+      "OL\020\006\"F\n\006Origin\022\017\n\007latchId\030\001 \001(\t\022\021\n\treque" +
+      "stId\030\002 \001(\t\022\n\n\002ip\030\003 \001(\t\022\014\n\004port\030\004 \001(\005B\021B\017",
+      "TransportPacket"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

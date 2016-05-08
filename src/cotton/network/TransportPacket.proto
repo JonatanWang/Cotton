@@ -43,6 +43,7 @@ enum PathType{
 		UNKNOWN = 3;
     NOTFOUND = 4;
     REQUESTQUEUE = 5;
+    COMMANDCONTROL = 6;
 }
 
   optional bool keepalive = 1;

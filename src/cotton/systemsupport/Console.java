@@ -31,6 +31,7 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.systemsupport;
 
+import cotton.network.NetworkPacket;
 import java.util.ArrayList;
 import java.util.Arrays;
 /**
@@ -69,6 +70,10 @@ public class Console {
             }
         }
         return new EmptyProvider("Unknown provider: " + type.toString());
+    }
+    
+    public void processCommand(NetworkPacket packet) {
+        
     }
     
     private class EmptyProvider implements StatisticsProvider{

@@ -158,6 +158,7 @@ public class Cotton {
 */
     public void start(){
         new Thread(network).start();
+        internalRouting.setCommandControl(console);
         internalRouting.start();
         new Thread(services).start();
         discovery.announce();

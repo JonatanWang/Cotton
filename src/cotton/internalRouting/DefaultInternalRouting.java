@@ -54,6 +54,7 @@ import java.util.logging.Logger;
 import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.servicediscovery.GlobalServiceDiscovery;
 import cotton.requestqueue.RequestQueueManager;
+import cotton.systemsupport.Console;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -72,6 +73,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     private ServiceBuffer serviceHandlerBridge;
     private RouteDispatcher dispatcher = null;
     private RequestQueueManager requestQueueManager = null;
+    private Console commandConsole = null;
 
     public DefaultInternalRouting(NetworkHandler networkHandler, ServiceDiscovery discovery) {
         this.networkHandler = networkHandler;
@@ -95,6 +97,10 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         this.requestQueueManager.setNetworkHandler(networkHandler);
     }
 
+    public void setCommandControl(Console commandConsole) {
+        this.commandConsole = commandConsole;
+    }
+    
     /**
      * The InternalRoutingNetwork implementation
      */
@@ -578,6 +584,10 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
 
             switch (packet.getType()) {
                 case RELAY:
+                    break;
+                case COMMANDCONTROL:
+                    if(commandConsole != null)
+                        commandConsole.processCommand(packet);
                     break;
                 case DISCOVERY:
                     discovery.discoveryUpdate(packet.getOrigin(), packet.getData());
