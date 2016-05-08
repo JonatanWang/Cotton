@@ -288,6 +288,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     @Override
     public boolean notifyRequestQueue(DestinationMetaData destination, RouteSignal route, String serviceName) {
         // TODO: actually notify the queue
+        destination.setPathType(PathType.REQUESTQUEUEUPDATE);
         Origin origin = new Origin();
         origin.setAddress(this.localAddress);
         byte[] data = serviceName.getBytes(StandardCharsets.UTF_8);
@@ -342,6 +343,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         // TODO: actually notify the queue
         DestinationMetaData destination = new DestinationMetaData();
         RouteSignal route = discovery.getRequestQueueDestination(destination, serviceName);
+        destination.setPathType(PathType.REQUESTQUEUEUPDATE);
         Origin origin = new Origin();
         origin.setAddress(this.localAddress);
         byte[] data = serviceName.getBytes(StandardCharsets.UTF_8);
@@ -582,6 +584,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 return;
             }
 
+            String serviceName = null;
             switch (packet.getType()) {
                 case RELAY:
                     break;
@@ -597,19 +600,21 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                     serviceHandlerBridge.add(servicePacket);
                     break;
                 case REQUESTQUEUE:
-                    ServiceChain pathChain = packet.getPath();
-                    byte[] data = packet.getData();
-                    String serviceName = null;
                     if (requestQueueManager == null) {
                         break; // TODO: give error
                     }
+                    ServiceChain pathChain = packet.getPath();
                     if (pathChain != null && (serviceName = pathChain.peekNextServiceName()) != null) {
                         requestQueueManager.queueService(packet, serviceName);
-                    } else {
-                        serviceName = new String(data, StandardCharsets.UTF_8);
-                        //System.out.println("serviceName: " + serviceName);
-                        requestQueueManager.addAvailableInstance(packet.getOrigin(), serviceName);
                     }
+                    break;
+                case REQUESTQUEUEUPDATE:
+                    byte[] data = packet.getData();
+                    if (requestQueueManager == null) {
+                        break; // TODO: give error
+                    }
+                    serviceName = new String(data, StandardCharsets.UTF_8);
+                    requestQueueManager.addAvailableInstance(packet.getOrigin(), serviceName);
                     break;
                 case UNKNOWN:
                     System.out.println("PacketType unknown in process packet");
