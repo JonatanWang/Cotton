@@ -424,6 +424,27 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     public StatType getStatType() {
         return StatType.SERVICEDISCOVERY;
     }
+    private void processProbeRequest(Origin origin, DiscoveryProbe probe) {
+        if(probe.getAddress() == null)
+            return;
+
+        AddressPool pool = null;
+        if(localServiceTable.getAddress() == null){
+            return;
+        }
+
+        DestinationMetaData addr = origin.getAddress();
+        probe.setAddress(addr);
+        DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE);
+        packet.setProbe(probe);
+        byte[] data = new byte[0];
+        try {
+            data = serializeToBytes(packet);
+        } catch (IOException ex) {
+
+        }
+        internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, data);
+    }
 
     @Override
     public boolean announce() {
@@ -520,7 +541,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         //      + " from: " + ((InetSocketAddress) origin.getAddress()).toString());
         switch (type) {
             case DISCOVERYREQUEST:
-                //processProbeRequest(origin, packet.getProbe());
+                processProbeRequest(origin, packet.getProbe());
                 break;
             case DISCOVERYRESPONSE:
                 //localDiscovery.updateHandling(from, packet);
@@ -646,27 +667,6 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     }
 
     public boolean announceQueues(RequestQueueManager queueManager) {
-        /*String[] nameList = queueManager.getActiveQueues();
-        DestinationMetaData dest = discoveryCache.getAddress();
-        if(dest == null){
-            System.out.println("dest is null in announceQueues localServiceDiscovery");
-            return false;
-        }
-        if(queueManager == null){
-            System.out.println("queue list is null in announceQueues localServiceDiscovery");
-            return false;
-        }
-        QueuePacket queuePacket = new QueuePacket(localAddress,nameList);
-        DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
-        discoveryPacket.setQueue(queuePacket);
-        
-        try{
-            byte[] data = serializeToBytes(discoveryPacket);
-            internalRouting.SendToDestination(dest,data);
-        }catch(IOException e){
-            e.printStackTrace();
-            return false;
-        }*/
         this.queueManager = queueManager;
         return true;
     }
