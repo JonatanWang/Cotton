@@ -429,12 +429,10 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             return;
 
         AddressPool pool = null;
-        if(localServiceTable.getAddress() == null){
-            return;
+        if(localServiceTable.getService(probe.getName()) == null){
+            probe.setAddress(null);
         }
 
-        DestinationMetaData addr = origin.getAddress();
-        probe.setAddress(addr);
         DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE);
         packet.setProbe(probe);
         byte[] data = new byte[0];

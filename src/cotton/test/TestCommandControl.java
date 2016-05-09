@@ -65,7 +65,11 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
-
+import cotton.internalRouting.DefaultInternalRouting;
+import java.nio.charset.StandardCharsets;
+import java.net.SocketAddress;
+import cotton.servicediscovery.LocalServiceDiscovery;
+import cotton.internalRouting.DefaultServiceRequest;
 /**
  *
  * @author Tony
@@ -320,5 +324,34 @@ public class TestCommandControl {
         ObjectOutputStream objectStream = new ObjectOutputStream(stream);
         objectStream.writeObject(data);
         return stream.toByteArray();
+    }
+
+    @Test
+    public void TestServiceRequestTimeout(){
+        GlobalDnsStub stub = new GlobalDnsStub();
+        stub.setGlobalDiscoveryAddress(new InetSocketAddress[0]);
+        DefaultInternalRouting internalRouting = new DefaultInternalRouting(new NetworkHandlerStub(new InetSocketAddress("127.0.0.1",16392)),new LocalServiceDiscovery(stub));
+        DefaultServiceRequest req = (DefaultServiceRequest)internalRouting.newServiceRequest(new Origin(),200);
+        new Thread(new Runnable(){
+                @Override
+                public void run(){
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ex) {
+                        //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    req.setData("Hej".getBytes());
+                }
+            }).start();
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ex) {
+                //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+            }
+       
+            byte[] data = req.getData();
+            String s = new String(data,StandardCharsets.UTF_16);
+        
+        assertTrue("SocketRequest timed out ".equals(s));
     }
 }
