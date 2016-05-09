@@ -344,7 +344,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
                 return new StatisticsData[0];
             }
             StatisticsData[] ret = new StatisticsData[1];
-            ret[0] = new StatisticsData<DestinationMetaData>(StatType.SERVICEDISCOVERY, name, discoveryNodes);
+            ret[0] = new StatisticsData<DestinationMetaData>(StatType.DISCOVERY, name, discoveryNodes);
             return ret;
         }
 
@@ -352,7 +352,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             ArrayList<StatisticsData> result = new ArrayList<>();
             for (Map.Entry<String, AddressPool> entry : this.activeQueue.entrySet()) {
                 DestinationMetaData[] nodes = connectedRequestQueueNode(entry.getKey());
-                result.add(new StatisticsData(StatType.SERVICEDISCOVERY, entry.getKey(), nodes));
+                result.add(new StatisticsData(StatType.DISCOVERY, entry.getKey(), nodes));
             }
             StatisticsData[] ret = result.toArray(new StatisticsData[result.size()]);
             return ret;
@@ -362,7 +362,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             ArrayList<StatisticsData> result = new ArrayList<>();
             for (Map.Entry<String, AddressPool> entry : this.serviceCache.entrySet()) {
                 DestinationMetaData[] nodes = connectedServiceNode(entry.getKey());
-                result.add(new StatisticsData(StatType.SERVICEDISCOVERY, entry.getKey(), nodes));
+                result.add(new StatisticsData(StatType.DISCOVERY, entry.getKey(), nodes));
             }
             StatisticsData[] ret = result.toArray(new StatisticsData[result.size()]);
             return ret;
@@ -378,7 +378,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             if (discoveryNodes.length <= 0) {
                 return new StatisticsData();
             }
-            return new StatisticsData(StatType.SERVICEDISCOVERY, name[0], discoveryNodes);
+            return new StatisticsData(StatType.DISCOVERY, name[0], discoveryNodes);
 
         }
 
@@ -390,7 +390,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             if (reqQueueNodes.length <= 0) {
                 return new StatisticsData();
             }
-            return new StatisticsData(StatType.SERVICEDISCOVERY, name[1], reqQueueNodes);
+            return new StatisticsData(StatType.DISCOVERY, name[1], reqQueueNodes);
 
         }
 
@@ -399,7 +399,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             if (reqQueueNodes.length <= 0) {
                 return new StatisticsData();
             }
-            return new StatisticsData(StatType.SERVICEDISCOVERY, name[1], reqQueueNodes);
+            return new StatisticsData(StatType.DISCOVERY, name[1], reqQueueNodes);
 
         }
 
@@ -408,7 +408,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             if (servNodes.length <= 0) {
                 return new StatisticsData();
             }
-            return new StatisticsData(StatType.SERVICEDISCOVERY, name[1], servNodes);
+            return new StatisticsData(StatType.DISCOVERY, name[1], servNodes);
 
         }
 
@@ -422,7 +422,26 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
 
     @Override
     public StatType getStatType() {
-        return StatType.SERVICEDISCOVERY;
+        return StatType.DISCOVERY;
+    }
+    private void processProbeRequest(Origin origin, DiscoveryProbe probe) {
+        if(probe.getAddress() == null)
+            return;
+
+        AddressPool pool = null;
+        if(localServiceTable.getService(probe.getName()) == null){
+            probe.setAddress(null);
+        }
+
+        DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE);
+        packet.setProbe(probe);
+        byte[] data = new byte[0];
+        try {
+            data = serializeToBytes(packet);
+        } catch (IOException ex) {
+
+        }
+        internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, data);
     }
 
     @Override
@@ -520,7 +539,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         //      + " from: " + ((InetSocketAddress) origin.getAddress()).toString());
         switch (type) {
             case DISCOVERYREQUEST:
-                //processProbeRequest(origin, packet.getProbe());
+                processProbeRequest(origin, packet.getProbe());
                 break;
             case DISCOVERYRESPONSE:
                 //localDiscovery.updateHandling(from, packet);
@@ -646,27 +665,6 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     }
 
     public boolean announceQueues(RequestQueueManager queueManager) {
-        /*String[] nameList = queueManager.getActiveQueues();
-        DestinationMetaData dest = discoveryCache.getAddress();
-        if(dest == null){
-            System.out.println("dest is null in announceQueues localServiceDiscovery");
-            return false;
-        }
-        if(queueManager == null){
-            System.out.println("queue list is null in announceQueues localServiceDiscovery");
-            return false;
-        }
-        QueuePacket queuePacket = new QueuePacket(localAddress,nameList);
-        DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
-        discoveryPacket.setQueue(queuePacket);
-        
-        try{
-            byte[] data = serializeToBytes(discoveryPacket);
-            internalRouting.SendToDestination(dest,data);
-        }catch(IOException e){
-            e.printStackTrace();
-            return false;
-        }*/
         this.queueManager = queueManager;
         return true;
     }
@@ -699,6 +697,11 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         return RouteSignal.NETWORKDESTINATION;
     }
 
+    @Override
+    public boolean processCommand(Command command) {
+        return false;
+    }
+    
     private void processConfigPacket(ConfigurationPacket packet) {
         if (packet == null) {
             return;

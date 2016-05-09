@@ -34,6 +34,7 @@ package cotton.systemsupport;
 import cotton.network.NetworkPacket;
 import cotton.servicediscovery.DiscoveryPacket;
 import cotton.servicediscovery.GlobalServiceDiscovery;
+import cotton.servicediscovery.ServiceDiscovery;
 import cotton.services.ServiceHandler;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -92,6 +93,10 @@ public class Console {
             case SERVICEHANDLER:
                 ServiceHandler serviceHandler = (ServiceHandler)getProvider(StatType.SERVICEHANDLER);
                 serviceHandler.setServiceConfig(command.getName(), command.getAmount());
+                break;
+            case DISCOVERY:
+                ServiceDiscovery serviceDiscovery = (ServiceDiscovery)getProvider(StatType.DISCOVERY);
+                serviceDiscovery.processCommand(command);
                 break;
             default:
                 System.out.println("WRONG COMMAND TYPE IN CLASS CONSOLE PROCESSCOMMAND" + command.getType());

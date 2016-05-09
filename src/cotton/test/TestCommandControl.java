@@ -65,6 +65,17 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import cotton.internalRouting.DefaultInternalRouting;
+import java.nio.charset.StandardCharsets;
+import java.net.SocketAddress;
+import cotton.servicediscovery.LocalServiceDiscovery;
+import cotton.internalRouting.DefaultServiceRequest;
+import cotton.network.DestinationMetaData;
+import cotton.servicediscovery.AddressPool;
+import cotton.servicediscovery.GlobalServiceDiscovery;
+import cotton.servicediscovery.RouteSignal;
+import cotton.servicediscovery.ServiceDiscovery;
+import cotton.systemsupport.CommandType;
 
 /**
  *
@@ -164,8 +175,9 @@ public class TestCommandControl {
                 Thread.sleep(100);
                 StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
                 System.out.println(dataArrToStr(stats));
-                if(resFactory.getCounter().intValue() == sentChains)
+                if (resFactory.getCounter().intValue() == sentChains) {
                     break;
+                }
             } catch (InterruptedException ex) {
                 //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
             }/*
@@ -179,7 +191,7 @@ public class TestCommandControl {
         }
         StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
         System.out.println(dataArrToStr(stats));
-         for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 100; i++) {
             try {
                 Thread.sleep(10);
                 if (resFactory.getCounter().intValue() == sentChains) {
@@ -256,7 +268,7 @@ public class TestCommandControl {
         Console console1 = discovery.getConsole();
         Console console3 = queue.getConsole();
         StatisticsProvider queueStat = console3.getProvider(StatType.REQUESTQUEUE);
-        StatisticsProvider discStat = console1.getProvider(StatType.SERVICEDISCOVERY);
+        StatisticsProvider discStat = console1.getProvider(StatType.DISCOVERY);
         StatisticsProvider serviceHandlerStat = console.getProvider(StatType.SERVICEHANDLER);
         if (queueStat == null) {
             assertTrue(queueStat != null);
@@ -320,5 +332,116 @@ public class TestCommandControl {
         ObjectOutputStream objectStream = new ObjectOutputStream(stream);
         objectStream.writeObject(data);
         return stream.toByteArray();
+    }
+
+    @Test
+    public void TestServiceRequestTimeout() {
+        GlobalDnsStub stub = new GlobalDnsStub();
+        stub.setGlobalDiscoveryAddress(new InetSocketAddress[0]);
+        DefaultInternalRouting internalRouting = new DefaultInternalRouting(new NetworkHandlerStub(new InetSocketAddress("127.0.0.1", 16392)), new LocalServiceDiscovery(stub));
+        DefaultServiceRequest req = (DefaultServiceRequest) internalRouting.newServiceRequest(new Origin(), 200);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ex) {
+                    //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                req.setData("Hej".getBytes());
+            }
+        }).start();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        byte[] data = req.getData();
+        String s = null;
+        if (data == null) {
+            s = req.getErrorMessage();
+        }
+
+        assertTrue("SocketRequest timed out ".equals(s));
+    }
+
+    @Test
+    public void TestNodesServiceReachabillity() throws UnknownHostException {
+        Cotton discovery = new Cotton(true, 14490);
+        GlobalDnsStub gDns = new GlobalDnsStub();
+
+        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 14490);
+        InetSocketAddress[] arr = new InetSocketAddress[1];
+        arr[0] = gdAddr;
+        gDns.setGlobalDiscoveryAddress(arr);
+
+        discovery.start();
+
+        Cotton ser1 = new Cotton(false, gDns);
+        Cotton ser2 = new Cotton(false, gDns);
+
+        ser1.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
+        ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
+        ser1.start();
+        ser2.start();
+
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        ser2.shutdown();
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        Command command = new Command(StatType.DISCOVERY, null, 0, CommandType.CHECKREACHABILLITY);
+        byte[] data = null;
+        try {
+            data = serializeToBytes(command);
+        } catch (IOException e) {
+        }
+        NetworkPacket packet = NetworkPacket.newBuilder().setData(data).build();
+        discovery.getConsole().processCommand(packet);
+        try {
+            Thread.sleep(1050);
+        } catch (InterruptedException ex) {
+            System.out.println("EXCEPTION INTERRUPTED");
+            ex.printStackTrace();
+
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        Console console = ser1.getConsole();
+        ServiceDiscovery serviceDiscovery1 = (ServiceDiscovery) console.getProvider(StatType.DISCOVERY);
+        RouteSignal route = serviceDiscovery1.getDestination(new DestinationMetaData(), new Origin(), new DummyServiceChain().into("mathpow21"));
+        RouteSignal route1 = serviceDiscovery1.getDestination(new DestinationMetaData(), new Origin(), new DummyServiceChain().into("mathpow2"));
+
+        discovery.shutdown();
+        ser1.shutdown();
+        System.out.println("Routesignal route: " + route);
+        System.out.println("Routesignal route1: " + route1);
+        assertTrue(route == RouteSignal.NOTFOUND);
+    }
+
+    @Test
+    public void addressPoolTest() {
+        AddressPool pool = new AddressPool();
+        DestinationMetaData dest = new DestinationMetaData(new InetSocketAddress("127.0.0.1", 18762), PathType.DISCOVERY);
+        DestinationMetaData dest1 = new DestinationMetaData(new InetSocketAddress("127.0.0.1", 18762), PathType.SERVICE);
+        DestinationMetaData dest2 = new DestinationMetaData(new InetSocketAddress("127.0.0.1", 18767), PathType.DISCOVERY);
+        DestinationMetaData dest3 = new DestinationMetaData(new InetSocketAddress("125.213.31.92", 18762), PathType.DISCOVERY);
+        pool.addAddress(dest);
+        boolean b = pool.remove(dest1);
+        boolean b1 = pool.remove(dest2);
+        boolean b2 = pool.remove(dest3);
+        boolean b3 = pool.remove(dest);
+        boolean b4 = pool.remove(dest);
+        assertTrue(!b && !b1 && !b2 && b3 && !b4);
     }
 }

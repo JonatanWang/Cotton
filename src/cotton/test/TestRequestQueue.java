@@ -333,7 +333,7 @@ public class TestRequestQueue {
         } catch (InterruptedException ex) {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        StatisticsProvider sd = discovery.getConsole().getProvider(StatType.SERVICEDISCOVERY);
+        StatisticsProvider sd = discovery.getConsole().getProvider(StatType.DISCOVERY);
         StatisticsProvider qm = queueInstance.getConsole().getProvider(StatType.REQUESTQUEUE);
         StatisticsProvider sh1 = ser1.getConsole().getProvider(StatType.SERVICEHANDLER);
         StatisticsProvider sh2 = ser2.getConsole().getProvider(StatType.SERVICEHANDLER);
