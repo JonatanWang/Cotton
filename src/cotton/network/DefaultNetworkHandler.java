@@ -243,7 +243,6 @@ public class DefaultNetworkHandler implements NetworkHandler {
             InetSocketAddress is = (InetSocketAddress) s;
             if(is.getAddress().equals(idest.getAddress()) && is.getPort() == idest.getPort()){
                conn = openSockets.get(s);
-               System.out.println("Sending over active");
                tp = buildTransportPacket(packet);
                break;
             }
@@ -255,7 +254,6 @@ public class DefaultNetworkHandler implements NetworkHandler {
             conn = new Connection(socket);
             openSockets.putIfAbsent(dest, conn);
             assignListener(conn);
-            System.out.println("Sending over new");
             tp = buildTransportPacket(packet, localPort);
         }
 
@@ -276,18 +274,27 @@ public class DefaultNetworkHandler implements NetworkHandler {
         if(packet == null) throw new NullPointerException("Null data");
         if(dest == null) throw new NullPointerException("Null destination");
         Connection conn = null;
+        InetSocketAddress idest = (InetSocketAddress) dest;
+        TransportPacket.Packet tp = null;
 
-        if(openSockets.containsKey(dest))
-            conn = openSockets.get(dest);
-        else{
+        for(SocketAddress s: openSockets.keySet()){
+            InetSocketAddress is = (InetSocketAddress) s;
+            if(is.getAddress().equals(idest.getAddress()) && is.getPort() == idest.getPort()){
+                conn = openSockets.get(s);
+                tp = buildTransportPacket(packet);
+                break;
+            }
+        }
+
+        if(conn == null){
             Socket socket = new Socket();
             socket.connect(dest);
             conn = new Connection(socket, 50000);
             openSockets.putIfAbsent(dest, conn);
             assignListener(conn);
+            tp = buildTransportPacket(packet, true, localPort);
         }
 
-        TransportPacket.Packet tp = buildTransportPacket(packet, true);
         try {
             tp.writeDelimitedTo(conn.getSocket().getOutputStream());
         }catch(SocketException e){
