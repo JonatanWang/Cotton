@@ -39,5 +39,6 @@ package cotton.internalRouting;
  */
 public interface ServiceRequest {
     public byte[] getData();
-    public void setFailed(byte[] errorMessage);
+    public void setFailed(String errorMessage);
+    public String getErrorMessage();
 }

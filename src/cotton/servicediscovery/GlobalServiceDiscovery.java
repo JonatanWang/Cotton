@@ -32,6 +32,7 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.servicediscovery;
 
 import cotton.internalRouting.InternalRoutingServiceDiscovery;
+import cotton.internalRouting.ServiceRequest;
 import cotton.network.DestinationMetaData;
 import cotton.network.NetworkPacket;
 import cotton.network.Origin;
@@ -53,6 +54,7 @@ import java.io.ObjectOutputStream;
 import java.util.concurrent.ConcurrentHashMap.KeySetView;
 import cotton.services.ServiceMetaData;
 import cotton.systemsupport.Command;
+import cotton.systemsupport.CommandType;
 import java.util.ArrayList;
 import java.io.Serializable;
 import java.util.concurrent.ExecutorService;
@@ -232,6 +234,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             path = (path == null) ? PathType.SERVICE : path;
             destination.setPathType(path); // default pathType for now
             signal = RouteSignal.NETWORKDESTINATION;
+            return signal;
         }
 
         return signal;
@@ -366,6 +369,31 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         return stream.toByteArray();
     }
 
+    private void validateServiceActivity(){
+        AddressPool pool;
+        DestinationMetaData[] destinations;
+        for(Map.Entry<String,AddressPool>entry: serviceCache.entrySet()){
+            pool = entry.getValue();
+            destinations = pool.copyPoolData();
+            String key = entry.getKey();;
+            for(int i =0; i<destinations.length; i++){
+                DiscoveryProbe probe = new DiscoveryProbe(key,destinations[i]);
+                DiscoveryPacket response = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
+                response.setProbe(probe);
+                byte[] data = null;
+                try{
+                    data = serializeToBytes(response);
+                }catch(IOException e){}
+                DestinationMetaData target = new DestinationMetaData(destinations[i].getSocketAddress(),PathType.DISCOVERY);
+                ServiceRequest request = internalRouting.sendWithResponse(target, data, 70);
+                if(request == null || request.getData() == null){
+                    boolean flag =pool.remove(destinations[i]);
+                    System.out.println("FLAG VALUE" + flag);
+                }
+            }
+        }
+    }
+    
     @Override
     public void stop() {
         threadPool.shutdown();
@@ -602,12 +630,26 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             }
             DestinationMetaData dest = pool.getAddress();
             dest.setPathType(PathType.COMMANDCONTROL);
-            Command command = new Command(StatType.SERVICEHANDLER, circuit.getCircuitName(), 100);
-            Command com = new Command(StatType.SERVICEHANDLER, "mathpow21", 100);
+            Command com = new Command(StatType.SERVICEHANDLER, "mathpow21", 100,CommandType.CHANGEACTIVEAMOUNT);
             sendCommandPacket(dest, com);
         }
     }
 
+    @Override
+    public boolean processCommand(Command command) {
+        if(command.getCommandType() == CommandType.CHECKREACHABILLITY){
+            threadPool.execute(new Runnable(){
+                @Override
+                public void run() {
+                    validateServiceActivity();
+                }
+            });
+            return true;
+        }
+       return false;
+    }
+
+    
     private boolean sendCommandPacket(DestinationMetaData destination, Command command) {
         byte[] data;
         try {
@@ -707,7 +749,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                 return new StatisticsData[0];
             }
             StatisticsData[] ret = new StatisticsData[1];
-            ret[0] = new StatisticsData<DestinationMetaData>(StatType.SERVICEDISCOVERY, name, discoveryNodes);
+            ret[0] = new StatisticsData<DestinationMetaData>(StatType.DISCOVERY, name, discoveryNodes);
             return ret;
         }
 
@@ -715,7 +757,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             ArrayList<StatisticsData> result = new ArrayList<>();
             for (Map.Entry<String, AddressPool> entry : this.activeQueue.entrySet()) {
                 DestinationMetaData[] nodes = connectedRequestQueueNode(entry.getKey());
-                result.add(new StatisticsData(StatType.SERVICEDISCOVERY, entry.getKey(), nodes));
+                result.add(new StatisticsData(StatType.DISCOVERY, entry.getKey(), nodes));
             }
             StatisticsData[] ret = result.toArray(new StatisticsData[result.size()]);
             return ret;
@@ -725,7 +767,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             ArrayList<StatisticsData> result = new ArrayList<>();
             for (Map.Entry<String, AddressPool> entry : this.serviceCache.entrySet()) {
                 DestinationMetaData[] nodes = connectedServiceNode(entry.getKey());
-                result.add(new StatisticsData(StatType.SERVICEDISCOVERY, entry.getKey(), nodes));
+                result.add(new StatisticsData(StatType.DISCOVERY, entry.getKey(), nodes));
             }
             StatisticsData[] ret = result.toArray(new StatisticsData[result.size()]);
             return ret;
@@ -741,7 +783,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             if (discoveryNodes.length <= 0) {
                 return new StatisticsData();
             }
-            return new StatisticsData(StatType.SERVICEDISCOVERY, name[0], discoveryNodes);
+            return new StatisticsData(StatType.DISCOVERY, name[0], discoveryNodes);
 
         }
 
@@ -753,7 +795,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             if (reqQueueNodes.length <= 0) {
                 return new StatisticsData();
             }
-            return new StatisticsData(StatType.SERVICEDISCOVERY, name[1], reqQueueNodes);
+            return new StatisticsData(StatType.DISCOVERY, name[1], reqQueueNodes);
 
         }
 
@@ -762,7 +804,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             if (servNodes.length <= 0) {
                 return new StatisticsData();
             }
-            return new StatisticsData(StatType.SERVICEDISCOVERY, name[1], servNodes);
+            return new StatisticsData(StatType.DISCOVERY, name[1], servNodes);
 
         }
 
@@ -777,7 +819,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     @Override
     public StatType getStatType() {
-        return StatType.SERVICEDISCOVERY;
+        return StatType.DISCOVERY;
     }
 
     @Override

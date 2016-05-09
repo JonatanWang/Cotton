@@ -39,6 +39,7 @@ import cotton.network.Origin;
 import cotton.network.ServiceChain;
 import cotton.requestqueue.RequestQueueManager;
 import cotton.services.ActiveServiceLookup;
+import cotton.systemsupport.Command;
 import cotton.systemsupport.StatisticsProvider;
 import java.net.SocketAddress;
 
@@ -58,5 +59,5 @@ public interface ServiceDiscovery extends StatisticsProvider {
     public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName);
     public boolean announceQueues(RequestQueueManager queueManager);
     public DestinationMetaData destinationUnreachable(DestinationMetaData dest,String serviceName);
-    
+    public boolean processCommand(Command command);
 }
