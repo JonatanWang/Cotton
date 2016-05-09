@@ -36,58 +36,75 @@ package cotton.network;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.Arrays;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- *
+ * The <code>AESEncryption</code> consists of encrypt and decrypt methods as 
+ * well as a <code>key</code> setter. Before use the <strong>AES</strong> key 
+ * and <code>initVector</code> must be set.
+ * 
  * @author Gunnlaugur Juliusson
+ * @see Encryption
  */
 public class AESEncryption implements Encryption{
     private String key;
     private String initVector;
     
+    /**
+     * Encrypts the data with <strong>AES</strong> and returns the result.
+     * 
+     * @param data the data to be encrypted.
+     * @return the encrypted data.
+     */
     @Override
-    public byte[] encryptData(byte[] data) {
-        try {
-            IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
-            SecretKeySpec keySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
-            
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-            cipher.init(Cipher.ENCRYPT_MODE, keySpec, iv);
-            
-            byte[] enc = cipher.doFinal(data);
+    public byte[] encryptData(byte[] data) throws UnsupportedEncodingException,
+            NoSuchAlgorithmException, 
+            NoSuchPaddingException,
+            InvalidKeyException, 
+            InvalidAlgorithmParameterException, 
+            IllegalBlockSizeException, 
+            BadPaddingException 
+    {
+        IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
+        SecretKeySpec keySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
 
-            return enc;
-        } catch(Exception e) {
-            System.out.println(e.toString());
-        } //TODO Fix
-        
-        // Should not return data that is not encrypted.
-        return null;
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, iv);
+
+        return cipher.doFinal(data);
     }
 
+    /**
+     * Decrypts the data with <strong>AES</strong> and returns the result.
+     * 
+     * @param data the data to be decrypted.
+     * @return the decrypted data.
+     */
     @Override
-    public byte[] decryptData(byte[] data) {
-        byte[] dec = null;
-        
-        try {
-            IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
-            SecretKeySpec keySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
-            
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-            cipher.init(Cipher.DECRYPT_MODE, keySpec, iv);
-            
-            dec = cipher.doFinal(data);
+    public byte[] decryptData(byte[] data) throws InvalidKeyException, 
+            InvalidAlgorithmParameterException,
+            NoSuchAlgorithmException,
+            UnsupportedEncodingException, 
+            NoSuchPaddingException, 
+            IllegalBlockSizeException, 
+            BadPaddingException 
+    {
+        IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
+        SecretKeySpec keySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
 
-            return dec;
-        } catch(Exception e) {
-            System.out.println(e.toString());
-        } //TODO Fix
-        
-        return null;
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, iv);
+
+        return cipher.doFinal(data);
     }
 
     /**
@@ -95,29 +112,14 @@ public class AESEncryption implements Encryption{
      * The key is required to be a multiple of 16.
      * 
      * @param key the <strong>AES</strong> key to be set.
+     * @throws java.io.IOException
      */
     @Override
-    public void setKey(byte[] key) {
-        ObjectInputStream input = null;
-        String keyAES = null;
-        
-        try {
-            input = new ObjectInputStream(new ByteArrayInputStream(key));
-            keyAES = (String) input.readObject();
-            this.key = keyAES;
-        } catch (IOException ex) {
-            try {
-                throw ex;
-            } catch (IOException ex1) {}
-        } catch (ClassNotFoundException ex) {
-            try {
-                throw ex;
-            } catch (ClassNotFoundException ex1) {}
-        } finally {
-            try {
-                input.close();
-            } catch (IOException ex) {}
-        }
+    public void setKey(byte[] key) throws IOException, ClassNotFoundException{
+        ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(key));
+        String keyAES = (String) input.readObject();
+        this.key = keyAES;
+        input.close();
     }
     
     /**

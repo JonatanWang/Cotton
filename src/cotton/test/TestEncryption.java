@@ -38,9 +38,14 @@ import cotton.network.RSAEncryption;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.security.KeyPair;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -51,7 +56,16 @@ import static org.junit.Assert.*;
 public class TestEncryption {
     
     @Test
-    public void TestEncryption() throws NoSuchAlgorithmException, IOException {
+    public void TestEncryption() throws NoSuchAlgorithmException, 
+            IOException, 
+            ClassNotFoundException, 
+            UnsupportedEncodingException, 
+            NoSuchPaddingException, 
+            InvalidKeyException, 
+            InvalidAlgorithmParameterException, 
+            IllegalBlockSizeException, 
+            BadPaddingException 
+    {
         RSAEncryption rsa = new RSAEncryption();
         AESEncryption aes = new AESEncryption();
 

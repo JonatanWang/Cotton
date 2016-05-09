@@ -32,6 +32,15 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package cotton.network;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
 /**
  * Implementing this interface enables a <code>class</code> to act as a 
  * Encryption handler. The Encryption handler manages both encryption and 
@@ -44,22 +53,55 @@ public interface Encryption {
      * Encrypts a <code>byte array</code> and returns it.
      * 
      * @param data the data to encrypt.
+     * 
      * @return the encrypted result.
+     * 
+     * @throws javax.crypto.BadPaddingException if padding is bad.
+     * @throws javax.crypto.IllegalBlockSizeException if invalid block size.
+     * @throws java.security.InvalidAlgorithmParameterException if algorithm parameter is invalid.
+     * @throws java.security.InvalidKeyException if <code>key</code> is invalid.
+     * @throws java.security.NoSuchAlgorithmException if algorithm does not exist.
+     * @throws javax.crypto.NoSuchPaddingException if padding does not exist.
+     * @throws java.io.UnsupportedEncodingException if encoding is unsupported.
      */
-    public byte[] encryptData(byte[] data);
+    public byte[] encryptData(byte[] data) throws BadPaddingException,
+            IllegalBlockSizeException, 
+            InvalidAlgorithmParameterException,
+            InvalidKeyException,
+            NoSuchAlgorithmException, 
+            NoSuchPaddingException,
+            UnsupportedEncodingException;
     
     /**
      * Decrypts a <code>byte array</code> and returns it.
      * 
      * @param data the data to decrypt.
+     * 
      * @return the decrypted result.
+     * 
+     * @throws javax.crypto.BadPaddingException if padding is bad.
+     * @throws javax.crypto.IllegalBlockSizeException if invalid block size.
+     * @throws java.security.InvalidAlgorithmParameterException if algorithm parameter is invalid.
+     * @throws java.security.InvalidKeyException if <code>key</code> is invalid.
+     * @throws java.security.NoSuchAlgorithmException if algorithm does not exist.
+     * @throws javax.crypto.NoSuchPaddingException if padding does not exist.
+     * @throws java.io.UnsupportedEncodingException if encoding is unsupported.
      */
-    public byte[] decryptData(byte[] data);
+    public byte[] decryptData(byte[] data) throws BadPaddingException,
+            IllegalBlockSizeException,
+            InvalidAlgorithmParameterException,
+            InvalidKeyException,
+            NoSuchAlgorithmException,
+            NoSuchPaddingException,
+            UnsupportedEncodingException;
     
     /**
      * Sets the encryption key for the encryption handler.
      * 
      * @param key the encryption key.
+     * 
+     * @throws java.io.IOException if <code>key</code> conversion fails.
+     * @throws java.lang.ClassNotFoundException if <code>key</code> conversion fails.
      */
-    public void setKey(byte[] key);
+    public void setKey(byte[] key) throws ClassNotFoundException, IOException;
 }
