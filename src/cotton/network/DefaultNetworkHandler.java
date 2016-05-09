@@ -236,18 +236,29 @@ public class DefaultNetworkHandler implements NetworkHandler {
         if(packet == null) throw new NullPointerException("Null data");
         if(dest == null) throw new NullPointerException("Null destination");
         Connection conn = null;
+        InetSocketAddress idest = (InetSocketAddress) dest;
+        TransportPacket.Packet tp = null;
 
-        if(openSockets.containsKey(dest))
-            conn = openSockets.get(dest);
-        else{
+        for(SocketAddress s: openSockets.keySet()){
+            InetSocketAddress is = (InetSocketAddress) s;
+            if(is.getAddress().equals(idest.getAddress()) && is.getPort() == idest.getPort()){
+               conn = openSockets.get(s);
+               System.out.println("Sending over active");
+               tp = buildTransportPacket(packet);
+               break;
+            }
+        }
+
+        if(conn == null){
             Socket socket = new Socket();
             socket.connect(dest);
             conn = new Connection(socket);
             openSockets.putIfAbsent(dest, conn);
             assignListener(conn);
+            System.out.println("Sending over new");
+            tp = buildTransportPacket(packet, localPort);
         }
 
-        TransportPacket.Packet tp = buildTransportPacket(packet);
         try {
             tp.writeDelimitedTo(conn.getSocket().getOutputStream());
         }catch(SocketException e){
@@ -303,7 +314,6 @@ public class DefaultNetworkHandler implements NetworkHandler {
 
         public NetworkUnpacker(Socket socket){
             clientConnection = new Connection(socket);
-            openSockets.putIfAbsent(socket.getRemoteSocketAddress(), clientConnection);
         }
 
         @Override
@@ -312,13 +322,19 @@ public class DefaultNetworkHandler implements NetworkHandler {
             // TODO: ablility  to turn on and off debug msg
             //System.out.println("Incoming connection to: " + clientSocket.getLocalSocketAddress() +" from" + clientSocket.getRemoteSocketAddress());
             try {
-                while(running.get() == true){
+                do{
                     clientConnection.updateTime();
                     TransportPacket.Packet input = TransportPacket.Packet.parseDelimitedFrom(clientSocket.getInputStream());
 
                     if(input == null) {
                         System.out.println("TransportPacket null");
                         return;
+                    }
+
+                    if(input.hasLastHopPort()){
+                        String address = clientSocket.getInetAddress().getHostAddress();
+                        InetSocketAddress s = new InetSocketAddress(address, input.getLastHopPort());
+                        openSockets.putIfAbsent(s, clientConnection);
                     }
                     //// TODO: ablility  to turn on and off debug msg
                     //System.out.println("Pathtype is: "+input.getPathtype());
@@ -332,7 +348,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
                         buildTransportPacket(keepAliveResult).writeDelimitedTo(clientSocket.getOutputStream());
                     }else
                         internalRouting.pushNetworkPacket(np);
-                }
+                }while(running.get() == true);
             } catch(com.google.protobuf.InvalidProtocolBufferException e){
                 if(!e.getMessage().equals("Socket closed"))
                     e.printStackTrace();// TODO: Logging
@@ -420,6 +436,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         builder.setData(com.google.protobuf.ByteString.copyFrom(input.getData()));
 
         builder.setPathtype(TransportPacket.Packet.PathType.valueOf(input.getType().toString()));
+
         return builder;
     }
 
@@ -432,6 +449,20 @@ public class DefaultNetworkHandler implements NetworkHandler {
     public TransportPacket.Packet buildTransportPacket(NetworkPacket input, boolean keepAlive) throws IOException{
         TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
         builder.setKeepalive(keepAlive);
+        return builder.build();
+    }
+
+    public TransportPacket.Packet buildTransportPacket(NetworkPacket input, int port) throws IOException{
+        TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
+        builder.setKeepalive(false);
+        builder.setLastHopPort(port);
+        return builder.build();
+    }
+
+    public TransportPacket.Packet buildTransportPacket(NetworkPacket input, boolean keepAlive, int port) throws IOException{
+        TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
+        builder.setKeepalive(keepAlive);
+        builder.setLastHopPort(port);
         return builder.build();
     }
 }
