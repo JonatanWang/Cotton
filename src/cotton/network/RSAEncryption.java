@@ -109,7 +109,7 @@ public class RSAEncryption implements Encryption {
      * Generates the public and private <strong>RSA</strong> keys with a 
      * byte size of 512.
      * 
-     * @return 
+     * @return a key with a byte size of 512.
      * @throws java.security.NoSuchAlgorithmException <code>KeyPair</code> generation failed. 
      */
     public KeyPair generateRSAKeys() throws NoSuchAlgorithmException {
