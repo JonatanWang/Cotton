@@ -182,7 +182,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     @Override
     public ServiceRequest sendKeepAlive(byte[] data, ServiceChain serviceChain) {
         Origin origin = new Origin();
-        ServiceRequest request = newServiceRequest(origin);
+        ServiceRequest request = newServiceRequest(origin, 0);
         origin.setAddress(localAddress);
         if (resolveDestination(origin, serviceChain, data, true)) {
             return request;
@@ -202,7 +202,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     @Override
     public ServiceRequest sendWithResponse(byte[] data, ServiceChain serviceChain) {
         Origin origin = new Origin();
-        ServiceRequest request = newServiceRequest(origin);
+        ServiceRequest request = newServiceRequest(origin, 0);
         origin.setAddress(localAddress);
         if (resolveDestination(origin, serviceChain, data, false)) {
             return request;
@@ -286,9 +286,9 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      * @return ServiceRequest
      */
     @Override
-    public ServiceRequest sendWithResponse(DestinationMetaData dest, byte[] data) {
+    public ServiceRequest sendWithResponse(DestinationMetaData dest, byte[] data, int timeout) {
         Origin origin = new Origin();
-        ServiceRequest request = newServiceRequest(origin);
+        ServiceRequest request = newServiceRequest(origin, timeout);
         origin.setAddress(this.localAddress);
 
         NetworkPacket packet = prepareForTransmission(origin, null, data, dest.getPathType());
@@ -413,7 +413,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      * @param origin field for service request is filled in
      * @return ServiceRequest that can be used by this system
      */
-    private ServiceRequest newServiceRequest(Origin origin) {
+    private ServiceRequest newServiceRequest(Origin origin, int timeout) {
         UUID requestID = UUID.randomUUID();
         origin.setServiceRequestID(requestID);
         ServiceRequest requestLatch = new DefaultServiceRequest();

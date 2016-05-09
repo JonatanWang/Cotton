@@ -189,7 +189,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         //DestinationMetaData dest = new DestinationMetaData(addr,PathType.DISCOVERY);
         try {
             byte[] data = serializeToBytes(packet);
-            ServiceRequest request = internalRouting.sendWithResponse(dest, data);
+            ServiceRequest request = internalRouting.sendWithResponse(dest, data, 0);
             if (request == null) {
                 return RouteSignal.NOTFOUND;
             }

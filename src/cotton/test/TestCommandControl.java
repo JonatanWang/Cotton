@@ -164,6 +164,8 @@ public class TestCommandControl {
                 Thread.sleep(100);
                 StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
                 System.out.println(dataArrToStr(stats));
+                if(resFactory.getCounter().intValue() == sentChains)
+                    break;
             } catch (InterruptedException ex) {
                 //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
             }/*
@@ -177,10 +179,16 @@ public class TestCommandControl {
         }
         StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
         System.out.println(dataArrToStr(stats));
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException ex) {
-            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+         for (int i = 0; i < 100; i++) {
+            try {
+                Thread.sleep(10);
+                if (resFactory.getCounter().intValue() == sentChains) {
+                    break;
+                }
+            } catch (InterruptedException ex) {
+                //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
         }
         stats = queueManager.getStatisticsForSubSystem("");
         System.out.println(dataArrToStr(stats));
