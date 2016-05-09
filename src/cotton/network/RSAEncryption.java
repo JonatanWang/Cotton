@@ -36,49 +36,61 @@ package cotton.network;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 /**
- *
+ * The <code>RSAEncryption</code> consists of encrypt and decrypt methods as 
+ * well as a key generator. Before use the <strong>RSA</strong> key must be set.
+ * 
  * @author Gunnlaugur Juliusson
+ * @see Encryption
  */
 public class RSAEncryption implements Encryption {
     private KeyPair keyPair;
     
+    /**
+     * Encrypts the data with <strong>RSA</strong> and returns the result.
+     * 
+     * @param data the data to be encrypted.
+     * @return the encrypted data.
+     */
     @Override
-    public byte[] encryptData(byte[] data) {
-        try {
-            Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPublic());
-            
-            byte[] enc = cipher.doFinal(data);
+    public byte[] encryptData(byte[] data) throws IllegalBlockSizeException, 
+            BadPaddingException, 
+            InvalidKeyException, 
+            NoSuchAlgorithmException, 
+            NoSuchPaddingException 
+    {
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPublic());
 
-            return enc;
-        } catch(Exception e) {
-            System.out.println(e.toString());
-        } //TODO Fix
-        
-        return null;
+        return cipher.doFinal(data);
     }
 
+    /**
+     * Decrypts the data with <strong>RSA</strong> and returns the result.
+     * 
+     * @param data the data to be decrypted.
+     * @return the decrypted data.
+     */
     @Override
-    public byte[] decryptData(byte[] data) {
-        try {
-            Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.DECRYPT_MODE, keyPair.getPrivate());
-            
-            byte[] dec = cipher.doFinal(data);
-            
-            return dec;
-        } catch(Exception e) {
-            System.out.println(e.toString());
-        } //TODO Fix
-        
-        return data;
+    public byte[] decryptData(byte[] data) throws IllegalBlockSizeException, 
+            BadPaddingException, 
+            InvalidKeyException, 
+            NoSuchAlgorithmException, 
+            NoSuchPaddingException 
+    {
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.DECRYPT_MODE, keyPair.getPrivate());
+
+        return cipher.doFinal(data);
     }
 
     /**
@@ -87,27 +99,10 @@ public class RSAEncryption implements Encryption {
      * @param key the <strong>RSA</strong> key.
      */
     @Override
-    public void setKey(byte[] key) {
-        ObjectInputStream input = null;
-        KeyPair keyPair = null;
-        
-        try {
-            input = new ObjectInputStream(new ByteArrayInputStream(key));
-            keyPair = (KeyPair) input.readObject();
-            this.keyPair = keyPair;
-        } catch (IOException ex) {
-            try {
-                throw ex;
-            } catch (IOException ex1) {}
-        } catch (ClassNotFoundException ex) {
-            try {
-                throw ex;
-            } catch (ClassNotFoundException ex1) {}
-        } finally {
-            try {
-                input.close();
-            } catch (IOException ex) {}
-        }
+    public void setKey(byte[] key) throws IOException, ClassNotFoundException {
+        ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(key));
+        keyPair = (KeyPair) input.readObject();
+        input.close();
     }
     
     /**
