@@ -46,7 +46,7 @@ import cotton.servicediscovery.RouteSignal;
 public interface InternalRoutingServiceDiscovery {
     public boolean sendBackToOrigin(Origin origin,PathType pathType,byte[] data);
     public boolean sendToDestination(DestinationMetaData dest,byte[] data);
-    public ServiceRequest sendWithResponse(DestinationMetaData dest, byte[] data);
+    public ServiceRequest sendWithResponse(DestinationMetaData dest, byte[] data, int timeout);
     public boolean notifyRequestQueue(DestinationMetaData destination,RouteSignal route, String serviceName);
     public boolean sendLocal(DestinationMetaData destination,RouteSignal route,byte[] data);
     
