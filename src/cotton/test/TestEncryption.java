@@ -33,7 +33,12 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package cotton.test;
 
-import cotton.network.DefaultEncryption;
+import cotton.network.AESEncryption;
+import cotton.network.RSAEncryption;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import org.junit.Test;
@@ -46,17 +51,43 @@ import static org.junit.Assert.*;
 public class TestEncryption {
     
     @Test
-    public void TestEncryption() throws NoSuchAlgorithmException {
-        DefaultEncryption de = new DefaultEncryption();
-        de.setAESKey("Cotton1234Cloud5", "CottonInitVector");
-        de.generateRSAKeys();
+    public void TestEncryption() throws NoSuchAlgorithmException, IOException {
+        RSAEncryption rsa = new RSAEncryption();
+        AESEncryption aes = new AESEncryption();
+
+        aes.setKey(stringToByteArray("Cotton1234Cloud5"));
+        aes.setInitVector("CottonInitVector");
+        rsa.setKey(keyPairToByteArray(rsa));
         
         byte[] data = {0,1,2,3,4};
         System.out.println("Initial data: " + Arrays.toString(data));
 
-        byte[] enc = de.encryptData(data);        
-        byte[] dec = de.decryptData(enc);
+        byte[] enc = aes.encryptData(data);
+        System.out.println("AES Encrypted data: " + Arrays.toString(enc));
+        
+        enc = rsa.encryptData(enc);
+        System.out.println("RSA Encrypted data: " + Arrays.toString(enc));
+        
+        byte[] dec = rsa.decryptData(enc);
+        System.out.println("RSA Decrypted data: " + Arrays.toString(dec));
+        
+        dec = aes.decryptData(dec);
+        System.out.println("AES Decrypted data: " + Arrays.toString(dec));
         
         assertTrue(Arrays.equals(data, dec));
+    }
+
+    private byte[] stringToByteArray(String s) throws IOException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ObjectOutputStream objectStream = new ObjectOutputStream(stream);
+        objectStream.writeObject(s);
+        return stream.toByteArray();
+    }
+    
+    private byte[] keyPairToByteArray(RSAEncryption rsa) throws IOException, NoSuchAlgorithmException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ObjectOutputStream objectStream = new ObjectOutputStream(stream);
+        objectStream.writeObject(rsa.generateRSAKeys());
+        return stream.toByteArray();
     }
 }
