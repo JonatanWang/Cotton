@@ -69,6 +69,25 @@ public class DefaultNetworkHandler implements NetworkHandler {
     private AtomicBoolean running;
     private SocketAddress localSocketAddress;
     private ConcurrentHashMap<SocketAddress, Connection> openSockets;
+    
+    private boolean encryption = false;
+    
+    public DefaultNetworkHandler(boolean encryption) throws UnknownHostException {
+        this.localPort = 3333; // TODO: Remove hardcoded port
+        try{
+            //this.localIP = InetAddress.getByName(null);
+            this.localIP = Inet4Address.getLocalHost();
+        }catch(java.net.UnknownHostException e){// TODO: Get address from outside
+            logError("initialization process local address "+e.getMessage());
+            throw e;
+        }
+
+        threadPool = Executors.newCachedThreadPool();
+        running = new AtomicBoolean(true);
+        localSocketAddress = getLocalAddress();
+        openSockets = new ConcurrentHashMap<>();
+        this.encryption = encryption;
+    }
 
     public DefaultNetworkHandler() throws UnknownHostException {
         this.localPort = 3333; // TODO: Remove hardcoded port
@@ -128,21 +147,32 @@ public class DefaultNetworkHandler implements NetworkHandler {
             throw new NullPointerException("InternalRoutingNetwork points to null");
     }
     
-    private SSLServerSocket createSSLServerSocket() throws IOException {
-        SSLServerSocketFactory sf = (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
-        return (SSLServerSocket)sf.createServerSocket();
+    private ServerSocket createServerSocket() throws IOException {
+        if(encryption) {
+            SSLServerSocketFactory sf = (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
+            return sf.createServerSocket();
+        } else {
+            return new ServerSocket();
+        }
     }
     
-    private SSLSocket createSSLClientSocket(InetSocketAddress address) throws IOException{
-        SSLSocketFactory sf = (SSLSocketFactory)SSLSocketFactory.getDefault();
-        return (SSLSocket)sf.createSocket(address.getAddress(), address.getPort());
+    private Socket createSocket(InetSocketAddress address) throws IOException{
+        if(encryption) {
+            SSLSocketFactory sf = (SSLSocketFactory)SSLSocketFactory.getDefault();
+            return (SSLSocket)sf.createSocket(address.getAddress(), address.getPort());
+        } else {
+            Socket socket = new Socket();
+            socket.connect(address);
+            return socket;
+        }
     }
 
     @Override
     public void run(){
         ServerSocket serverSocket = null;
+        
         try{
-            serverSocket = new ServerSocket();
+            serverSocket = createServerSocket();
             serverSocket.bind(getLocalAddress());
             serverSocket.setSoTimeout(80);
         }catch(IOException e){// TODO: Logging
@@ -252,8 +282,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         }
 
         if(conn == null){
-            Socket socket = new Socket();
-            socket.connect(dest);
+            Socket socket = createSocket(idest);
             conn = new Connection(socket);
             openSockets.putIfAbsent(dest, conn);
             assignListener(conn);
@@ -290,8 +319,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         }
 
         if(conn == null){
-            Socket socket = new Socket();
-            socket.connect(dest);
+            Socket socket = createSocket(idest);
             conn = new Connection(socket, 50000);
             openSockets.putIfAbsent(dest, conn);
             assignListener(conn);

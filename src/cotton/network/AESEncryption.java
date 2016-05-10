@@ -112,7 +112,6 @@ public class AESEncryption implements Encryption{
      * The key is required to be a multiple of 16.
      * 
      * @param key the <strong>AES</strong> key to be set.
-     * @throws java.io.IOException
      */
     @Override
     public void setKey(byte[] key) throws IOException, ClassNotFoundException{
