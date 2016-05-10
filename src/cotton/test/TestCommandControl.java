@@ -70,12 +70,18 @@ import java.nio.charset.StandardCharsets;
 import java.net.SocketAddress;
 import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.internalRouting.DefaultServiceRequest;
+import cotton.internalRouting.InternalRoutingServiceDiscovery;
 import cotton.network.DestinationMetaData;
 import cotton.servicediscovery.AddressPool;
+import cotton.servicediscovery.DiscoveryPacket;
 import cotton.servicediscovery.GlobalServiceDiscovery;
 import cotton.servicediscovery.RouteSignal;
 import cotton.servicediscovery.ServiceDiscovery;
 import cotton.systemsupport.CommandType;
+import java.io.ByteArrayInputStream;
+import java.io.ObjectInputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -401,7 +407,7 @@ public class TestCommandControl {
 
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        Command command = new Command(StatType.DISCOVERY, null, 0, CommandType.CHECKREACHABILLITY);
+        Command command = new Command(StatType.DISCOVERY, null,null, 0, CommandType.CHECKREACHABILLITY);
         byte[] data = null;
         try {
             data = serializeToBytes(command);
@@ -444,4 +450,83 @@ public class TestCommandControl {
         boolean b4 = pool.remove(dest);
         assertTrue(!b && !b1 && !b2 && b3 && !b4);
     }
+    
+    @Test
+    public void TestQuerySubSystem() throws UnknownHostException {
+        Cotton discovery = new Cotton(true, 19876);
+        GlobalDnsStub gDns = new GlobalDnsStub();
+        InetSocketAddress discoveryAddress = new InetSocketAddress(Inet4Address.getLocalHost(),19876);
+        InetSocketAddress gdAddr = discoveryAddress;
+        InetSocketAddress[] arr = new InetSocketAddress[1];
+        arr[0] = gdAddr;
+        gDns.setGlobalDiscoveryAddress(arr);
+
+        discovery.start();
+
+        Cotton ser1 = new Cotton(false, gDns);
+        Cotton ser2 = new Cotton(false, gDns);
+
+        ser1.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
+        ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
+        ser1.start();
+        ser2.start();
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        Command command = new Command(StatType.DISCOVERY, "serviceNodes",null, 0, CommandType.STATISTICSFORSUBSYSTEM);
+        command.setQuery(true);
+        byte[] data = null;
+        try {
+            data = serializeToBytes(command);
+        } catch (IOException e) {
+            System.out.println("IOEXception in testQuerySubSystem");
+            e.printStackTrace();
+        }
+        NetworkPacket packet = NetworkPacket.newBuilder().setData(data).build();
+        try {
+            Thread.sleep(1050);
+        } catch (InterruptedException ex) {
+            System.out.println("EXCEPTION INTERRUPTED");
+            ex.printStackTrace();
+
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        InternalRoutingServiceDiscovery internalRouting =(InternalRoutingServiceDiscovery) ser1.getConsole().getProvider(StatType.INTERNALROUTING);
+        ServiceRequest req = internalRouting.sendWithResponse(new DestinationMetaData(discoveryAddress,PathType.COMMANDCONTROL), data, 1000);
+        
+        if(req == null){
+            System.out.println("REQ IS NULL");
+            assertFalse(true);
+        }
+        if(req.getData() == null){
+            System.out.println("REQ GETDATA IS NULL");
+            assertFalse(true);
+        }
+        discovery.shutdown();
+        ser1.shutdown();
+        ser2.shutdown();
+        StatisticsData[] statistics = packetUnpack(req.getData());
+        System.out.println("INFORMATION" + Arrays.toString(statistics));
+        assertTrue(true);
+    }
+   private StatisticsData[] packetUnpack(byte[] data) {
+        StatisticsData[] statistics = null;
+        try {
+            ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
+            statistics = (StatisticsData[]) input.readObject();
+        } catch (IOException ex) {
+            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return statistics;
+    }
+   
+
 }

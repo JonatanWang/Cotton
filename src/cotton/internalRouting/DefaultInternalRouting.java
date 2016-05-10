@@ -56,6 +56,9 @@ import cotton.servicediscovery.GlobalServiceDiscovery;
 import cotton.requestqueue.RequestQueueManager;
 import cotton.servicediscovery.DiscoveryPacket;
 import cotton.systemsupport.Console;
+import cotton.systemsupport.StatType;
+import cotton.systemsupport.StatisticsData;
+import cotton.systemsupport.StatisticsProvider;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -67,7 +70,8 @@ import java.util.ArrayList;
  *
  * @author Magnus
  */
-public class DefaultInternalRouting implements InternalRoutingNetwork, InternalRoutingClient, InternalRoutingServiceDiscovery, InternalRoutingServiceHandler, InternalRoutingRequestQueue {
+public class DefaultInternalRouting implements InternalRoutingNetwork, InternalRoutingClient, InternalRoutingServiceDiscovery,
+        InternalRoutingServiceHandler, InternalRoutingRequestQueue, StatisticsProvider {
 
     private NetworkHandler networkHandler;
     private SocketAddress localAddress;
@@ -297,7 +301,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         Origin origin = new Origin();
         ServiceRequest request = newServiceRequest(origin, timeout);
         origin.setAddress(this.localAddress);
-
+        
         NetworkPacket packet = prepareForTransmission(origin, null, data, dest.getPathType());
         try {
             //networkHandler.send(packet, dest.getSocketAddress());
@@ -425,51 +429,53 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         origin.setServiceRequestID(requestID);
         ServiceRequest requestLatch;
         long timeStamp = System.currentTimeMillis() + timeout;
-        if(timeout == 0)
+        if (timeout == 0) {
             timeStamp = 0;
+        }
         requestLatch = new DefaultServiceRequest(timeStamp);
         if (connectionTable.putIfAbsent(requestID, requestLatch) != null) {
             return null;
         }
-        if(timeStamp != 0){
+        if (timeStamp != 0) {
             scheduleTask(timeStamp);
         }
         return requestLatch;
     }
     private long nextTime = 0;
+
     /**
-     * Schedules threads sets a reaper function to go off after at a given timestamp.
+     * Schedules threads sets a reaper function to go off after at a given
+     * timestamp.
+     *
      * @param timeStamp
      */
-    public void scheduleTask(long timeStamp){
+    public void scheduleTask(long timeStamp) {
         long curTime = System.currentTimeMillis();
-        long diff = Math.abs(nextTime-timeStamp);
-        if(diff > 50 || curTime-timeStamp > 0){
-            taskScheduler.schedule(new Runnable(){
-                    @Override
-                    public void run(){
-                        reapTimedOutRequest();
-                    }
-                }, timeStamp-curTime, TimeUnit.MILLISECONDS);
+        long diff = Math.abs(nextTime - timeStamp);
+        if (diff > 50 || curTime - timeStamp > 0) {
+            taskScheduler.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    reapTimedOutRequest();
+                }
+            }, timeStamp - curTime, TimeUnit.MILLISECONDS);
             nextTime = timeStamp;
         }
-        
-
 
     }
 
-    private void reapTimedOutRequest(){
+    private void reapTimedOutRequest() {
         long time = System.currentTimeMillis();
         DefaultServiceRequest req;
         ArrayList<UUID> reapedServiceRequest = new ArrayList<>();
-        for(Map.Entry<UUID,ServiceRequest> entry: connectionTable.entrySet()){
-            req = (DefaultServiceRequest)entry.getValue();
-            if((time - req.getTimeStamp()) > 0){
+        for (Map.Entry<UUID, ServiceRequest> entry : connectionTable.entrySet()) {
+            req = (DefaultServiceRequest) entry.getValue();
+            if ((time - req.getTimeStamp()) > 0) {
                 req.setFailed("SocketRequest timed out ");
                 reapedServiceRequest.add(entry.getKey());
             }
         }
-        for(UUID id: reapedServiceRequest){
+        for (UUID id : reapedServiceRequest) {
             connectionTable.remove(id);
         }
 
@@ -618,6 +624,32 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      */
     public void stop() {
         dispatcher.stop();
+    }
+
+    /**
+     * StatisticsProvider
+     *
+     *
+     */
+
+    @Override
+    public StatisticsData[] getStatisticsForSubSystem(String name) {
+        return new StatisticsData[0];
+    }
+
+    @Override
+    public StatisticsData getStatistics(String[] name) {
+        return new StatisticsData();
+    }
+
+    @Override
+    public StatisticsProvider getProvider() {
+        return this;
+    }
+
+    @Override
+    public StatType getStatType() {
+        return StatType.INTERNALROUTING;
     }
 
     private class RouteDispatcher implements Runnable {

@@ -31,14 +31,20 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.systemsupport;
 
+import cotton.internalRouting.InternalRoutingServiceDiscovery;
 import cotton.network.NetworkPacket;
+import cotton.network.Origin;
+import cotton.network.PathType;
 import cotton.servicediscovery.DiscoveryPacket;
 import cotton.servicediscovery.GlobalServiceDiscovery;
 import cotton.servicediscovery.ServiceDiscovery;
 import cotton.services.ServiceHandler;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -89,13 +95,21 @@ public class Console {
             return;
         }
         Command command = packetUnpack(packet.getData());
-        switch(command.getType()){
+        if (!command.isQuery()) {
+            sendCommandToSubSystem(command);
+        } else {
+            querySubSystem(command, packet.getOrigin());
+        }
+    }
+
+    private void sendCommandToSubSystem(Command command) {
+        switch (command.getType()) {
             case SERVICEHANDLER:
-                ServiceHandler serviceHandler = (ServiceHandler)getProvider(StatType.SERVICEHANDLER);
+                ServiceHandler serviceHandler = (ServiceHandler) getProvider(StatType.SERVICEHANDLER);
                 serviceHandler.setServiceConfig(command.getName(), command.getAmount());
                 break;
             case DISCOVERY:
-                ServiceDiscovery serviceDiscovery = (ServiceDiscovery)getProvider(StatType.DISCOVERY);
+                ServiceDiscovery serviceDiscovery = (ServiceDiscovery) getProvider(StatType.DISCOVERY);
                 serviceDiscovery.processCommand(command);
                 break;
             default:
@@ -103,7 +117,43 @@ public class Console {
                 break;
         }
     }
-    
+
+    private void querySubSystem(Command command, Origin origin) {
+
+        InternalRoutingServiceDiscovery internalRouting = (InternalRoutingServiceDiscovery) getProvider(StatType.INTERNALROUTING);
+        StatisticsProvider provider = getProvider(command.getType());
+        byte[] data;
+        try{
+        if (provider.getStatType() == StatType.UNKNOWN) {
+            data = serializeToBytes(new StatisticsData[0]);
+            internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
+        }
+        switch (command.getCommandType()) {
+            case STATISTICSFORSUBSYSTEM:
+                StatisticsData[] statisticsForSubSystem = provider.getStatisticsForSubSystem(command.getName());
+                data = serializeToBytes(statisticsForSubSystem);
+                internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
+                break;
+            case STATISTICSFORSYSTEM:
+                StatisticsData statistics = provider.getStatistics(command.getTokens());
+                data = serializeToBytes(statistics);
+                internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
+                break;
+            default:
+                break;
+        }
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    private byte[] serializeToBytes(Serializable data) throws IOException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ObjectOutputStream objectStream = new ObjectOutputStream(stream);
+        objectStream.writeObject(data);
+        return stream.toByteArray();
+    }
+
     private Command packetUnpack(byte[] data) {
         Command command = null;
         try {

@@ -630,7 +630,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             }
             DestinationMetaData dest = pool.getAddress();
             dest.setPathType(PathType.COMMANDCONTROL);
-            Command com = new Command(StatType.SERVICEHANDLER, "mathpow21", 100,CommandType.CHANGEACTIVEAMOUNT);
+            Command com = new Command(StatType.SERVICEHANDLER, "mathpow21",null, 100,CommandType.CHANGEACTIVEAMOUNT);
             sendCommandPacket(dest, com);
         }
     }

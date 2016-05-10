@@ -40,12 +40,12 @@ import java.util.Arrays;
  * @param <T>
  */
 
-public class  StatisticsData<T extends Serializable> {
+public class  StatisticsData<T extends Serializable> implements Serializable {
 
     private StatType type;
     private String name;
     private int[] numberArray = new int[0];
-    private T[] data;
+    private T[] data = null;
 
     public StatisticsData() {
         this.type = StatType.UNKNOWN;

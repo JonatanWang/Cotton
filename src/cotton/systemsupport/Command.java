@@ -38,33 +38,92 @@ import java.io.Serializable;
  * @author Tony
  * @author Magnus
  */
-public class Command implements Serializable{
+public class Command implements Serializable {
+
     private final StatType type;
     private final String name;
+    private final String[] tokens;
     private final int amount;
     private final CommandType command;
-    
-    public Command(StatType type, String name, int amount,CommandType command){
+    private boolean query;
+
+    /**
+     * This class creates a command that can be sent to notify other nodes.
+     *
+     * @param type
+     * @param name
+     * @param amount
+     * @param command
+     */
+    public Command(StatType type, String name,String[] tokens, int amount, CommandType command) {
         this.type = type;
         this.name = name;
+        this.tokens = tokens;
         this.amount = amount;
         this.command = command;
+        this.query = false;
     }
 
+    /**
+     * returns the type of the given subsystem this command was created for.
+     *
+     * @return type The type of the subsystem.
+     */
     public StatType getType() {
         return type;
     }
 
+    /**
+     * returns the name of the given subsystem.
+     *
+     * @return name the name of the section within a subsystem.
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * returns a value that should be changed.
+     *
+     * @return amount the value that should be changed on a subsystem
+     */
     public int getAmount() {
         return amount;
     }
 
+    /**
+     * returns a specific command that instructs a subsystem what to do.
+     *
+     * @return command
+     */
     public CommandType getCommandType() {
         return command;
+    }
+
+    /**
+     * returns a sequence of tokens that should be executed.
+     * @return tokens  
+     */
+    public String[] getTokens() {
+        return tokens;
+    }
+
+
+    /**
+     * whether the command should respond back to origin.
+     *
+     * @return true or false whether the command should respond back to origin.
+     */
+    public boolean isQuery() {
+        return query;
+    }
+
+    /**
+     * Sets whether the command should respond back to origin
+     * @param query true gives response and default false.
+     */
+    public void setQuery(boolean response) {
+        this.query = response;
     }
 
 }

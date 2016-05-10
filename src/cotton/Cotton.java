@@ -164,6 +164,7 @@ public class Cotton {
         discovery.announce();
         this.console.addSubSystem(discovery);
         this.console.addSubSystem(services);
+        this.console.addSubSystem(internalRouting);
     }
 
     public Console getConsole() {
