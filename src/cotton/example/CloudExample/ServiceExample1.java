@@ -51,7 +51,7 @@ import java.util.logging.Logger;
  */
 public class ServiceExample1 {
     public static void main(String[] args) throws UnknownHostException {
-        GlobalDnsStub gDns = getDnsStub("130.229.130.212", 9546);
+        GlobalDnsStub gDns = getDnsStub("127.0.0.1", 9546);
         Cotton cotton = new Cotton(false, gDns);
         ServiceFactory factory = MathResult.getFactory(new AtomicInteger(0));
         cotton.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);

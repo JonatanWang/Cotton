@@ -167,7 +167,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
     private Socket createSocket(InetSocketAddress address) throws IOException{
         if(encryption) {
             SSLSocketFactory sf = (SSLSocketFactory)SSLSocketFactory.getDefault();
-            return (SSLSocket)sf.createSocket(address.getAddress(), address.getPort());
+            return sf.createSocket(address.getAddress(), address.getPort());
         } else {
             Socket socket = new Socket();
             socket.connect(address);
