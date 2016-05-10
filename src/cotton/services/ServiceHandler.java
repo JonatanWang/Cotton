@@ -54,7 +54,7 @@ public class ServiceHandler implements Runnable,StatisticsProvider{
         this.internalRouting = internalRouting;
         this.serviceLookup = serviceLookup;
         this.workBuffer = internalRouting.getServiceBuffer();
-        threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newFixedThreadPool(100);
     }
 
     public void run(){
@@ -158,8 +158,8 @@ public class ServiceHandler implements Runnable,StatisticsProvider{
                 byte[] result = service.execute(null, servicePacket.getOrigin(), servicePacket.getData(),servicePacket.getTo());
                 
                 internalRouting.forwardResult(servicePacket.getOrigin(), servicePacket.getTo(), result);
-                serviceLookup.getService(serviceName).decrementThreadCount(); 
                 internalRouting.notifyRequestQueue(serviceName);
+                serviceLookup.getService(serviceName).decrementThreadCount(); 
                 
             }catch(Exception e){
                 serviceLookup.getService(serviceName).decrementThreadCount(); 

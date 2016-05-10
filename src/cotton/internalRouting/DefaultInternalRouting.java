@@ -693,6 +693,14 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
 
             if (signal == RouteSignal.ENDPOINT) {
                 DefaultServiceRequest request = (DefaultServiceRequest) removeServiceRequest(packet.getOrigin());
+                if(request == null) {
+                    // TODO: logg request removed
+                    return;
+                }
+                if(packet.getData() == null) {
+                    request.setFailed("ENDPOINT failure no data returned");
+                    return;
+                }
                 request.setData(packet.getData());
                 return;
             } else if (signal == RouteSignal.NETWORKDESTINATION) {

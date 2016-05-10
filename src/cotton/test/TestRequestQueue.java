@@ -146,8 +146,9 @@ public class TestRequestQueue {
         }
 
         for (int i = 0; i < req.length; i++) {
-            if (req[i] != null) {
+            if (req[i] != null || req[i].getData() != null) {
                 byte[] data2 = req[i].getData();
+                
                 int num2 = ByteBuffer.wrap(data2).getInt();
                 //System.out.println("result: " + i + " : " + num2);
                 num = num2;
@@ -212,9 +213,9 @@ public class TestRequestQueue {
         AtomicInteger counter = new AtomicInteger(0);
         MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
         
-        ser1.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 100);
-        ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 100);
-        ser3.getServiceRegistation().registerService("result", resFactory, 1000);
+        ser1.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
+        ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
+        ser3.getServiceRegistation().registerService("result", resFactory, 10);
 
         Cotton cCotton = new Cotton(false, gDns);
         cCotton.start();
@@ -427,6 +428,7 @@ public class TestRequestQueue {
         }
         System.out.print("done\n");
         System.out.println("Starting fill work queue:");
+        int startedNodes = 0;
         for (int i = 0; i < 500; i++) {
             for (int j = 0; j < clientArr.length; j++) {
                 clientArr[j].getClient().sendToService(data, builder1.build());
@@ -437,10 +439,19 @@ public class TestRequestQueue {
                 StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
                 System.out.println(dataArrToStr(stats));
             }
+            if(i%10 == 0) {
+                if(startedNodes < countInst) {
+                    serArr1[startedNodes].start();
+                    serArr2[startedNodes].start();
+                    serArr3[startedNodes].start();
+                    startedNodes++;
+                }
+                
+            }
         }
         System.out.print("done\n");
 
-        for (int i = 0; i < countInst; i++) {
+        for (int i = startedNodes; i < countInst; i++) {
             serArr1[i].start();
             serArr2[i].start();
             serArr3[i].start();

@@ -102,7 +102,8 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         this.discoveryCache = new AddressPool();
         initGlobalDiscoveryPool(dnsConfig);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
-        threadPool = Executors.newCachedThreadPool();
+        //threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newFixedThreadPool(10);
         this.activeQueue = new ConcurrentHashMap<>();
     }
 
@@ -622,17 +623,17 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     private void triggeredCircuitBreaker(Origin origin, CircuitBreakerPacket circuit) {
         AddressPool pool;
-        if (circuit.getCircuitName().equals("mathpow21")) {
-            System.out.println("INCOMMING CIRCUITBREAKER MESSAGE IN GLOBAL SERVICE DISCOVERY");
-            pool = serviceCache.get(circuit.getCircuitName());
-            if (pool == null) {
-                return;
-            }
-            DestinationMetaData dest = pool.getAddress();
-            dest.setPathType(PathType.COMMANDCONTROL);
-            Command com = new Command(StatType.SERVICEHANDLER, "mathpow21",null, 100,CommandType.CHANGEACTIVEAMOUNT);
-            sendCommandPacket(dest, com);
+
+        System.out.println("INCOMMING CIRCUITBREAKER MESSAGE IN GLOBAL SERVICE DISCOVERY: " + circuit.getCircuitName());
+        pool = serviceCache.get(circuit.getCircuitName());
+        if (pool == null) {
+            return;
         }
+        DestinationMetaData dest = pool.getAddress();
+        dest.setPathType(PathType.COMMANDCONTROL);
+        Command com = new Command(StatType.SERVICEHANDLER, circuit.getCircuitName(), null, 100, CommandType.CHANGEACTIVEAMOUNT);
+        sendCommandPacket(dest, com);
+        
     }
 
     @Override

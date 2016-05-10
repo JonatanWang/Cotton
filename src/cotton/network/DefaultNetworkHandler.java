@@ -80,7 +80,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             throw e;
         }
 
-        threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newFixedThreadPool(10);
         running = new AtomicBoolean(true);
         localSocketAddress = getLocalAddress();
         openSockets = new ConcurrentHashMap<>();
@@ -98,7 +98,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
 
         localSocketAddress = socketAddress;
 
-        threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newFixedThreadPool(10);
         running = new AtomicBoolean(true);
         openSockets = new ConcurrentHashMap<>();
     }
@@ -114,7 +114,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             throw e;
         }
 
-        threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newFixedThreadPool(10);
         running = new AtomicBoolean(true);
         localSocketAddress = getLocalAddress();
         openSockets = new ConcurrentHashMap<>();
@@ -151,10 +151,13 @@ public class DefaultNetworkHandler implements NetworkHandler {
 
         Socket clientSocket = null;
 
+        int totalThreadStarted = 0;
         while(running.get() == true){
             try {
                 if( (clientSocket = serverSocket.accept()) != null ){
                     NetworkUnpacker pck = new NetworkUnpacker(clientSocket);
+                    totalThreadStarted++;
+                    System.out.println("NewThread net num: " + totalThreadStarted);
                     threadPool.execute(pck);
                 }
             } catch (SocketTimeoutException ignore) {
