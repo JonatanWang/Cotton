@@ -623,6 +623,10 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      * sends a stop signal for the routing dispatcher thread
      */
     public void stop() {
+        if(this.requestQueueManager != null)
+            this.requestQueueManager.stop();
+        if(this.taskScheduler != null)
+            this.taskScheduler.shutdownNow();
         dispatcher.stop();
     }
 

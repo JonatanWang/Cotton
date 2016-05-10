@@ -90,7 +90,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             throw e;
         }
 
-        threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newFixedThreadPool(10);
         running = new AtomicBoolean(true);
         localSocketAddress = getLocalAddress();
         openSockets = new ConcurrentHashMap<>();
@@ -211,6 +211,9 @@ public class DefaultNetworkHandler implements NetworkHandler {
         }
 
         try {
+            for(SocketAddress a: openSockets.keySet()){
+                openSockets.get(a).close();
+            }
             threadPool.shutdown();
             serverSocket.close();
         }catch (Throwable e) { //TODO EXCEPTION HANDLING

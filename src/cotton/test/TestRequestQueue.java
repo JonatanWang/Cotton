@@ -254,6 +254,7 @@ public class TestRequestQueue {
                     break;
                 }
             } catch (InterruptedException ex) {
+                System.out.println("INTERRUPTED");
                 //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
             }
 

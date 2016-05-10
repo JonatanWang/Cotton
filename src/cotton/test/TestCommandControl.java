@@ -201,12 +201,12 @@ public class TestCommandControl {
             try {
                 Thread.sleep(10);
                 if (resFactory.getCounter().intValue() == sentChains) {
+                    System.out.println("All chains sent");
                     break;
                 }
             } catch (InterruptedException ex) {
                 //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
             }
-
         }
         stats = queueManager.getStatisticsForSubSystem("");
         System.out.println(dataArrToStr(stats));
@@ -401,7 +401,7 @@ public class TestCommandControl {
         }
         ser2.shutdown();
         try {
-            Thread.sleep(1000);
+            Thread.sleep(500);
         } catch (InterruptedException ex) {
             ex.printStackTrace();
 
