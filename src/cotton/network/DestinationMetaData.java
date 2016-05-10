@@ -29,9 +29,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
 package cotton.network;
+
 import cotton.network.PathType;
 import java.io.Serializable;
 import java.net.SocketAddress;
@@ -43,26 +42,27 @@ import java.util.Objects;
  * @author tony
  */
 public class DestinationMetaData implements Serializable {
+
     private SocketAddress socketAddress;
     private PathType pathType;
 
     /**
-  	* Default empty DestinationMetaData constructor
-  	*/
-  	public DestinationMetaData() {
-      socketAddress = null;
-      pathType = PathType.NOTFOUND;
-  	}
+     * Default empty DestinationMetaData constructor
+     */
+    public DestinationMetaData() {
+        socketAddress = null;
+        pathType = PathType.NOTFOUND;
+    }
 
     /**
-    *
-    *
-    **/
+     *
+     *
+     *
+     */
     public DestinationMetaData(SocketAddress socketAddress, PathType pathType) {
         this.socketAddress = socketAddress;
         this.pathType = pathType;
     }
-
 
     public SocketAddress getSocketAddress() {
         return socketAddress;
@@ -109,13 +109,13 @@ public class DestinationMetaData implements Serializable {
         return true;
     }
 
-   	public boolean compareAddress(SocketAddress other){
-      	return ((InetSocketAddress)socketAddress).equals((InetSocketAddress)other);
-  	}
+    public boolean compareAddress(SocketAddress other) {
+        return ((InetSocketAddress) socketAddress).equals((InetSocketAddress) other);
+    }
 
     @Override
     public String toString() {
-        return "DestinationMetaData{" + "socketAddress=" + (InetSocketAddress)socketAddress + ", pathType=" + pathType + '}';
+        return "DestinationMetaData{" + "socketAddress=" + (InetSocketAddress) socketAddress + ", pathType=" + pathType + '}';
     }
-        
+
 }

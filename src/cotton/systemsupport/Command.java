@@ -42,11 +42,13 @@ public class Command implements Serializable{
     private final StatType type;
     private final String name;
     private final int amount;
-
-    public Command(StatType type, String name, int amount){
+    private final CommandType command;
+    
+    public Command(StatType type, String name, int amount,CommandType command){
         this.type = type;
         this.name = name;
         this.amount = amount;
+        this.command = command;
     }
 
     public StatType getType() {
@@ -59,6 +61,10 @@ public class Command implements Serializable{
 
     public int getAmount() {
         return amount;
+    }
+
+    public CommandType getCommandType() {
+        return command;
     }
 
 }

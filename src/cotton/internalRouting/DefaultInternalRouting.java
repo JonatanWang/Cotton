@@ -465,7 +465,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         for(Map.Entry<UUID,ServiceRequest> entry: connectionTable.entrySet()){
             req = (DefaultServiceRequest)entry.getValue();
             if((time - req.getTimeStamp()) > 0){
-                req.setFailed("SocketRequest timed out ".getBytes(StandardCharsets.UTF_16));
+                req.setFailed("SocketRequest timed out ");
                 reapedServiceRequest.add(entry.getKey());
             }
         }
