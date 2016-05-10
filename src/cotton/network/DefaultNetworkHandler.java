@@ -72,6 +72,14 @@ public class DefaultNetworkHandler implements NetworkHandler {
     
     private boolean encryption = false;
     
+    /**
+     * Returns a <code>DefaultNetworkHandler</code> with the option to set <strong>SSL</strong> encryption. 
+     * For the encryption to work a <code>keystore</code> must exists on all machines. 
+     * The <code>keystore</code> is required to be the same on all machines.
+     * 
+     * @param encryption whether the data should be encrypted or not.
+     * @throws UnknownHostException 
+     */
     public DefaultNetworkHandler(boolean encryption) throws UnknownHostException {
         this.localPort = 3333; // TODO: Remove hardcoded port
         try{
