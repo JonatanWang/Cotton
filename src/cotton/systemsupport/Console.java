@@ -35,6 +35,7 @@ import cotton.internalRouting.InternalRoutingServiceDiscovery;
 import cotton.network.NetworkPacket;
 import cotton.network.Origin;
 import cotton.network.PathType;
+import cotton.requestqueue.RequestQueueManager;
 import cotton.servicediscovery.DiscoveryPacket;
 import cotton.servicediscovery.GlobalServiceDiscovery;
 import cotton.servicediscovery.ServiceDiscovery;
@@ -112,6 +113,10 @@ public class Console {
                 ServiceDiscovery serviceDiscovery = (ServiceDiscovery) getProvider(StatType.DISCOVERY);
                 serviceDiscovery.processCommand(command);
                 break;
+            case REQUESTQUEUE:
+                RequestQueueManager rqManager = (RequestQueueManager) getProvider(StatType.REQUESTQUEUE);
+                rqManager.processCommand(command);
+                break;
             default:
                 System.out.println("WRONG COMMAND TYPE IN CLASS CONSOLE PROCESSCOMMAND" + command.getType());
                 break;
@@ -129,12 +134,12 @@ public class Console {
             internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
         }
         switch (command.getCommandType()) {
-            case STATISTICSFORSUBSYSTEM:
+            case STATISTICS_FORSUBSYSTEM:
                 StatisticsData[] statisticsForSubSystem = provider.getStatisticsForSubSystem(command.getName());
                 data = serializeToBytes(statisticsForSubSystem);
                 internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
                 break;
-            case STATISTICSFORSYSTEM:
+            case STATISTICS_FORSYSTEM:
                 StatisticsData statistics = provider.getStatistics(command.getTokens());
                 data = serializeToBytes(statistics);
                 internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);

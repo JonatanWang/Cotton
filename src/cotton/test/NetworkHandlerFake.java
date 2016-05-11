@@ -56,14 +56,14 @@ import java.util.logging.Logger;
  *
  * @author Magnus
  */
-public class TestNetworkHandler implements NetworkHandler {
+public class NetworkHandlerFake implements NetworkHandler {
 
     private InternalRoutingNetwork internalRouting = null;
     private InetSocketAddress localAddress = null;
     private ConcurrentHashMap<SocketAddress, Socket> openSocket;
     private ExecutorService threadPool;
 
-    public TestNetworkHandler(int portNumber) throws UnknownHostException {
+    public NetworkHandlerFake(int portNumber) throws UnknownHostException {
         this.localAddress = new InetSocketAddress(Inet4Address.getLocalHost(), portNumber);
         this.openSocket = new ConcurrentHashMap<SocketAddress, Socket>();
         this.threadPool = Executors.newFixedThreadPool(100);
@@ -123,10 +123,10 @@ public class TestNetworkHandler implements NetworkHandler {
                 return;
             } catch (SocketException ex) {
                 removeConnection(dest, connection);
-                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
                 removeConnection(dest, connection);
-                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         connection = createConnection(dest);
@@ -138,7 +138,7 @@ public class TestNetworkHandler implements NetworkHandler {
             return;
         } catch (IOException ex) {
             removeConnection(dest, connection);
-            Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }
@@ -153,11 +153,11 @@ public class TestNetworkHandler implements NetworkHandler {
                 
             } catch (SocketException ex) {
                 removeConnection(dest, connection);
-                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
                 return;
             } catch (IOException ex) {
                 removeConnection(dest, connection);
-                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
                 return;
             }
         }
@@ -179,13 +179,13 @@ public class TestNetworkHandler implements NetworkHandler {
                     System.out.println("NetworkDataGetter run: InvalidProtocolBufferException null"); //proccessIncoming
                     ex.printStackTrace();
                 } catch (IOException ex) {
-                    Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 try {
                     removeConnection(dest, connection);
                     connection.close();
                 } catch (IOException ex) {
-                    Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });
@@ -210,7 +210,7 @@ public class TestNetworkHandler implements NetworkHandler {
                 this.serverSocket.close();
             }
         } catch (IOException ex) {
-            Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -225,7 +225,7 @@ public class TestNetworkHandler implements NetworkHandler {
             serverSocket.setSoTimeout(40);
             //serverSocket.setReuseAddress(true);
         } catch (IOException ex) {
-            Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         Socket client = null;
@@ -246,7 +246,7 @@ public class TestNetworkHandler implements NetworkHandler {
                 e.printStackTrace();
                 break;
             } catch (IOException ex) {
-                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
             }
 
         } while (true);
@@ -254,13 +254,13 @@ public class TestNetworkHandler implements NetworkHandler {
             serverSocket.close();
 
         } catch (IOException ex) {
-            Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
         }
         for (Map.Entry<SocketAddress, Socket> entry : this.openSocket.entrySet()) {
             try {
                 entry.getValue().close();
             } catch (IOException ex) {
-                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -427,7 +427,7 @@ public class TestNetworkHandler implements NetworkHandler {
                 }
             } catch (IOException ex) {
                 this.shutdown = true;
-                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
@@ -442,7 +442,7 @@ public class TestNetworkHandler implements NetworkHandler {
                 }
                 connection.close();
             } catch (IOException ex) {
-                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
@@ -482,7 +482,7 @@ public class TestNetworkHandler implements NetworkHandler {
                 System.out.println("NetworkDataGetter run: InvalidProtocolBufferException null"); //proccessIncoming
                 ex.printStackTrace();
             } catch (IOException ex) {
-                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
             }
             killConnection();
 

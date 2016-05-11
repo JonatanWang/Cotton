@@ -297,7 +297,7 @@ public class TestCommandControl {
 
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        Command command = new Command(StatType.DISCOVERY, null, null, 0, CommandType.CHECKREACHABILLITY);
+        Command command = new Command(StatType.DISCOVERY, null, null, 0, CommandType.CHECK_REACHABILLITY);
         byte[] data = null;
         try {
             data = serializeToBytes(command);
@@ -370,7 +370,7 @@ public class TestCommandControl {
 
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        Command command = new Command(StatType.DISCOVERY, "serviceNodes", null, 0, CommandType.STATISTICSFORSUBSYSTEM);
+        Command command = new Command(StatType.DISCOVERY, "serviceNodes", null, 0, CommandType.STATISTICS_FORSUBSYSTEM);
         command.setQuery(true);
         byte[] data = null;
         try {

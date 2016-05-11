@@ -44,6 +44,7 @@ import cotton.network.PathType;
 import cotton.servicediscovery.CircuitBreakerPacket;
 import cotton.servicediscovery.DiscoveryPacket;
 import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
+import cotton.systemsupport.Command;
 import java.util.Set;
 import java.util.ArrayList;
 import cotton.systemsupport.StatisticsProvider;
@@ -201,6 +202,11 @@ public class RequestQueueManager implements StatisticsProvider {
 
     public void setInternalRouting(InternalRoutingRequestQueue internalRouting){
         this.internalRouting = internalRouting;
+    }
+    
+    public boolean processCommand(Command command) {
+        
+        return false;
     }
     
     private class RequestQueue implements Runnable {

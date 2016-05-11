@@ -632,14 +632,14 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         }
         DestinationMetaData dest = pool.getAddress();
         dest.setPathType(PathType.COMMANDCONTROL);
-        Command com = new Command(StatType.SERVICEHANDLER, circuit.getCircuitName(), null, 100, CommandType.CHANGEACTIVEAMOUNT);
+        Command com = new Command(StatType.SERVICEHANDLER, circuit.getCircuitName(), null, 100, CommandType.CHANGE_ACTIVEAMOUNT);
         sendCommandPacket(dest, com);
         
     }
 
     @Override
     public boolean processCommand(Command command) {
-        if(command.getCommandType() == CommandType.CHECKREACHABILLITY){
+        if(command.getCommandType() == CommandType.CHECK_REACHABILLITY){
             threadPool.execute(new Runnable(){
                 @Override
                 public void run() {
