@@ -36,6 +36,6 @@ package cotton.systemsupport;
  * @author Magnus
  * @author Tony
  */
-public enum CommandType{
+public enum CommandType {
     REQUESTQUEUE,CHANGE_ACTIVEAMOUNT,CHECK_REACHABILLITY,STATISTICS_FORSUBSYSTEM,STATISTICS_FORSYSTEM,RECORD_USAGEHISTORY,UNKNOWN
 }

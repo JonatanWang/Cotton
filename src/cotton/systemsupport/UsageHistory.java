@@ -40,24 +40,24 @@ import java.util.Vector;
  * @author Tony
  * @author Magnus
  */
-public class UsageHistory<T extends Serializable> {
-    private Vector<T> usageHistoryList;
+public class UsageHistory implements Serializable{
+    private Vector<TimeInterval> usageHistoryList;
     
     public UsageHistory(){
-        this.usageHistoryList = new Vector<T>();
+        this.usageHistoryList = new Vector<>();
     }
     
-    public void add(T element){
+    public void add(TimeInterval element){
         usageHistoryList.add(element);
     }
     
-    public T[] getUsageHistory(){
-        T[] tmp =(T[])new Object[usageHistoryList.size()];
+    public TimeInterval[] getUsageHistory(){
+        TimeInterval[] tmp = new TimeInterval[usageHistoryList.size()];
         usageHistoryList.copyInto(tmp);
         return tmp;
     }
     
-    public synchronized List<T> getInterval(int first, int last){  
+    public synchronized List<TimeInterval> getInterval(int first, int last){  
         int lastIndex = (last >= usageHistoryList.size()) ? usageHistoryList.size() : last;
         int firstIndex = (first <= 0) ? 0 : first;
         return usageHistoryList.subList(firstIndex, lastIndex);

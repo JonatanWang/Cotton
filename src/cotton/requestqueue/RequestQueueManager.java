@@ -125,6 +125,7 @@ public class RequestQueueManager implements StatisticsProvider {
         }
         RequestQueue queuePool = new RequestQueue(serviceName, 100);
         internalQueueMap.putIfAbsent(serviceName, queuePool);
+        threadPool.execute(queuePool);
     }
 
     /**
@@ -141,7 +142,7 @@ public class RequestQueueManager implements StatisticsProvider {
         }
         queue.queueService(packet);
         if (queue.getThreadCount().get() < 5) {
-            threadPool.execute(queue);
+            //        threadPool.execute(queue);
         }
     }
 
@@ -159,13 +160,21 @@ public class RequestQueueManager implements StatisticsProvider {
         }
         //System.out.println("AvailableInstance: " + origin.getAddress().toString() + " :: " + serviceName);
         queue.addInstance(origin);
-        if (queue.getThreadCount().get() < (queue.getMaxCapacity() / 10)) {
-            threadPool.execute(queue);
+        //System.out.println("max capacity1: " + queue.getMaxCapacity());
+        if (queue.getThreadCount().get() < (queue.getMaxCapacity())) {
+          //  System.out.println("max capacity2: " + queue.getMaxCapacity());
+       //     threadPool.execute(queue);
         }
     }
 
     public void stop() {
+        for (Map.Entry<String, RequestQueue> entry : internalQueueMap.entrySet()) {
+            entry.getValue().stopUsageRecording();
+            entry.getValue().stop();
+        }
+        
         threadPool.shutdown();
+
     }
 
     public StatisticsData[] getStatisticsForSubSystem(String serviceName) {
@@ -217,7 +226,7 @@ public class RequestQueueManager implements StatisticsProvider {
             return false;
         }
         String[] tokens = command.getTokens();
-        if (tokens.length < 3) {
+        if (tokens.length < 2) {
             return false;
         }
         String name = tokens[0];
@@ -246,15 +255,17 @@ public class RequestQueueManager implements StatisticsProvider {
         private AtomicInteger threadCount = new AtomicInteger(0);
         private AtomicInteger inputCounter;
         private AtomicInteger outputCounter;
-        private UsageHistory<TimeInterval> usageHistory;
+        private UsageHistory usageHistory;
         private Timer timer;
-
+        private volatile boolean running = true;
         public RequestQueue(String queueName, int maxCapacity) {
-            processQueue = new ConcurrentLinkedQueue<>();
-            processingNodes = new ConcurrentLinkedQueue<>();
+            this.processQueue = new ConcurrentLinkedQueue<>();
+            this.processingNodes = new ConcurrentLinkedQueue<>();
             this.queueName = queueName;
             this.maxCapacity = maxCapacity;
             this.usageHistory = new UsageHistory();
+            this.inputCounter = new AtomicInteger(0);
+            this.outputCounter = new AtomicInteger(0);
         }
 
         /**
@@ -263,25 +274,26 @@ public class RequestQueueManager implements StatisticsProvider {
          * @return StatisticsData
          */
         public StatisticsData getStatistics(String[] statisticsInformation) {
-            if(statisticsInformation.length < 2)
+            if (statisticsInformation.length < 2) {
                 return new StatisticsData();
-            
+            }
+
             if (statisticsInformation[1].equals("queueData")) {
                 int[] data = {maxCapacity, processQueue.size(), processingNodes.size()};
                 return new StatisticsData(StatType.REQUESTQUEUE, queueName, data);
             } else if (statisticsInformation[1].equals("getUsageRecordingInterval")) {
                 TimeInterval[] interval = null;
-                if(statisticsInformation.length == 2){
+                if (statisticsInformation.length == 2) {
                     interval = usageHistory.getUsageHistory();
-                }else if(statisticsInformation.length == 4){
+                } else if (statisticsInformation.length == 4) {
                     int first = Integer.parseInt(statisticsInformation[2]);
                     int last = Integer.parseInt(statisticsInformation[3]);
-                    List<TimeInterval> tmp = usageHistory.getInterval(first,last);
+                    List<TimeInterval> tmp = usageHistory.getInterval(first, last);
                     interval = tmp.toArray(new TimeInterval[tmp.size()]);
-                }else{
+                } else {
                     return new StatisticsData();
                 }
-                return new StatisticsData(StatType.REQUESTQUEUE,statisticsInformation[0],interval);
+                return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], interval);
             }
             return new StatisticsData();
         }
@@ -301,6 +313,7 @@ public class RequestQueueManager implements StatisticsProvider {
                 discPacket.setCircuitBreakerPacket(new CircuitBreakerPacket(queueName));
                 internalRouting.notifyDiscovery(discPacket);
             }
+            inputCounter.incrementAndGet();
             processQueue.add(packet);
         }
 
@@ -319,31 +332,41 @@ public class RequestQueueManager implements StatisticsProvider {
          */
         public void run() {
             int thcount = this.threadCount.getAndIncrement();
-            if (thcount > processingNodes.size() || thcount > processQueue.size() / 2) {
+            if (thcount > processingNodes.size() || thcount > processQueue.size()) {
                 this.threadCount.getAndDecrement();
                 return;
             }
 
             Origin origin = null;
-            while ((origin = processingNodes.poll()) != null) {
-                NetworkPacket packet = processQueue.poll();
-                if (packet == null) {
-                    processingNodes.add(origin);
-                    if (threadCount.get() > 1) {
-                        break;
+            do {
+                while ((origin = processingNodes.poll()) != null) {
+                    NetworkPacket packet = processQueue.poll();
+                    if (packet == null) {
+                        processingNodes.add(origin);
+                        if (threadCount.get() > 1) {
+                            break;
+                        }
+                        continue;
                     }
-                    continue;
+                    packet.setPathType(PathType.SERVICE);
+                    try {
+                        //networkHandler.send(packet,origin.getAddress());
+
+                        outputCounter.incrementAndGet();
+                        internalRouting.sendWork(packet, origin.getAddress());
+                        //System.out.println("Queue sent work to " + origin.getAddress().toString());
+                    } catch (IOException e) {
+                        processQueue.add(packet);
+                        System.out.println("ERROR IN REQUEST QUEUE SEND WORK");
+                        // TODO: LOGGING
+                    }
                 }
-                packet.setPathType(PathType.SERVICE);
-                try {
-                    //networkHandler.send(packet,origin.getAddress());
-                    internalRouting.sendWork(packet, origin.getAddress());
-                    //System.out.println("Queue sent work to " + origin.getAddress().toString());
-                } catch (IOException e) {
-                    processQueue.add(packet);
-                    // TODO: LOGGING
+                try{
+                    Thread.sleep(5);
+                }catch(InterruptedException e){
+                    //e.printStackTrace();
                 }
-            }
+            } while (running);
             this.threadCount.getAndDecrement();
         }
 
@@ -380,10 +403,14 @@ public class RequestQueueManager implements StatisticsProvider {
             }
             return true;
         }
-
+        
+        public void stop(){
+            running = false;
+        }
+        
         private class TimeSliceTask extends TimerTask {
 
-            private final long startTime;
+            private long startTime;
 
             public TimeSliceTask(long startTime) {
                 this.startTime = startTime;
@@ -393,13 +420,16 @@ public class RequestQueueManager implements StatisticsProvider {
             public void run() {
                 long endTime = System.currentTimeMillis();
                 long deltaTime = endTime - startTime;
-                int in = inputCounter.getAndSet(0);
-                int out = outputCounter.getAndSet(0);
+                int in = inputCounter.get();
+                inputCounter.set(0);
+                int out = outputCounter.get();
+                outputCounter.set(0);
                 TimeInterval timeInterval = new TimeInterval(deltaTime);
                 timeInterval.setCurrentQueueCount(processQueue.size());
-                timeInterval.calculateInputIntensity(in);
-                timeInterval.calculateOutputIntensity(out);
+                timeInterval.setInputCount(in);
+                timeInterval.setOutputCount(out);
                 usageHistory.add(timeInterval);
+                startTime = System.currentTimeMillis();
             }
         }
 

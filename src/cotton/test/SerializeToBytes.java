@@ -29,67 +29,24 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-package cotton.systemsupport;
+package cotton.test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /**
  *
- * @author Tony
- * @author Magnus
+ * @author tony
  */
-public class TimeInterval implements Serializable {
+public class SerializeToBytes {
 
-    private long inputCount;
-    private long outputCount;
-    private long deltaTime;
-    private long currentQueueCount = 0;
-
-    public TimeInterval(long deltaTime) {
-        this.inputCount = 0;
-        this.outputCount = 0;
-        this.deltaTime = deltaTime;
-    }
-
-    public double calculateInputIntensity() {
-        double time = (double) deltaTime / 1000;
-        return (deltaTime == 0) ? 0 : ((float) inputCount / time);
-
-    }
-
-    public double calculateOutputIntensity() {
-        double time = (double) deltaTime / 1000;
-        return (deltaTime == 0) ? 0 : ((float) outputCount / time);
-
-    }
-
-    public void setInputCount(int inputCount) {
-        this.inputCount = inputCount;
-    }
-
-    public void setOutputCount(int outputCount) {
-        this.outputCount = outputCount;
-    }
-
-    public long getCurrentQueueCount() {
-        return currentQueueCount;
-    }
-
-    public void setCurrentQueueCount(long currentQueueCount) {
-        this.currentQueueCount = currentQueueCount;
-    }
-
-    public long getInputIntensity() {
-        return inputCount;
-    }
-
-    public long getOutputIntensity() {
-        return outputCount;
-    }
-
-    @Override
-    public String toString() {
-        return "\t TimeInterval{" + "inputIntensity=" + calculateInputIntensity() + ", outputIntensity=" + calculateOutputIntensity() + ", deltaTime=" + deltaTime + ", currentQueueCount=" + currentQueueCount + '}' + "\n";
+    public static byte[] serializeToBytes(Serializable data) throws IOException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ObjectOutputStream objectStream = new ObjectOutputStream(stream);
+        objectStream.writeObject(data);
+        return stream.toByteArray();
     }
 
 }
