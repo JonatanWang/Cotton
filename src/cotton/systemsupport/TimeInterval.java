@@ -39,6 +39,7 @@ public class TimeInterval {
     private long inputIntensity;
     private long outputIntensity;
     private long deltaTime;
+    private long currentQueueCount = 0;
     
     public TimeInterval(long deltaTime){
         inputIntensity = 0;
@@ -53,6 +54,14 @@ public class TimeInterval {
     public long calculateOutputIntensity(int outputCount){
         outputIntensity = outputCount * deltaTime;
         return outputIntensity;
+    }
+
+    public long getCurrentQueueCount() {
+        return currentQueueCount;
+    }
+
+    public void setCurrentQueueCount(long currentQueueCount) {
+        this.currentQueueCount = currentQueueCount;
     }
     
     public long getInputIntensity() {

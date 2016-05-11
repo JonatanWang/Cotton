@@ -45,6 +45,7 @@ import cotton.servicediscovery.CircuitBreakerPacket;
 import cotton.servicediscovery.DiscoveryPacket;
 import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
 import cotton.systemsupport.Command;
+import cotton.systemsupport.CommandType;
 import java.util.Set;
 import java.util.ArrayList;
 import cotton.systemsupport.StatisticsProvider;
@@ -54,6 +55,7 @@ import cotton.systemsupport.TimeInterval;
 import cotton.systemsupport.UsageHistory;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -69,12 +71,12 @@ public class RequestQueueManager implements StatisticsProvider {
     private ExecutorService threadPool;
     private InternalRoutingRequestQueue internalRouting;
     private int maxAmountOfQueues = 10;
-    private ConcurrentHashMap<String,String> banList;
-    
+    private ConcurrentHashMap<String, String> banList;
+
     public RequestQueueManager() {
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();
-        this.banList = new ConcurrentHashMap<String,String>();
+        this.banList = new ConcurrentHashMap<String, String>();
 
     }
 
@@ -82,12 +84,13 @@ public class RequestQueueManager implements StatisticsProvider {
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(100);//.newCachedThreadPool();
         this.internalRouting = internalRouting;
-        this.banList = new ConcurrentHashMap<String,String>();
+        this.banList = new ConcurrentHashMap<String, String>();
     }
 
     /**
-     * A list of bannedServices that this node never can start a queue for.
-     * It will not be possible to remove after added
+     * A list of bannedServices that this node never can start a queue for. It
+     * will not be possible to remove after added
+     *
      * @param bannedService a array of name of services can get a queue
      */
     public void addBanList(String[] bannedService) {
@@ -95,6 +98,7 @@ public class RequestQueueManager implements StatisticsProvider {
             this.banList.put(bannedService[i], "b");
         }
     }
+
     /**
      * A array of names on different queues.
      *
@@ -114,8 +118,9 @@ public class RequestQueueManager implements StatisticsProvider {
      * @param serviceName the name for a specific service.
      */
     public void startQueue(String serviceName) {
-        if(this.banList.get(serviceName) != null)
+        if (this.banList.get(serviceName) != null) {
             return;
+        }
         RequestQueue queuePool = new RequestQueue(serviceName, 100);
         internalQueueMap.putIfAbsent(serviceName, queuePool);
     }
@@ -133,7 +138,7 @@ public class RequestQueueManager implements StatisticsProvider {
             return;
         }
         queue.queueService(packet);
-        if(queue.getThreadCount().get() < 5){
+        if (queue.getThreadCount().get() < 5) {
             threadPool.execute(queue);
         }
     }
@@ -145,7 +150,6 @@ public class RequestQueueManager implements StatisticsProvider {
      * @param serviceName the name of the service that is supposed to process
      * this data.
      */
-
     public void addAvailableInstance(Origin origin, String serviceName) {
         RequestQueue queue = internalQueueMap.get(serviceName);
         if (queue == null) {
@@ -153,9 +157,9 @@ public class RequestQueueManager implements StatisticsProvider {
         }
         //System.out.println("AvailableInstance: " + origin.getAddress().toString() + " :: " + serviceName);
         queue.addInstance(origin);
-        if(queue.getThreadCount().get() < (queue.getMaxCapacity()/10)){
+        if (queue.getThreadCount().get() < (queue.getMaxCapacity() / 10)) {
             threadPool.execute(queue);
-        }   
+        }
     }
 
     public void stop() {
@@ -177,7 +181,7 @@ public class RequestQueueManager implements StatisticsProvider {
         }
         return queue.getStatistics();
     }
-    
+
     @Override
     public StatisticsProvider getProvider() {
         return this;
@@ -187,6 +191,7 @@ public class RequestQueueManager implements StatisticsProvider {
     public StatType getStatType() {
         return StatType.REQUESTQUEUE;
     }
+
     public int getMaxCapacity(String serviceName) {
         RequestQueue queue = internalQueueMap.get(serviceName);
         return queue.getMaxCapacity();
@@ -200,15 +205,19 @@ public class RequestQueueManager implements StatisticsProvider {
         this.maxAmountOfQueues = maxAmountOfQueues;
     }
 
-    public void setInternalRouting(InternalRoutingRequestQueue internalRouting){
+    public void setInternalRouting(InternalRoutingRequestQueue internalRouting) {
         this.internalRouting = internalRouting;
     }
-    
+
     public boolean processCommand(Command command) {
-        
+        CommandType commandType = command.getCommandType();
+        if (commandType != CommandType.RECORD_USAGEHISTORY) {
+            return false;
+        }
+
         return false;
     }
-    
+
     private class RequestQueue implements Runnable {
 
         private ConcurrentLinkedQueue<NetworkPacket> processQueue;
@@ -218,16 +227,20 @@ public class RequestQueueManager implements StatisticsProvider {
         private AtomicInteger threadCount = new AtomicInteger(0);
         private AtomicInteger inputCounter;
         private AtomicInteger outputCounter;
-        private UsageHistory<TimeInterval> intervals;
-        
+        private UsageHistory<TimeInterval> usageHistory;
+
         public RequestQueue(String queueName, int maxCapacity) {
             processQueue = new ConcurrentLinkedQueue<>();
             processingNodes = new ConcurrentLinkedQueue<>();
             this.queueName = queueName;
             this.maxCapacity = maxCapacity;
-            this.intervals = new UsageHistory();
+            this.usageHistory = new UsageHistory();
         }
 
+        /**
+         * getStatistics for this queue
+         * @return StatisticsData
+         */
         public StatisticsData getStatistics() {
             int[] data = {maxCapacity, processQueue.size(), processingNodes.size()};
             return new StatisticsData(StatType.REQUESTQUEUE, queueName, data);
@@ -236,14 +249,14 @@ public class RequestQueueManager implements StatisticsProvider {
         public AtomicInteger getThreadCount() {
             return threadCount;
         }
-        
+
         /**
          * buffers networkpackets to be processed
          *
          * @param packet a networkpacket to be processed
          */
         public void queueService(NetworkPacket packet) {
-            if(maxCapacity < processQueue.size() && (processQueue.size()%100)==0){
+            if (maxCapacity < processQueue.size() && (processQueue.size() % 100) == 0) {
                 DiscoveryPacket discPacket = new DiscoveryPacket(DiscoveryPacketType.CIRCUITBREAKER);
                 discPacket.setCircuitBreakerPacket(new CircuitBreakerPacket(queueName));
                 internalRouting.notifyDiscovery(discPacket);
@@ -266,17 +279,17 @@ public class RequestQueueManager implements StatisticsProvider {
          */
         public void run() {
             int thcount = this.threadCount.getAndIncrement();
-            if( thcount > processingNodes.size() || thcount > processQueue.size()/2){
+            if (thcount > processingNodes.size() || thcount > processQueue.size() / 2) {
                 this.threadCount.getAndDecrement();
                 return;
             }
-            
+
             Origin origin = null;
             while ((origin = processingNodes.poll()) != null) {
                 NetworkPacket packet = processQueue.poll();
                 if (packet == null) {
                     processingNodes.add(origin);
-                    if(threadCount.get() > 1){
+                    if (threadCount.get() > 1) {
                         break;
                     }
                     continue;
@@ -296,6 +309,43 @@ public class RequestQueueManager implements StatisticsProvider {
 
         public int getMaxCapacity() {
             return this.maxCapacity;
+        }
+
+        /**
+         * Start the Usage History recording and sets the sampling rate
+         * @param samplingRate
+         * @return 
+         */
+        public boolean setUsageRecording(long samplingRate) {
+            return false;
+        }
+        
+        /**
+         * Stop the Usage History recording
+         * @param samplingRate
+         * @return 
+         */
+        public boolean stopUsageRecording(long samplingRate) {
+            return false;
+        }
+        
+        private class TimeSliceTask extends TimerTask {
+            private final long startTime;
+            public TimeSliceTask(long startTime) {
+                this.startTime = startTime;
+            }
+            @Override
+            public void run() {
+                long endTime = System.currentTimeMillis();
+                long deltaTime = endTime - startTime;
+                int in = inputCounter.getAndSet(0);
+                int out = outputCounter.getAndSet(0);
+                TimeInterval timeInterval = new TimeInterval(deltaTime);
+                timeInterval.setCurrentQueueCount(processQueue.size());
+                timeInterval.calculateInputIntensity(in);
+                timeInterval.calculateOutputIntensity(out);
+                usageHistory.add(timeInterval);
+            }
         }
 
     }
