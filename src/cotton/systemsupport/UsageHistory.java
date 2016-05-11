@@ -62,4 +62,8 @@ public class UsageHistory implements Serializable{
         int firstIndex = (first <= 0) ? 0 : first;
         return usageHistoryList.subList(firstIndex, lastIndex);
     }
+    
+    public int getLastIndex(){
+        return usageHistoryList.size();
+    }
 }

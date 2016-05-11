@@ -258,6 +258,7 @@ public class RequestQueueManager implements StatisticsProvider {
         private UsageHistory usageHistory;
         private Timer timer;
         private volatile boolean running = true;
+        
         public RequestQueue(String queueName, int maxCapacity) {
             this.processQueue = new ConcurrentLinkedQueue<>();
             this.processingNodes = new ConcurrentLinkedQueue<>();
@@ -294,6 +295,10 @@ public class RequestQueueManager implements StatisticsProvider {
                     return new StatisticsData();
                 }
                 return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], interval);
+            }else if(statisticsInformation[1].equals("isSampling")){
+                if(hasRunningTimer())
+                    return new StatisticsData(StatType.REQUESTQUEUE,statisticsInformation[0],new int[]{1,usageHistory.getLastIndex()});
+                return new StatisticsData(StatType.REQUESTQUEUE,statisticsInformation[0],new int[]{0,usageHistory.getLastIndex()});
             }
             return new StatisticsData();
         }
@@ -385,12 +390,11 @@ public class RequestQueueManager implements StatisticsProvider {
                 timer.cancel();
                 timer.purge();
             }
-
             timer = new Timer();
             timer.scheduleAtFixedRate(new TimeSliceTask(System.currentTimeMillis()), 0, samplingRate);
             return true;
         }
-
+        
         /**
          * Stop the Usage History recording
          *
@@ -400,6 +404,14 @@ public class RequestQueueManager implements StatisticsProvider {
             if (timer != null) {
                 timer.cancel();
                 timer.purge();
+                timer = null;
+            }
+            return true;
+        }
+        
+        public boolean hasRunningTimer(){
+            if(timer == null){
+                return false;
             }
             return true;
         }
