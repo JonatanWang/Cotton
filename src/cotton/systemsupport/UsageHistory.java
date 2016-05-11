@@ -31,6 +31,7 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.systemsupport;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Vector;
 
@@ -39,7 +40,7 @@ import java.util.Vector;
  * @author Tony
  * @author Magnus
  */
-public class UsageHistory<T> {
+public class UsageHistory<T extends Serializable> {
     private Vector<T> usageHistoryList;
     
     public UsageHistory(){
@@ -50,7 +51,7 @@ public class UsageHistory<T> {
         usageHistoryList.add(element);
     }
     
-    public T[] getUsageHistoryList(){
+    public T[] getUsageHistory(){
         T[] tmp =(T[])new Object[usageHistoryList.size()];
         usageHistoryList.copyInto(tmp);
         return tmp;

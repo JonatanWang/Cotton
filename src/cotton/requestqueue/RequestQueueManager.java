@@ -53,8 +53,10 @@ import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.TimeInterval;
 import cotton.systemsupport.UsageHistory;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -169,7 +171,7 @@ public class RequestQueueManager implements StatisticsProvider {
     public StatisticsData[] getStatisticsForSubSystem(String serviceName) {
         ArrayList<StatisticsData> tdata = new ArrayList<>();
         for (Map.Entry<String, RequestQueue> rq : internalQueueMap.entrySet()) {
-            tdata.add(rq.getValue().getStatistics());
+            tdata.add(rq.getValue().getStatistics(new String[]{serviceName, "queueData"}));
         }
         return tdata.toArray(new StatisticsData[tdata.size()]);
     }
@@ -179,7 +181,7 @@ public class RequestQueueManager implements StatisticsProvider {
         if (queue == null) {
             return new StatisticsData();
         }
-        return queue.getStatistics();
+        return queue.getStatistics(serviceName);
     }
 
     @Override
@@ -214,8 +216,25 @@ public class RequestQueueManager implements StatisticsProvider {
         if (commandType != CommandType.RECORD_USAGEHISTORY) {
             return false;
         }
-
-        return false;
+        String[] tokens = command.getTokens();
+        if (tokens.length < 3) {
+            return false;
+        }
+        String name = tokens[0];
+        String task = tokens[1];
+        int samplingRate = command.getAmount();
+        RequestQueue queue = internalQueueMap.get(name);
+        if (queue == null) {
+            return false;
+        }
+        if (task.equals("setUsageRecordingInterval")) {
+            queue.setUsageRecording(samplingRate);
+        } else if (task.equals("stopUsageRecording")) {
+            queue.stopUsageRecording();
+        } else {
+            return false;
+        }
+        return true;
     }
 
     private class RequestQueue implements Runnable {
@@ -228,6 +247,7 @@ public class RequestQueueManager implements StatisticsProvider {
         private AtomicInteger inputCounter;
         private AtomicInteger outputCounter;
         private UsageHistory<TimeInterval> usageHistory;
+        private Timer timer;
 
         public RequestQueue(String queueName, int maxCapacity) {
             processQueue = new ConcurrentLinkedQueue<>();
@@ -239,11 +259,31 @@ public class RequestQueueManager implements StatisticsProvider {
 
         /**
          * getStatistics for this queue
+         *
          * @return StatisticsData
          */
-        public StatisticsData getStatistics() {
-            int[] data = {maxCapacity, processQueue.size(), processingNodes.size()};
-            return new StatisticsData(StatType.REQUESTQUEUE, queueName, data);
+        public StatisticsData getStatistics(String[] statisticsInformation) {
+            if(statisticsInformation.length < 2)
+                return new StatisticsData();
+            
+            if (statisticsInformation[1].equals("queueData")) {
+                int[] data = {maxCapacity, processQueue.size(), processingNodes.size()};
+                return new StatisticsData(StatType.REQUESTQUEUE, queueName, data);
+            } else if (statisticsInformation[1].equals("getUsageRecordingInterval")) {
+                TimeInterval[] interval = null;
+                if(statisticsInformation.length == 2){
+                    interval = usageHistory.getUsageHistory();
+                }else if(statisticsInformation.length == 4){
+                    int first = Integer.parseInt(statisticsInformation[2]);
+                    int last = Integer.parseInt(statisticsInformation[3]);
+                    List<TimeInterval> tmp = usageHistory.getInterval(first,last);
+                    interval = tmp.toArray(new TimeInterval[tmp.size()]);
+                }else{
+                    return new StatisticsData();
+                }
+                return new StatisticsData(StatType.REQUESTQUEUE,statisticsInformation[0],interval);
+            }
+            return new StatisticsData();
         }
 
         public AtomicInteger getThreadCount() {
@@ -313,27 +353,42 @@ public class RequestQueueManager implements StatisticsProvider {
 
         /**
          * Start the Usage History recording and sets the sampling rate
+         *
          * @param samplingRate
-         * @return 
+         * @return
          */
         public boolean setUsageRecording(long samplingRate) {
-            return false;
+            if (timer != null) {
+                timer.cancel();
+                timer.purge();
+            }
+
+            timer = new Timer();
+            timer.scheduleAtFixedRate(new TimeSliceTask(System.currentTimeMillis()), 0, samplingRate);
+            return true;
         }
-        
+
         /**
          * Stop the Usage History recording
-         * @param samplingRate
-         * @return 
+         *
+         * @return
          */
-        public boolean stopUsageRecording(long samplingRate) {
-            return false;
+        public boolean stopUsageRecording() {
+            if (timer != null) {
+                timer.cancel();
+                timer.purge();
+            }
+            return true;
         }
-        
+
         private class TimeSliceTask extends TimerTask {
+
             private final long startTime;
+
             public TimeSliceTask(long startTime) {
                 this.startTime = startTime;
             }
+
             @Override
             public void run() {
                 long endTime = System.currentTimeMillis();

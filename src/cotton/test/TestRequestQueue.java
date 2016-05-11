@@ -287,7 +287,7 @@ public class TestRequestQueue {
         assertTrue(sentChains == completedChains);
     }
 
-    //@Test
+    @Test
     public void TestStatistics() throws UnknownHostException {
         System.out.println("Now running: TestStatistics");
         Cotton discovery = new Cotton(true, 8161);

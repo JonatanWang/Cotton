@@ -30,12 +30,15 @@ POSSIBILITY OF SUCH DAMAGE.
 
  */
 package cotton.systemsupport;
+
+import java.io.Serializable;
+
 /**
  *
  * @author Tony
  * @author Magnus
  */
-public class TimeInterval {
+public class TimeInterval implements Serializable{
     private long inputIntensity;
     private long outputIntensity;
     private long deltaTime;
