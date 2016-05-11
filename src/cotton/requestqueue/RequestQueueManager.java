@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import cotton.systemsupport.StatisticsProvider;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
+import cotton.systemsupport.UsageHistory;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -194,12 +195,16 @@ public class RequestQueueManager implements StatisticsProvider {
         private final String queueName;
         private int maxCapacity;
         private AtomicInteger threadCount = new AtomicInteger(0);
-
+        private AtomicInteger inputCounter;
+        private AtomicInteger outputCounter;
+        private UsageHistory<TimeInterval> intervals;
+        
         public RequestQueue(String queueName, int maxCapacity) {
             processQueue = new ConcurrentLinkedQueue<>();
             processingNodes = new ConcurrentLinkedQueue<>();
             this.queueName = queueName;
             this.maxCapacity = maxCapacity;
+            this.intervals = new UsageHistory();
         }
 
         public StatisticsData getStatistics() {
