@@ -67,10 +67,12 @@ public class RequestQueueManager implements StatisticsProvider {
     private ExecutorService threadPool;
     private InternalRoutingRequestQueue internalRouting;
     private int maxAmountOfQueues = 10;
-
+    private ConcurrentHashMap<String,String> banList;
+    
     public RequestQueueManager() {
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();
+        this.banList = new ConcurrentHashMap<String,String>();
 
     }
 
@@ -78,9 +80,19 @@ public class RequestQueueManager implements StatisticsProvider {
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(100);//.newCachedThreadPool();
         this.internalRouting = internalRouting;
+        this.banList = new ConcurrentHashMap<String,String>();
     }
 
-
+    /**
+     * A list of bannedServices that this node never can start a queue for.
+     * It will not be possible to remove after added
+     * @param bannedService a array of name of services can get a queue
+     */
+    public void addBanList(String[] bannedService) {
+        for (int i = 0; i < bannedService.length; i++) {
+            this.banList.put(bannedService[i], "b");
+        }
+    }
     /**
      * A array of names on different queues.
      *
@@ -100,6 +112,8 @@ public class RequestQueueManager implements StatisticsProvider {
      * @param serviceName the name for a specific service.
      */
     public void startQueue(String serviceName) {
+        if(this.banList.get(serviceName) != null)
+            return;
         RequestQueue queuePool = new RequestQueue(serviceName, 100);
         internalQueueMap.putIfAbsent(serviceName, queuePool);
     }
