@@ -55,7 +55,6 @@ import cotton.services.ServiceLookup;
 import cotton.services.ServiceFactory;
 import cotton.internalRouting.DefaultInternalRouting;
 import cotton.internalRouting.InternalRoutingClient;
-import cotton.network.BetaNetworkHandler;
 import cotton.network.DefaultNetworkHandler;
 import java.util.Random;
 import cotton.requestqueue.RequestQueueManager;

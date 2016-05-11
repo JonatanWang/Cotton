@@ -458,7 +458,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 public void run() {
                     reapTimedOutRequest();
                 }
-            }, timeStamp - curTime, TimeUnit.MILLISECONDS);
+            }, timeStamp - curTime + 10, TimeUnit.MILLISECONDS);
             nextTime = timeStamp;
         }
 

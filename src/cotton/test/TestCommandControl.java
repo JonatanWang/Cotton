@@ -238,18 +238,13 @@ public class TestCommandControl {
             @Override
             public void run() {
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(300);
                 } catch (InterruptedException ex) {
                     //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 req.setData("Hej".getBytes());
             }
         }).start();
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException ex) {
-            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
 
         byte[] data = req.getData();
         String s = null;

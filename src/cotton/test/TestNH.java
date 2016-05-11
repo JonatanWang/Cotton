@@ -34,9 +34,7 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.test;
 
 import cotton.internalRouting.InternalRoutingNetwork;
-import cotton.network.BetaNetworkHandler;
 import cotton.network.DefaultNetworkHandler;
-//import cotton.network.BetaNetworkHandler;
 import cotton.network.DummyServiceChain;
 import cotton.network.NetworkPacket;
 import cotton.network.NetworkPacket.NetworkPacketBuilder;

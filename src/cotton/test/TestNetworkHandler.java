@@ -29,14 +29,14 @@ import java.util.logging.Logger;
  *
  * @author o_0
  */
-public class BetaNetworkHandler implements NetworkHandler {
+public class TestNetworkHandler implements NetworkHandler {
 
     private InternalRoutingNetwork internalRouting = null;
     private InetSocketAddress localAddress = null;
     private ConcurrentHashMap<SocketAddress, Socket> openSocket;
     private ExecutorService threadPool;
 
-    public BetaNetworkHandler(int portNumber) throws UnknownHostException {
+    public TestNetworkHandler(int portNumber) throws UnknownHostException {
         this.localAddress = new InetSocketAddress(Inet4Address.getLocalHost(), portNumber);
         this.openSocket = new ConcurrentHashMap<SocketAddress, Socket>();
         this.threadPool = Executors.newFixedThreadPool(100);
@@ -96,10 +96,10 @@ public class BetaNetworkHandler implements NetworkHandler {
                 return;
             } catch (SocketException ex) {
                 removeConnection(dest, connection);
-                Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
                 removeConnection(dest, connection);
-                Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         connection = createConnection(dest);
@@ -111,7 +111,7 @@ public class BetaNetworkHandler implements NetworkHandler {
             return;
         } catch (IOException ex) {
             removeConnection(dest, connection);
-            Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }
@@ -126,11 +126,11 @@ public class BetaNetworkHandler implements NetworkHandler {
                 
             } catch (SocketException ex) {
                 removeConnection(dest, connection);
-                Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
                 return;
             } catch (IOException ex) {
                 removeConnection(dest, connection);
-                Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
                 return;
             }
         }
@@ -152,13 +152,13 @@ public class BetaNetworkHandler implements NetworkHandler {
                     System.out.println("NetworkDataGetter run: InvalidProtocolBufferException null"); //proccessIncoming
                     ex.printStackTrace();
                 } catch (IOException ex) {
-                    Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 try {
                     removeConnection(dest, connection);
                     connection.close();
                 } catch (IOException ex) {
-                    Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });
@@ -183,7 +183,7 @@ public class BetaNetworkHandler implements NetworkHandler {
                 this.serverSocket.close();
             }
         } catch (IOException ex) {
-            Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -198,7 +198,7 @@ public class BetaNetworkHandler implements NetworkHandler {
             serverSocket.setSoTimeout(40);
             //serverSocket.setReuseAddress(true);
         } catch (IOException ex) {
-            Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         Socket client = null;
@@ -219,7 +219,7 @@ public class BetaNetworkHandler implements NetworkHandler {
                 e.printStackTrace();
                 break;
             } catch (IOException ex) {
-                Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
 
         } while (true);
@@ -227,13 +227,13 @@ public class BetaNetworkHandler implements NetworkHandler {
             serverSocket.close();
 
         } catch (IOException ex) {
-            Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
         for (Map.Entry<SocketAddress, Socket> entry : this.openSocket.entrySet()) {
             try {
                 entry.getValue().close();
             } catch (IOException ex) {
-                Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -400,7 +400,7 @@ public class BetaNetworkHandler implements NetworkHandler {
                 }
             } catch (IOException ex) {
                 this.shutdown = true;
-                Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
@@ -415,7 +415,7 @@ public class BetaNetworkHandler implements NetworkHandler {
                 }
                 connection.close();
             } catch (IOException ex) {
-                Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
@@ -455,7 +455,7 @@ public class BetaNetworkHandler implements NetworkHandler {
                 System.out.println("NetworkDataGetter run: InvalidProtocolBufferException null"); //proccessIncoming
                 ex.printStackTrace();
             } catch (IOException ex) {
-                Logger.getLogger(BetaNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(TestNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
             killConnection();
 
