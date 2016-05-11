@@ -71,6 +71,7 @@ public class RequestQueueManager implements StatisticsProvider {
     public RequestQueueManager() {
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();
+        this.banList = new ConcurrentHashMap<String,String>();
 
     }
 
@@ -78,6 +79,7 @@ public class RequestQueueManager implements StatisticsProvider {
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(100);//.newCachedThreadPool();
         this.internalRouting = internalRouting;
+        this.banList = new ConcurrentHashMap<String,String>();
     }
 
     /**
