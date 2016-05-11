@@ -51,6 +51,7 @@ import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Tony
@@ -74,7 +75,7 @@ public class RequestQueueManager implements StatisticsProvider {
 
     public RequestQueueManager(InternalRoutingRequestQueue internalRouting) {
         this.internalQueueMap = new ConcurrentHashMap<>();
-        threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(100);//.newCachedThreadPool();
         this.internalRouting = internalRouting;
     }
 
@@ -115,7 +116,9 @@ public class RequestQueueManager implements StatisticsProvider {
             return;
         }
         queue.queueService(packet);
-        threadPool.execute(queue);
+        if(queue.getThreadCount().get() < 5){
+            threadPool.execute(queue);
+        }
     }
 
     /**
@@ -133,7 +136,9 @@ public class RequestQueueManager implements StatisticsProvider {
         }
         //System.out.println("AvailableInstance: " + origin.getAddress().toString() + " :: " + serviceName);
         queue.addInstance(origin);
-        threadPool.execute(queue);
+        if(queue.getThreadCount().get() < (queue.getMaxCapacity()/10)){
+            threadPool.execute(queue);
+        }   
     }
 
     public void stop() {
@@ -188,6 +193,7 @@ public class RequestQueueManager implements StatisticsProvider {
         private ConcurrentLinkedQueue<Origin> processingNodes;
         private final String queueName;
         private int maxCapacity;
+        private AtomicInteger threadCount = new AtomicInteger(0);
 
         public RequestQueue(String queueName, int maxCapacity) {
             processQueue = new ConcurrentLinkedQueue<>();
@@ -201,6 +207,10 @@ public class RequestQueueManager implements StatisticsProvider {
             return new StatisticsData(StatType.REQUESTQUEUE, queueName, data);
         }
 
+        public AtomicInteger getThreadCount() {
+            return threadCount;
+        }
+        
         /**
          * buffers networkpackets to be processed
          *
@@ -229,12 +239,21 @@ public class RequestQueueManager implements StatisticsProvider {
          *
          */
         public void run() {
+            int thcount = this.threadCount.getAndIncrement();
+            if( thcount > processingNodes.size() || thcount > processQueue.size()/2){
+                this.threadCount.getAndDecrement();
+                return;
+            }
+            
             Origin origin = null;
             while ((origin = processingNodes.poll()) != null) {
                 NetworkPacket packet = processQueue.poll();
                 if (packet == null) {
                     processingNodes.add(origin);
-                    return;
+                    if(threadCount.get() > 1){
+                        break;
+                    }
+                    continue;
                 }
                 packet.setPathType(PathType.SERVICE);
                 try {
@@ -246,6 +265,7 @@ public class RequestQueueManager implements StatisticsProvider {
                     // TODO: LOGGING
                 }
             }
+            this.threadCount.getAndDecrement();
         }
 
         public int getMaxCapacity() {

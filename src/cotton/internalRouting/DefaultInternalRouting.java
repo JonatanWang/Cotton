@@ -299,8 +299,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     @Override
     public ServiceRequest sendWithResponse(DestinationMetaData dest, byte[] data, int timeout) {
         Origin origin = new Origin();
-        ServiceRequest request = newServiceRequest(origin, timeout);
         origin.setAddress(this.localAddress);
+        ServiceRequest request = newServiceRequest(origin, timeout);
         
         NetworkPacket packet = prepareForTransmission(origin, null, data, dest.getPathType());
         try {
@@ -451,8 +451,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      */
     public void scheduleTask(long timeStamp) {
         long curTime = System.currentTimeMillis();
-        long diff = Math.abs(nextTime - timeStamp);
-        if (diff > 50 || curTime - timeStamp > 0) {
+        long diff =nextTime - timeStamp;
+        if (diff >= 0 || diff < -50 || curTime - timeStamp > 0) {
             taskScheduler.schedule(new Runnable() {
                 @Override
                 public void run() {

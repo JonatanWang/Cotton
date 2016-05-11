@@ -62,6 +62,7 @@ import cotton.systemsupport.StatisticsProvider;
 import cotton.test.services.GlobalDnsStub;
 import cotton.test.services.MathResult;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -91,7 +92,8 @@ public class TestRequestQueue {
     }
 
     //@Test
-    public void TestRequestQueue() throws UnknownHostException {
+    public void TestRequestQueue() throws UnknownHostException {        
+        System.out.println("Now running: TestRequestQueue");
         Cotton discovery = new Cotton(true, 11765);
         GlobalDnsStub gDns = new GlobalDnsStub();
 
@@ -181,10 +183,12 @@ public class TestRequestQueue {
 
     @Test
     public void TestWorkFloodRequestQueue() throws UnknownHostException {
-        Cotton discovery = new Cotton(true, 8266);
+        System.out.println("Now running: TestWorkFloodRequestQueue");
+        int port = new Random().nextInt(25000) + 5000;
+        Cotton discovery = new Cotton(true, port);
         GlobalDnsStub gDns = new GlobalDnsStub();
 
-        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 8266);
+        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = gdAddr;
         gDns.setGlobalDiscoveryAddress(arr);
@@ -285,6 +289,7 @@ public class TestRequestQueue {
 
     //@Test
     public void TestStatistics() throws UnknownHostException {
+        System.out.println("Now running: TestStatistics");
         Cotton discovery = new Cotton(true, 8161);
         GlobalDnsStub gDns = new GlobalDnsStub();
 
@@ -378,6 +383,7 @@ public class TestRequestQueue {
 
     //@Test
     public void TestMassInstances() throws UnknownHostException {
+        System.out.println("Now running: TestMassInstances");
         Cotton discovery = new Cotton(true, 7159);
         GlobalDnsStub gDns = new GlobalDnsStub();
 

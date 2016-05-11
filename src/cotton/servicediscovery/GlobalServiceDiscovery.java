@@ -237,7 +237,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             signal = RouteSignal.NETWORKDESTINATION;
             return signal;
         }
-
+        System.out.println("Last return (global: getDestination): " + serviceName + " Signal: " + signal);
         return signal;
     }
 
@@ -268,6 +268,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
      */
     private RouteSignal resolveOriginRoute(Origin origin) {
         if (origin == null) {
+            System.out.println("resolveOriginRoute: Origin null");
             return RouteSignal.NOTFOUND;
         }
 

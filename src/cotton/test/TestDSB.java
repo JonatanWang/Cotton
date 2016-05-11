@@ -69,6 +69,7 @@ public class TestDSB {
     
     @Test
     public void testAdd() {
+        System.out.println("Now running: testAdd");
         ServiceBuffer sb = new BridgeServiceBuffer();
         
         ServicePacket sp = new ServicePacket(null, null, new DummyServiceChain("Coloring"));
@@ -78,6 +79,7 @@ public class TestDSB {
     
     @Test
     public void testNextPacket() {
+        System.out.println("Now running: testNextPacket");
         ServiceBuffer sb = new BridgeServiceBuffer();
         
         ServicePacket[] sp = new ServicePacket[3];

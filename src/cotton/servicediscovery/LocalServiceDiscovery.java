@@ -189,8 +189,13 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         //DestinationMetaData dest = new DestinationMetaData(addr,PathType.DISCOVERY);
         try {
             byte[] data = serializeToBytes(packet);
-            ServiceRequest request = internalRouting.sendWithResponse(dest, data, 100);
-            if (request == null || request.getData() == null) {
+            ServiceRequest request = internalRouting.sendWithResponse(dest, data, 400);
+            if (request == null ) {
+                System.out.println("sendWithResponse (LocalServ: searchForService): " + serviceName + " Signal: " + signal);
+                return RouteSignal.NOTFOUND;
+            }
+            if(request.getData() == null) {
+                System.out.println("sendWithResponse (LocalServ: searchForService):request.getData() == null " + serviceName + " Signal: " + signal);
                 return RouteSignal.NOTFOUND;
             }
             DiscoveryPacket discoveryPacket = packetUnpack(request.getData());
@@ -226,6 +231,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         if (serviceName == null) {
             signal = resolveOriginRoute(origin);
             if (signal == RouteSignal.NOTFOUND) {
+                System.out.println("Local: (getDestination):resolveOriginRoute-> NOTFOUND");
                 return signal;
             }
             destination.setSocketAddress(origin.getAddress());
@@ -282,6 +288,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
      */
     private RouteSignal resolveOriginRoute(Origin origin) {
         if (origin == null) {
+            System.out.println("Local: resolveOriginRoute: Origin null");
             return RouteSignal.NOTFOUND;
         }
 
