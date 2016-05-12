@@ -59,12 +59,6 @@ public class Console {
 
     private ArrayList<StatisticsProvider> subSystems;
 
-    /**
-     *
-     * @param serviceDiscovery
-     * @param queueManager
-     * @param serviceHandler
-     */
     public Console(StatisticsProvider[] subSystems) {
         this.subSystems = new ArrayList<>();
         this.subSystems.addAll(Arrays.asList(subSystems));

@@ -613,9 +613,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     }
 
     /**
-     * Announces active queues
-     *
-     * @param queueList a list of names for the queues.
+     * Announces active queues.
      */
     public boolean announceQueues(RequestQueueManager queueManager) {
         this.queueManager = queueManager;

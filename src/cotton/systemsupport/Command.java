@@ -119,8 +119,9 @@ public class Command implements Serializable {
     }
 
     /**
-     * Sets whether the command should respond back to origin
-     * @param query true gives response and default false.
+     * Sets whether the command should respond back to origin.
+     * 
+     * @param response true gives response and default false.
      */
     public void setQuery(boolean response) {
         this.query = response;
