@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,7 +58,7 @@ public class CloudAnalyzer implements Serializable {
     private String name;
     private StatType subSystemType;
     private InternalRoutingServiceDiscovery internalRouting;
-
+    
     public CloudAnalyzer(AddressPool pool, String name, StatType subSystemType, InternalRoutingServiceDiscovery internalRouting) {
         this.pool = pool;
         this.name = name;
@@ -65,9 +66,13 @@ public class CloudAnalyzer implements Serializable {
         this.internalRouting = internalRouting;
     }
 
-    public void analyze() throws IOException {
+    public void analyze(int samplingRate, int samplingPeriod) throws IOException {
+        ArrayList<TimeInterval[]> statistics = gatherStatistics(samplingRate,samplingPeriod);
+    }
+
+    private ArrayList<TimeInterval[]> gatherStatistics(int samplingRate, int samplingPeriod) throws IOException{
         if (pool == null) {
-            return;
+            return null;
         }
         DestinationMetaData[] destinations = pool.copyPoolData();
         ServiceRequest[] isSampling = new DefaultServiceRequest[destinations.length];
@@ -75,30 +80,66 @@ public class CloudAnalyzer implements Serializable {
         Command command = new Command(subSystemType, name, queryRequest, 0, CommandType.RECORD_USAGEHISTORY);
         command.setQuery(true);
         String[] samplingRequest = new String[]{name, "setUsageRecordingInterval"};
-        
-        Command newCommand = new Command(subSystemType,name,samplingRequest,100,CommandType.RECORD_USAGEHISTORY);
+
+        Command newCommand = new Command(subSystemType, name, samplingRequest, samplingRate, CommandType.RECORD_USAGEHISTORY);
+
         byte[] data = serializeToBytes(command);
-        byte[] tmp = serializeToBytes(newCommand);
+        byte[] startSampling = serializeToBytes(newCommand);
+        int[] startIndex = new int[destinations.length];
         for (int i = 0; i < destinations.length; i++) {
             isSampling[i] = internalRouting.sendWithResponse(destinations[i], data, 80);
         }
+
         for (int i = 0; i < isSampling.length; i++) {
             byte[] response = isSampling[i].getData();
             if (response == null) {
                 continue;
             }
             StatisticsData statisticsData = packetUnpack(response);
-            if(statisticsData == null){
+            if (statisticsData == null) {
                 continue;
             }
             int[] samples = statisticsData.getNumberArray();
-            
-            if(samples[0] == 1){
-                internalRouting.sendToDestination(destinations[i], tmp);
+
+            startIndex[i] = samples[2];
+
+            if (samples[0] == 1 || Math.abs(samples[1] - samplingRate) > 50) {
+                internalRouting.sendToDestination(destinations[i], startSampling);
             }
         }
-    }
 
+        for (int i = 0; i < 100; i++) {
+            try {
+                Thread.sleep(samplingPeriod);
+            } catch (InterruptedException e) {
+
+            }
+        }
+
+        ArrayList<TimeInterval[]> intervalCollection = new ArrayList<>();
+        ServiceRequest[] timeIntervals = new ServiceRequest[destinations.length];
+        for (int i = 0; i < destinations.length; i++) {
+            String start = "" + startIndex[i];
+            String end = "" + (startIndex[i] + (samplingPeriod/samplingRate));
+            String[] collectRequests = new String[]{name, "getUsageRecordingInterval",start,end};
+            
+            Command collectSamples = new Command(subSystemType, name, collectRequests, samplingRate, CommandType.RECORD_USAGEHISTORY);
+            byte[] serializedCommand = serializeToBytes(collectSamples);
+
+            timeIntervals[i] = internalRouting.sendWithResponse(destinations[i], serializedCommand, 80);
+        }
+        
+        for (int i = 0; i < timeIntervals.length; i++) {
+            ServiceRequest timeInterval = timeIntervals[i];
+            if(timeInterval == null)
+                continue;
+            byte[] tmp = timeInterval.getData();
+            StatisticsData<TimeInterval> statistics = packetUnpack(tmp);
+            intervalCollection.add(statistics.getData());
+        }
+        return intervalCollection;
+    }
+    
     private static byte[] serializeToBytes(Serializable data) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         ObjectOutputStream objectStream = new ObjectOutputStream(stream);

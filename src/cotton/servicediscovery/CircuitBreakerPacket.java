@@ -49,8 +49,6 @@ public class CircuitBreakerPacket implements Serializable {
     /**
      * Constructs a <code>CircuitBreakerPacket</code> containing the current <code>Cotton</code> 
      * instance <code>SocketAddress</code> and the service list.
-     * 
-     * @param serviceList the <code>Cotton</code> instance service list.
      */
     public CircuitBreakerPacket(String circuitName) {
         this.instanceAddress = null;
@@ -61,7 +59,6 @@ public class CircuitBreakerPacket implements Serializable {
      * instance <code>SocketAddress</code> and the service list.
      * 
      * @param instanceAddress the <code>Cotton</code> instance address.
-     * @param serviceList the <code>Cotton</code> instance service list.
      */
     public CircuitBreakerPacket(SocketAddress instanceAddress, String circuitName) {
         this.instanceAddress = instanceAddress;

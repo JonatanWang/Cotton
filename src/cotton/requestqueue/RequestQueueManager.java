@@ -258,6 +258,7 @@ public class RequestQueueManager implements StatisticsProvider {
         private UsageHistory usageHistory;
         private Timer timer;
         private volatile boolean running = true;
+        private int samplingRate = 0;
         
         public RequestQueue(String queueName, int maxCapacity) {
             this.processQueue = new ConcurrentLinkedQueue<>();
@@ -297,8 +298,8 @@ public class RequestQueueManager implements StatisticsProvider {
                 return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], interval);
             }else if(statisticsInformation[1].equals("isSampling")){
                 if(hasRunningTimer())
-                    return new StatisticsData(StatType.REQUESTQUEUE,statisticsInformation[0],new int[]{1,usageHistory.getLastIndex()});
-                return new StatisticsData(StatType.REQUESTQUEUE,statisticsInformation[0],new int[]{0,usageHistory.getLastIndex()});
+                    return new StatisticsData(StatType.REQUESTQUEUE,statisticsInformation[0],new int[]{1,this.samplingRate,usageHistory.getLastIndex()});
+                return new StatisticsData(StatType.REQUESTQUEUE,statisticsInformation[0],new int[]{0,this.samplingRate,usageHistory.getLastIndex()});
             }
             return new StatisticsData();
         }
@@ -386,12 +387,13 @@ public class RequestQueueManager implements StatisticsProvider {
          * @return
          */
         public boolean setUsageRecording(long samplingRate) {
+            this.samplingRate = (int) samplingRate;
             if (timer != null) {
                 timer.cancel();
                 timer.purge();
             }
             timer = new Timer();
-            timer.scheduleAtFixedRate(new TimeSliceTask(System.currentTimeMillis()), 0, samplingRate);
+            timer.scheduleAtFixedRate(new TimeSliceTask(System.currentTimeMillis()), 0, this.samplingRate);
             return true;
         }
         
