@@ -122,31 +122,38 @@ public class Console {
         InternalRoutingServiceDiscovery internalRouting = (InternalRoutingServiceDiscovery) getProvider(StatType.INTERNALROUTING);
         StatisticsProvider provider = getProvider(command.getType());
         byte[] data;
-        try{
-        if (provider.getStatType() == StatType.UNKNOWN) {
-            data = serializeToBytes(new StatisticsData[0]);
-            internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
-        }
-        switch (command.getCommandType()) {
-            case STATISTICS_FORSUBSYSTEM:
-                StatisticsData[] statisticsForSubSystem = provider.getStatisticsForSubSystem(command.getName());
-                data = serializeToBytes(statisticsForSubSystem);
+        try {
+            if (provider.getStatType() == StatType.UNKNOWN) {
+                data = serializeToBytes(new StatisticsData[0]);
                 internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
-                break;
-            case STATISTICS_FORSYSTEM:
-                StatisticsData statistics = provider.getStatistics(command.getTokens());
-                data = serializeToBytes(statistics);
-                internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
-                break;
-            default:
-                break;
-        }
-        }catch(IOException e){
+            }
+            switch (command.getCommandType()) {
+                case STATISTICS_FORSUBSYSTEM:
+                    StatisticsData[] statisticsForSubSystem = provider.getStatisticsForSubSystem(command.getName());
+                    data = serializeToBytes(statisticsForSubSystem);
+                    internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
+                    break;
+                case STATISTICS_FORSYSTEM:
+                    StatisticsData statistics = provider.getStatistics(command.getTokens());
+                    data = serializeToBytes(statistics);
+                    internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
+                    break;
+                default:
+                    break;
+            }
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private byte[] serializeToBytes(Serializable data) throws IOException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ObjectOutputStream objectStream = new ObjectOutputStream(stream);
+        objectStream.writeObject(data);
+        return stream.toByteArray();
+    }
+
+    private byte[] serializeToBytes(Serializable[] data) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         ObjectOutputStream objectStream = new ObjectOutputStream(stream);
         objectStream.writeObject(data);
