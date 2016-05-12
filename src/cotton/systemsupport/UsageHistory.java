@@ -32,6 +32,7 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.systemsupport;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -57,10 +58,10 @@ public class UsageHistory implements Serializable{
         return tmp;
     }
     
-    public synchronized List<TimeInterval> getInterval(int first, int last){  
+    public synchronized ArrayList<TimeInterval> getInterval(int first, int last){  
         int lastIndex = (last >= usageHistoryList.size()) ? usageHistoryList.size() : last;
         int firstIndex = (first <= 0) ? 0 : first;
-        return usageHistoryList.subList(firstIndex, lastIndex);
+        return new ArrayList<>(usageHistoryList.subList(firstIndex, lastIndex));
     }
     
     public int getLastIndex(){

@@ -629,7 +629,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         if (pool == null) {
             return;
         }
-        DestinationMetaData dest = pool.getAddress();
+        DestinationMetaData dest = new DestinationMetaData(pool.getAddress());
         dest.setPathType(PathType.COMMANDCONTROL);
         Command com = new Command(StatType.SERVICEHANDLER, circuit.getCircuitName(), null, 100, CommandType.CHANGE_ACTIVEAMOUNT);
         sendCommandPacket(dest, com);
