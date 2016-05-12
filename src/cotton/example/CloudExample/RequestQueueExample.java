@@ -29,13 +29,12 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
 package cotton.example.cloudexample;
 
 import cotton.Cotton;
 import cotton.requestqueue.RequestQueueManager;
 import cotton.test.services.GlobalDnsStub;
+import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
@@ -44,8 +43,9 @@ import java.net.UnknownHostException;
  * @author Magnus
  */
 public class RequestQueueExample {
+
     public static void main(String[] args) throws UnknownHostException {
-        GlobalDnsStub gDns = getDnsStub("127.0.01", 9546);
+        GlobalDnsStub gDns = getDnsStub(null, 9546);
         Cotton queueInstance = new Cotton(false, gDns);
         RequestQueueManager requestQueueManager = new RequestQueueManager();
         requestQueueManager.startQueue("mathpow21");
@@ -59,10 +59,16 @@ public class RequestQueueExample {
         }
         queueInstance.shutdown();
     }
-    
-    private static GlobalDnsStub getDnsStub(String dest, int port) {
+
+    private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
         GlobalDnsStub gDns = new GlobalDnsStub();
-        InetSocketAddress gdAddr = new InetSocketAddress(dest,port);
+        InetSocketAddress gdAddr = null;
+        if (dest == null) {
+            gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
+            System.out.println("discAddr:" + Inet4Address.getLocalHost().toString() +" port: " + port);
+        }else {
+            gdAddr = new InetSocketAddress(dest, port);
+        }
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = gdAddr;
         gDns.setGlobalDiscoveryAddress(arr);

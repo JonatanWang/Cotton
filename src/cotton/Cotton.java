@@ -127,6 +127,7 @@ public class Cotton {
     public Cotton (boolean globalServiceDiscovery, int portNumber) throws java.net.UnknownHostException {
         //TODO swap for current versions
         GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
+        
         NetworkHandler net = null;
         if(globalServiceDiscovery) {
             net = new DefaultNetworkHandler(portNumber);
@@ -161,7 +162,9 @@ public class Cotton {
         internalRouting.setCommandControl(console);
         internalRouting.start();
         new Thread(services).start();
-        discovery.announce();
+        if(!discovery.announce()){
+            System.out.println("Announce failed");
+        }
         this.console.addSubSystem(discovery);
         this.console.addSubSystem(services);
         this.console.addSubSystem(internalRouting);
