@@ -39,6 +39,7 @@ import java.nio.ByteBuffer;
 import cotton.Cotton;
 import cotton.internalRouting.InternalRoutingClient;
 import cotton.internalRouting.ServiceRequest;
+import cotton.network.NetworkHandler;
 import cotton.network.ServiceChain;
 import cotton.servicediscovery.GlobalDiscoveryDNS;
 import cotton.test.services.MathPowV2;
@@ -92,7 +93,7 @@ public class TestRequestQueue {
     }
 
     //@Test
-    public void TestRequestQueue() throws UnknownHostException {        
+    public void TestRequestQueue() throws UnknownHostException {
         System.out.println("Now running: TestRequestQueue");
         Cotton discovery = new Cotton(true, 11765);
         GlobalDnsStub gDns = new GlobalDnsStub();
@@ -150,7 +151,7 @@ public class TestRequestQueue {
         for (int i = 0; i < req.length; i++) {
             if (req[i] != null || req[i].getData() != null) {
                 byte[] data2 = req[i].getData();
-                
+
                 int num2 = ByteBuffer.wrap(data2).getInt();
                 //System.out.println("result: " + i + " : " + num2);
                 num = num2;
@@ -184,7 +185,7 @@ public class TestRequestQueue {
     @Test
     public void TestWorkFloodRequestQueue() throws UnknownHostException {
         System.out.println("Now running: TestWorkFloodRequestQueue");
-        int port = new Random().nextInt(25000) + 5000;
+        int port = 9999;//new Random().nextInt(25000) + 5000;
         Cotton discovery = new Cotton(true, port);
         GlobalDnsStub gDns = new GlobalDnsStub();
 
@@ -216,7 +217,7 @@ public class TestRequestQueue {
 
         AtomicInteger counter = new AtomicInteger(0);
         MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
-        
+
         ser1.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
         ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
         ser3.getServiceRegistation().registerService("result", resFactory, 10);
@@ -381,10 +382,21 @@ public class TestRequestQueue {
         assertTrue(success);
     }
 
+    private NetworkHandler newNetHandlerFake(int port) throws UnknownHostException {
+        NetworkHandler net = null;
+        if (port == 0) {
+            Random rnd = new Random();
+            //return new NetworkHandlerFake(rnd.nextInt(20000) + 3000);
+            return new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
+        }        
+        //return new NetworkHandlerFake(port);
+        return new DefaultNetworkHandler(port);
+    }
+
     //@Test
     public void TestMassInstances() throws UnknownHostException {
         System.out.println("Now running: TestMassInstances");
-        Cotton discovery = new Cotton(true, 7159);
+        Cotton discovery = new Cotton(true, newNetHandlerFake(7159));
         GlobalDnsStub gDns = new GlobalDnsStub();
 
         InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 7159);
@@ -398,17 +410,18 @@ public class TestRequestQueue {
         Cotton[] clientArr = new Cotton[clientCount];
         System.out.println("Starting clients:");
         for (int i = 0; i < clientCount; i++) {
-            clientArr[i] = new Cotton(false, gDns);
+            clientArr[i] = new Cotton(false, gDns,newNetHandlerFake(0));
             clientArr[i].start();
         }
         System.out.print("done\n");
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
 
-        Cotton queueInstance = new Cotton(false, gDns);
+        Cotton queueInstance = new Cotton(false, gDns, newNetHandlerFake(0));
         RequestQueueManager requestQueueManager = new RequestQueueManager();
         requestQueueManager.startQueue("mathpow21");
         requestQueueManager.startQueue("mathpow2");
+        requestQueueManager.startQueue("result");
         queueInstance.setRequestQueueManager(requestQueueManager);
         queueInstance.start();
         ServiceChainBuilder builder1 = new ServiceChainBuilder().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
@@ -422,21 +435,24 @@ public class TestRequestQueue {
 
         AtomicInteger counter = new AtomicInteger(0);
         MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
-        
+
         System.out.println("Starting services:");
         for (int i = 0; i < countInst; i++) {
-            serArr1[i] = new Cotton(false, gDns);
-            serArr2[i] = new Cotton(false, gDns);
-            serArr3[i] = new Cotton(false, gDns);
+            serArr1[i] = new Cotton(false, gDns, newNetHandlerFake(0));
+            serArr2[i] = new Cotton(false, gDns, newNetHandlerFake(0));
+            serArr3[i] = new Cotton(false, gDns, newNetHandlerFake(0));
             serArr1[i].getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
             serArr2[i].getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
             serArr3[i].getServiceRegistation().registerService("result", resFactory, 10);
+            serArr1[i].start();
+            serArr2[i].start();
+            serArr3[i].start();
 
         }
         System.out.print("done\n");
         System.out.println("Starting fill work queue:");
         int startedNodes = 0;
-        for (int i = 0; i < 500; i++) {
+        for (int i = 0; i < 200; i++) {
             for (int j = 0; j < clientArr.length; j++) {
                 clientArr[j].getClient().sendToService(data, builder1.build());
                 clientArr[j].getClient().sendToService(data, builder2.build());
@@ -446,18 +462,18 @@ public class TestRequestQueue {
                 StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
                 System.out.println(dataArrToStr(stats));
             }
-            if(i%10 == 0) {
-                if(startedNodes < countInst) {
-                    serArr1[startedNodes].start();
-                    serArr2[startedNodes].start();
-                    serArr3[startedNodes].start();
+            if (i % 10 == 0) {
+                if (startedNodes < countInst) {
+//                    serArr1[startedNodes].start();
+//                    serArr2[startedNodes].start();
+//                    serArr3[startedNodes].start();
                     startedNodes++;
                 }
-                
+
             }
         }
         System.out.print("done\n");
-
+        /*
         for (int i = startedNodes; i < countInst; i++) {
             serArr1[i].start();
             serArr2[i].start();
@@ -467,12 +483,30 @@ public class TestRequestQueue {
                 System.out.println(dataArrToStr(stats));
             }
         }
-
+        */
         ServiceRequest req = clientArr[0].getClient().sendWithResponse(data, builder2.build());
-        data = req.getData();
-        num = ByteBuffer.wrap(data).getInt();
+        data = null;
+        num = 2;
+        try {
+            Thread.sleep(800);
+        } catch (InterruptedException ex) { }
+        if(req != null) {
+            data = req.getData();
+            if(data == null) {
+                System.out.println("reqTime" + req.getErrorMessage()); 
+            }
+        }else{
+            num = 2068;
+        }
+        if(data != null) {
+            num = ByteBuffer.wrap(data).getInt();
+            
+        }else{
+            
+            num += 2428;
+        }
         System.out.println("result:  : " + num);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < clientCount; i++) {
             clientArr[i].shutdown();
         }
         for (int i = 0; i < countInst; i++) {

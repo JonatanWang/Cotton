@@ -29,43 +29,56 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
 package cotton.services;
 
 import cotton.internalRouting.InternalRoutingServiceHandler;
+import cotton.systemsupport.Command;
+import cotton.systemsupport.CommandType;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
-import java.io.Serializable;
 import cotton.systemsupport.StatisticsProvider;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatType;
+import cotton.systemsupport.TimeInterval;
+import cotton.systemsupport.UsageHistory;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
-public class ServiceHandler implements Runnable,StatisticsProvider{
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class ServiceHandler implements Runnable, StatisticsProvider {
+
     private ActiveServiceLookup serviceLookup;
     private InternalRoutingServiceHandler internalRouting;
     private ServiceBuffer workBuffer;
     private ExecutorService threadPool;
     private volatile boolean active = true;
+    private ConcurrentHashMap<UUID, TimeSliceTask> timers;
+    private Timer timeManger = new Timer();
 
-    public ServiceHandler(ActiveServiceLookup serviceLookup, InternalRoutingServiceHandler internalRouting){
+    public ServiceHandler(ActiveServiceLookup serviceLookup, InternalRoutingServiceHandler internalRouting) {
         this.internalRouting = internalRouting;
         this.serviceLookup = serviceLookup;
         this.workBuffer = internalRouting.getServiceBuffer();
-        threadPool = Executors.newFixedThreadPool(100);
+        this.threadPool = Executors.newFixedThreadPool(10);
+        this.timers = new ConcurrentHashMap<UUID, TimeSliceTask>();
     }
 
-    public void run(){
-        while(active){
+    public void run() {
+        while (active) {
             ServicePacket packet = workBuffer.nextPacket();
+
+            //TODO: if the threadcap met put packet back into buffer.
             if(packet == null){
                 try{
                     Thread.sleep(5); //change to exponential fallback strategy.
-                }catch(InterruptedException ex){
+                } catch (InterruptedException ex) {
                 }
-            }else{
+            } else {
                 ServiceDispatcher th = new ServiceDispatcher(packet);
                 threadPool.execute(th);
             }
@@ -73,39 +86,71 @@ public class ServiceHandler implements Runnable,StatisticsProvider{
         threadPool.shutdown();
     }
 
-    public void stop(){
+    public void stop() {
         this.active = false;
+        timers.clear();
+        timeManger.cancel();
+        timeManger.purge();
     }
 
-    public void setServiceConfig(String name,int amount){
+    public void setServiceConfig(String name, int amount) {
         ServiceMetaData service = serviceLookup.getService(name);
-        if(service == null)
+        if (service == null) {
             return;
+        }
         int diff = amount - service.getMaxCapacity();
         service.setMaxCapacity(amount);
-        for(int i = 0; i<diff; i++){
+        for (int i = 0; i < diff; i++) {
             internalRouting.notifyRequestQueue(name);
         }
     }
-    
-    public StatisticsData[] getStatisticsForSubSystem(String name){
+
+    /*
+    *   Statistics 
+     */
+    public StatisticsData[] getStatisticsForSubSystem(String name) {
         ArrayList<StatisticsData> result = new ArrayList<>();
-        for(Map.Entry<String,ServiceMetaData>  entry: serviceLookup.getEntrySet()){
+        for (Map.Entry<String, ServiceMetaData> entry : serviceLookup.getEntrySet()) {
             ServiceMetaData metaData = entry.getValue();
-            int[] data = {metaData.getMaxCapacity(),metaData.getCurrentThreadCount()};
-            result.add(new StatisticsData(StatType.SERVICEHANDLER,entry.getKey(),data));
+            int[] data = {metaData.getMaxCapacity(), metaData.getCurrentThreadCount()};
+            result.add(new StatisticsData(StatType.SERVICEHANDLER, entry.getKey(), data));
         }
         StatisticsData[] ret = result.toArray(new StatisticsData[result.size()]);
         return ret;
     }
 
-    public StatisticsData getStatistics(String[] name){
-        ServiceMetaData metaData = serviceLookup.getService(name[0]);
-        if(metaData == null)
-            return null;
-        int[] data = {metaData.getMaxCapacity(),metaData.getCurrentThreadCount()};
-        return new StatisticsData(StatType.SERVICEHANDLER,name[0],data);
-        
+    @Override
+    public StatisticsData getStatistics(String[] cmdline) {
+        ServiceMetaData metaData = serviceLookup.getService(cmdline[0]);
+        if (metaData == null) {
+            return new StatisticsData();
+        }
+
+        if (cmdline[1].equals("serviceData")) {
+            int[] data = {metaData.getMaxCapacity(), metaData.getCurrentThreadCount()};
+            return new StatisticsData(StatType.SERVICEHANDLER, cmdline[0], data);
+        } else if (cmdline[1].equals("getUsageRecordingInterval")) {
+            TimeInterval[] interval = null;
+            if (cmdline.length == 2) {
+                interval = metaData.getUsageHistory().getUsageHistory();
+            } else if (cmdline.length == 4) {
+                int first = Integer.parseInt(cmdline[2]);
+                int last = Integer.parseInt(cmdline[3]);
+                ArrayList<TimeInterval> tmp = metaData.getUsageHistory().getInterval(first, last);
+                interval = tmp.toArray(new TimeInterval[tmp.size()]);
+            } else {
+                return new StatisticsData();
+            }
+            return new StatisticsData(StatType.SERVICEHANDLER, cmdline[0], interval);
+        } else if (cmdline[1].equals("isSampling")) {
+            if (hasRunningTimer(metaData)) {
+                return new StatisticsData(StatType.SERVICEHANDLER, cmdline[0], new int[]{1, (int) metaData.getSamplingRate(), metaData.getUsageHistory().getLastIndex()});
+            }
+            return new StatisticsData(StatType.SERVICEHANDLER, cmdline[0], new int[]{0, (int) metaData.getSamplingRate(), metaData.getUsageHistory().getLastIndex()});
+        }
+
+        return new StatisticsData();
+
     }
 
     @Override
@@ -118,28 +163,139 @@ public class ServiceHandler implements Runnable,StatisticsProvider{
         return StatType.SERVICEHANDLER;
     }
 
+    private boolean usageRecording(Command command) {
+        CommandType commandType = command.getCommandType();
+        if (commandType != CommandType.RECORD_USAGEHISTORY) {
+            return false;
+        }
+        String[] tokens = command.getTokens();
+        if (tokens.length < 2) {
+            return false;
+        }
+        String name = tokens[0];
+        String task = tokens[1];
+        int samplingRate = command.getAmount();
+        //RequestQueue queue = internalQueueMap.get(name);
+        ServiceMetaData service = this.serviceLookup.getService(name);
+        if (service == null) {
+            return false;
+        }
+        if (task.equals("setUsageRecordingInterval")) {
+            setUsageRecording(service, samplingRate);
+        } else if (task.equals("stopUsageRecording")) {
+            stopUsageRecording(service);
+        } else {
+            return false;
+        }
+        return true;
+    }
 
-    private class ServiceDispatcher implements Runnable{
+    public boolean processCommand(Command command) {
+        if (command.getCommandType() == CommandType.RECORD_USAGEHISTORY) {
+            return usageRecording(command);
+        } else if (command.getCommandType() == CommandType.CHANGE_ACTIVEAMOUNT) {
+            setServiceConfig(command.getName(), command.getAmount());
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Start the Usage History recording and sets the sampling rate
+     *
+     * @param samplingRate
+     * @return
+     */
+    public boolean setUsageRecording(ServiceMetaData service, long samplingRate) {
+        TimeSliceTask timer = timers.get(service.getServiceId());
+        service.setSamplingRate(samplingRate);
+        if (timer != null) {
+            timer.cancel();
+        }
+        service.setSampling(true);
+        this.timeManger.scheduleAtFixedRate(new TimeSliceTask(service, System.currentTimeMillis()), 0, service.getSamplingRate());
+        return true;
+    }
+
+    /**
+     * Stop the Usage History recording
+     *
+     * @return
+     */
+    public boolean stopUsageRecording(ServiceMetaData service) {
+        TimeSliceTask timer = timers.remove(service.getServiceId());
+        service.setSampling(false);
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
+        return true;
+    }
+
+    public boolean hasRunningTimer(ServiceMetaData service) {
+        TimeSliceTask timer = timers.get(service.getServiceId());
+        if (timer == null) {
+            return false;
+        }
+        return true;
+
+    }
+
+    private class TimeSliceTask extends TimerTask {
+
+        private long startTime;
+        private ServiceMetaData service;
+
+        public TimeSliceTask(ServiceMetaData service, long startTime) {
+            this.startTime = startTime;
+            this.service = service;
+        }
+
+        @Override
+        public void run() {
+            long endTime = System.currentTimeMillis();
+            long deltaTime = endTime - startTime;
+            int in = service.getInputCounter();
+            service.setInputCounter(0);
+
+            int out = service.getOutputCounter();
+            service.setOutputCounter(0);
+            TimeInterval timeInterval = new TimeInterval(deltaTime);
+            timeInterval.setCurrentQueueCount(service.getCurrentThreadCount());
+            timeInterval.setInputCount(in);
+            timeInterval.setOutputCount(out);
+            service.getUsageHistory().add(timeInterval);
+            startTime = System.currentTimeMillis();
+        }
+    }
+
+    /**
+     * ServiceDispatcher runs a service
+     */
+    private class ServiceDispatcher implements Runnable {
+
         private ServiceFactory serviceFactory;
         private boolean succesfulInit = true;
         private ServicePacket servicePacket;
         private String serviceName;
-        public ServiceDispatcher(ServicePacket servicePacket){
+        private ServiceMetaData serviceMetaData;
+
+        public ServiceDispatcher(ServicePacket servicePacket) {
             this.servicePacket = servicePacket;
             this.serviceName = this.servicePacket.getTo().getNextServiceName();
 
-            if(this.serviceName == null){
+            if (this.serviceName == null) {
                 succesfulInit = false;
                 return;
             }
 
-            ServiceMetaData serviceMetaData = serviceLookup.getService(serviceName);
-            if(serviceMetaData == null){
+            this.serviceMetaData = serviceLookup.getService(serviceName);
+            if (serviceMetaData == null) {
                 succesfulInit = false;
                 return;
             }
             int currentServiceCount = serviceMetaData.incrementThreadCount();
-            if(currentServiceCount > serviceMetaData.getMaxCapacity()){
+            if (currentServiceCount > serviceMetaData.getMaxCapacity()) {
                 serviceMetaData.decrementThreadCount();
                 succesfulInit = false;
                 return;
@@ -148,20 +304,27 @@ public class ServiceHandler implements Runnable,StatisticsProvider{
             this.serviceFactory = serviceMetaData.getServiceFactory();
 
         }
-        @Override
-        public void run(){
-            if(succesfulInit == false)
-                return;
-            Service service = serviceFactory.newService();
-            try{
 
-                byte[] result = service.execute(null, servicePacket.getOrigin(), servicePacket.getData(),servicePacket.getTo());
+        @Override
+        public void run() {
+            if (succesfulInit == false) {
+                return;
+            }
+            Service service = serviceFactory.newService();
+            try {
+                if (serviceMetaData.isSampling()) {
+                    serviceMetaData.incrementInputCounter();
+                }
+                byte[] result = service.execute(null, servicePacket.getOrigin(), servicePacket.getData(), servicePacket.getTo());
 
                 internalRouting.forwardResult(servicePacket.getOrigin(), servicePacket.getTo(), result);
-                serviceLookup.getService(serviceName).decrementThreadCount(); 
+                serviceLookup.getService(serviceName).decrementThreadCount();
                 internalRouting.notifyRequestQueue(serviceName);
-            }catch(Exception e){
-                serviceLookup.getService(serviceName).decrementThreadCount(); 
+                if (serviceMetaData.isSampling()) {
+                    serviceMetaData.incrementOutputCounter();
+                }
+            } catch (Exception e) {
+                serviceLookup.getService(serviceName).decrementThreadCount();
                 e.printStackTrace();
             }
         }

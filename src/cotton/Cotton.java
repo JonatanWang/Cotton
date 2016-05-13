@@ -133,6 +133,21 @@ public class Cotton {
         initRouting();
         initServiceHandler();
     }
+    public Cotton (boolean globalServiceDiscovery, NetworkHandler net) throws java.net.UnknownHostException {
+        initNetwork(net);
+        initDiscovery(globalServiceDiscovery,null);
+        initLookup();
+        initRouting();
+        initServiceHandler();
+    }
+
+    public Cotton(boolean globalServiceDiscovery,GlobalDiscoveryDNS globalDiscoveryDNS, NetworkHandler net) throws java.net.UnknownHostException {
+        initNetwork(net);
+        initDiscovery(globalServiceDiscovery,globalDiscoveryDNS);
+        initLookup();
+        initRouting();
+        initServiceHandler();
+    }
 
     public void start(){
         new Thread(network).start();
