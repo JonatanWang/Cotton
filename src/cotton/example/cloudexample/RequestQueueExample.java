@@ -32,8 +32,10 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.example.cloudexample;
 
 import cotton.Cotton;
+import cotton.configuration.Configurator;
 import cotton.requestqueue.RequestQueueManager;
 import cotton.test.services.GlobalDnsStub;
+import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -44,10 +46,12 @@ import java.net.UnknownHostException;
  */
 public class RequestQueueExample {
 
-    public static void main(String[] args) throws UnknownHostException {
+    public static void main(String[] args) throws UnknownHostException, IOException {
         GlobalDnsStub gDns = getDnsStub(null, 9546);
         Cotton queueInstance = new Cotton(false, gDns);
-        RequestQueueManager requestQueueManager = new RequestQueueManager();
+        Configurator config = new Configurator();
+        config.loadConfigFromFile("configurationtemplate.cfg");
+        RequestQueueManager requestQueueManager = new RequestQueueManager(config.getQueueConfigurator());
         requestQueueManager.startQueue("mathpow21");
         requestQueueManager.startQueue("mathpow2");
         queueInstance.setRequestQueueManager(requestQueueManager);

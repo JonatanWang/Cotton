@@ -35,6 +35,13 @@ package cotton.storagecomponents;
 
 import org.json.JSONObject;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
 /**
  *@author Mats
  *@author Jonathan
@@ -51,5 +58,5 @@ public interface DatabaseConnector {
 
     public boolean addUserInDatabase (JSONObject newUserData);
 
-    public byte[] authoriseUser (JSONObject newData);
+    public byte[] authoriseUser (JSONObject newData) throws IllegalBlockSizeException, NoSuchAlgorithmException, IOException, BadPaddingException, NoSuchPaddingException, InvalidKeyException;
 }

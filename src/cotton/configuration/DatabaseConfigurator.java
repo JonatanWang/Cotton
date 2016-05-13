@@ -33,7 +33,7 @@
 package cotton.configuration;
 
 /**
- * Configurator for the database
+ * Configurator for the database.
  *
  * @author Jonathan Kåhre
  */

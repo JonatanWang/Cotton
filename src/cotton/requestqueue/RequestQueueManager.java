@@ -31,6 +31,7 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.requestqueue;
 
+import cotton.configuration.QueueConfigurator;
 import cotton.internalrouting.InternalRoutingRequestQueue;
 import cotton.network.NetworkPacket;
 import cotton.network.Origin;
@@ -72,6 +73,7 @@ public class RequestQueueManager implements StatisticsProvider {
     private ExecutorService threadPool;
     private InternalRoutingRequestQueue internalRouting;
     private int maxAmountOfQueues = 10;
+    private AtomicInteger activeQueueCount = new AtomicInteger(0);
     private ConcurrentHashMap<String, String> banList;
 
     public RequestQueueManager() {
@@ -80,12 +82,46 @@ public class RequestQueueManager implements StatisticsProvider {
         this.banList = new ConcurrentHashMap<String, String>();
 
     }
+    
+    public RequestQueueManager(QueueConfigurator config) {
+        this.internalQueueMap = new ConcurrentHashMap<>();
+        threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(100);//.newCachedThreadPool();
+        this.banList = new ConcurrentHashMap<String, String>();
+        this.maxAmountOfQueues = config.getQueueLimit();
+        ArrayList<String> disabledServices = config.getDisabledServices();
+        addBanList(disabledServices);
+        System.out.println("Config :" + config.toString());
+    }
+
+    public RequestQueueManager(QueueConfigurator config,InternalRoutingRequestQueue internalRouting) {
+        this.internalQueueMap = new ConcurrentHashMap<>();
+        this.threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(100);//.newCachedThreadPool();
+        this.internalRouting = internalRouting;
+        this.banList = new ConcurrentHashMap<String, String>();
+        this.maxAmountOfQueues = config.getQueueLimit();
+        ArrayList<String> disabledServices = config.getDisabledServices();
+        addBanList(disabledServices);
+        System.out.println("Config :" + config.toString());
+
+    }
 
     public RequestQueueManager(InternalRoutingRequestQueue internalRouting) {
         this.internalQueueMap = new ConcurrentHashMap<>();
-        threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(100);//.newCachedThreadPool();
+        this.threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(100);//.newCachedThreadPool();
         this.internalRouting = internalRouting;
         this.banList = new ConcurrentHashMap<String, String>();
+    }
+
+    /**
+     * A list of bannedServices that this node never can start a queue for. It
+     * will not be possible to remove after added
+     *
+     * @param bannedService a array of name of services can get a queue
+     */
+    public void addBanList(ArrayList<String> bannedService) {
+        for (String banned : bannedService) {
+            this.banList.put(banned, "b");
+        }
     }
 
     /**
@@ -119,12 +155,13 @@ public class RequestQueueManager implements StatisticsProvider {
      * @param serviceName the name for a specific service.
      */
     public void startQueue(String serviceName) {
-        if (this.banList.get(serviceName) != null) {
+        if (this.banList.get(serviceName) != null || this.maxAmountOfQueues <= this.activeQueueCount.get()) {
             return;
         }
         RequestQueue queuePool = new RequestQueue(serviceName, 100);
         internalQueueMap.putIfAbsent(serviceName, queuePool);
         threadPool.execute(queuePool);
+        this.activeQueueCount.incrementAndGet();
     }
 
     /**
@@ -161,8 +198,8 @@ public class RequestQueueManager implements StatisticsProvider {
         queue.addInstance(origin);
         //System.out.println("max capacity1: " + queue.getMaxCapacity());
         if (queue.getThreadCount().get() < (queue.getMaxCapacity())) {
-          //  System.out.println("max capacity2: " + queue.getMaxCapacity());
-       //     threadPool.execute(queue);
+            //  System.out.println("max capacity2: " + queue.getMaxCapacity());
+            //     threadPool.execute(queue);
         }
     }
 
@@ -171,7 +208,7 @@ public class RequestQueueManager implements StatisticsProvider {
             entry.getValue().stopUsageRecording();
             entry.getValue().stop();
         }
-        
+
         threadPool.shutdown();
 
     }
@@ -258,7 +295,7 @@ public class RequestQueueManager implements StatisticsProvider {
         private Timer timer;
         private volatile boolean running = true;
         private int samplingRate = 0;
-        
+
         public RequestQueue(String queueName, int maxCapacity) {
             this.processQueue = new ConcurrentLinkedQueue<>();
             this.processingNodes = new ConcurrentLinkedQueue<>();
@@ -295,10 +332,11 @@ public class RequestQueueManager implements StatisticsProvider {
                     return new StatisticsData();
                 }
                 return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], interval);
-            }else if(statisticsInformation[1].equals("isSampling")){
-                if(hasRunningTimer())
-                    return new StatisticsData(StatType.REQUESTQUEUE,statisticsInformation[0],new int[]{1,this.samplingRate,usageHistory.getLastIndex()});
-                return new StatisticsData(StatType.REQUESTQUEUE,statisticsInformation[0],new int[]{0,this.samplingRate,usageHistory.getLastIndex()});
+            } else if (statisticsInformation[1].equals("isSampling")) {
+                if (hasRunningTimer()) {
+                    return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], new int[]{1, this.samplingRate, usageHistory.getLastIndex()});
+                }
+                return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], new int[]{0, this.samplingRate, usageHistory.getLastIndex()});
             }
             return new StatisticsData();
         }
@@ -366,9 +404,9 @@ public class RequestQueueManager implements StatisticsProvider {
                         // TODO: LOGGING
                     }
                 }
-                try{
+                try {
                     Thread.sleep(5);
-                }catch(InterruptedException e){
+                } catch (InterruptedException e) {
                     //e.printStackTrace();
                 }
             } while (running);
@@ -390,13 +428,13 @@ public class RequestQueueManager implements StatisticsProvider {
             if (timer != null) {
                 timer.cancel();
                 timer.purge();
-                
+
             }
             timer = new Timer();
             timer.scheduleAtFixedRate(new TimeSliceTask(System.currentTimeMillis()), 0, this.samplingRate);
             return true;
         }
-        
+
         /**
          * Stop the Usage History recording
          *
@@ -410,18 +448,18 @@ public class RequestQueueManager implements StatisticsProvider {
             }
             return true;
         }
-        
-        public boolean hasRunningTimer(){
-            if(timer == null){
+
+        public boolean hasRunningTimer() {
+            if (timer == null) {
                 return false;
             }
             return true;
         }
-        
-        public void stop(){
+
+        public void stop() {
             running = false;
         }
-        
+
         private class TimeSliceTask extends TimerTask {
 
             private long startTime;

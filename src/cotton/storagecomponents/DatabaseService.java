@@ -7,7 +7,13 @@ import cotton.services.Service;
 import cotton.services.ServiceFactory;
 import org.json.JSONObject;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * @author mats
@@ -86,7 +92,29 @@ public class DatabaseService implements Service{
                 }
                 break;
             case "authoriseUser":
-                byte[] returnedToken = wrapper.authoriseUser(databaseInput);
+                byte[] returnedToken = null;
+                try {
+                    returnedToken = wrapper.authoriseUser(databaseInput);
+                } catch (IllegalBlockSizeException e) {
+                    //TODO log error
+                    e.printStackTrace();
+                } catch (NoSuchAlgorithmException e) {
+                    //TODO log error
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    //TODO log error
+                    e.printStackTrace();
+                } catch (BadPaddingException e) {
+                    //TODO log error
+                    e.printStackTrace();
+                } catch (NoSuchPaddingException e) {
+                    //TODO log error
+                    e.printStackTrace();
+                } catch (InvalidKeyException e) {
+                    //TODO log error
+                    e.printStackTrace();
+                }
+
                 if(returnedToken != null){
                     returnValue.put("type", "token");
                     returnValue.put("content", returnedToken);
@@ -112,7 +140,12 @@ public class DatabaseService implements Service{
         return message;
     }
 
-    public class factory implements ServiceFactory{
+    @Override
+    public ServiceFactory loadFactory (){
+        return new Factory();
+    }
+
+    public class Factory implements ServiceFactory{
 
         @Override
         public Service newService() {

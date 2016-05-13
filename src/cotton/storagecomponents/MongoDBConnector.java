@@ -39,26 +39,33 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.util.JSON;
+import cotton.configuration.DatabaseConfigurator;
+import cotton.network.Token;
+import cotton.network.TokenManager;
 import org.apache.log4j.BasicConfigurator;
 import org.bson.Document;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Class that connects to the mongo database and handles the data insertion and retrival.
  *
  *@author Mats
  *@author Jonathan
+ *@author Gunnlaugur
  */
 public class MongoDBConnector implements DatabaseConnector {
 
     private MongoClient client = null;
     private static MongoDBConnector instance = null;
-    private DateFormat dates = null;
     private MongoDatabase db =  null;
-
+    private TokenManager tm = null;
 
     /**
      * Starts the connection to the database
@@ -67,10 +74,17 @@ public class MongoDBConnector implements DatabaseConnector {
         BasicConfigurator.configure();
         client = new MongoClient("localhost" , 27017);
         db = client.getDatabase("cotton");
-        dates = new SimpleDateFormat("yyyy-MM-dd");
+    }
 
-        //add tables
-
+    /**
+     * Recives config from files and setsup connection to mongo.
+     *
+     * @param config information needed for config.
+     */
+    public MongoDBConnector (DatabaseConfigurator config){
+        BasicConfigurator.configure();
+        client = new MongoClient(config.getAddress(), config.getPort());
+        db = client.getDatabase(config.getDatabaseName());
     }
 
     /**
@@ -144,7 +158,7 @@ public class MongoDBConnector implements DatabaseConnector {
         try {
             collection.insertOne(dataInput);
         }catch (MongoWriteException e){
-            //TODO logg error
+            //TODO log error
             success = false;
         }
         return success;
@@ -160,6 +174,15 @@ public class MongoDBConnector implements DatabaseConnector {
     public synchronized boolean addUserInDatabase (JSONObject newUserData){
         boolean success = true;
         MongoCollection<Document> collection = db.getCollection("userTable");
+
+        JSONObject nameCheck = new JSONObject();
+        nameCheck.put("username", newUserData.get("username"));
+
+        BasicDBObject dbObject = (BasicDBObject) JSON.parse(nameCheck.toString());
+        Document nameInDB = collection.find(dbObject).first();
+        if(nameInDB != null){
+            return false;
+        }
 
         Document userInput = Document.parse(newUserData.toString());
 
@@ -179,11 +202,12 @@ public class MongoDBConnector implements DatabaseConnector {
      * @return Token and other login information.
      */
     @Override
-    public synchronized byte[] authoriseUser (JSONObject newData){
-        //TODO this stuff
-        return null;
-    }
+    public synchronized byte[] authoriseUser (JSONObject newData) throws IllegalBlockSizeException, NoSuchAlgorithmException, IOException, BadPaddingException, NoSuchPaddingException, InvalidKeyException {
+        JSONObject getUser = getUserInDatabase(newData);
 
+        Token userTok = new Token(newData.getInt("securityLevel"), newData.getString("username"), newData.getString("id"));
+        return tm.encryptToken(userTok);
+    }
 
     /**
      * Returns a mongodb object
@@ -195,5 +219,27 @@ public class MongoDBConnector implements DatabaseConnector {
             instance = new MongoDBConnector();
         }
         return instance;
+    }
+
+    /**
+     * Sets the token manager as given parameter.
+     *
+     * @param tm token manager to be set.
+     */
+    public void setTokenManager (TokenManager tm){
+        this.tm = tm;
+    }
+
+    private JSONObject getUserInDatabase(JSONObject userData){
+        JSONObject returnValue = null;
+
+        BasicDBObject dbObject = (BasicDBObject) JSON.parse(userData.toString());
+
+        FindIterable<Document> request = db.getCollection("userTable").find(dbObject);
+
+        Document result = request.first();
+        if(result != null)
+            returnValue = new JSONObject(result.toJson());
+        return returnValue;
     }
 }
