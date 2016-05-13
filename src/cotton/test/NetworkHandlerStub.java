@@ -34,7 +34,7 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.test;
 
 import cotton.network.NetworkHandler;
-import cotton.internalRouting.InternalRoutingNetwork;
+import cotton.internalrouting.InternalRoutingNetwork;
 import cotton.network.SocketLatch;
 import java.net.SocketAddress;
 import cotton.network.NetworkPacket;

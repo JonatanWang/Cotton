@@ -31,10 +31,9 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.servicediscovery;
 
-import cotton.internalRouting.InternalRoutingServiceDiscovery;
-import cotton.internalRouting.ServiceRequest;
+import cotton.internalrouting.InternalRoutingServiceDiscovery;
+import cotton.internalrouting.ServiceRequest;
 import cotton.network.DestinationMetaData;
-import cotton.network.NetworkPacket;
 import cotton.network.Origin;
 import cotton.network.PathType;
 import cotton.network.ServiceChain;
@@ -51,7 +50,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
-import java.util.concurrent.ConcurrentHashMap.KeySetView;
+
 import cotton.services.ServiceMetaData;
 import cotton.systemsupport.Command;
 import cotton.systemsupport.CommandType;

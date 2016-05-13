@@ -30,15 +30,17 @@ POSSIBILITY OF SUCH DAMAGE.
 
  */
 
-package cotton.internalRouting;
+package cotton.internalrouting;
+
+import cotton.network.ServiceChain;
 
 /**
  *
- * @author tony
- * @author Magnus
+ * @author Tony
  */
-public interface ServiceRequest {
-    public byte[] getData();
-    public void setFailed(String errorMessage);
-    public String getErrorMessage();
+public interface InternalRoutingClient {
+    public boolean sendToService(byte[] data,ServiceChain serviceChain);
+    public ServiceRequest sendKeepAlive(byte[] data,ServiceChain serviceChain);
+    public ServiceRequest sendWithResponse(byte[] data,ServiceChain serviceChain);
+    
 }

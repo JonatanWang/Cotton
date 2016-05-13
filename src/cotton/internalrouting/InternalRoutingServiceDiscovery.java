@@ -30,12 +30,11 @@ POSSIBILITY OF SUCH DAMAGE.
 
  */
 
-package cotton.internalRouting;
+package cotton.internalrouting;
 
 import cotton.network.DestinationMetaData;
 import cotton.network.Origin;
 import cotton.network.PathType;
-import cotton.internalRouting.ServiceRequest;
 import cotton.servicediscovery.RouteSignal;
 
 

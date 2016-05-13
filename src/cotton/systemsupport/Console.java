@@ -31,12 +31,10 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.systemsupport;
 
-import cotton.internalRouting.InternalRoutingServiceDiscovery;
+import cotton.internalrouting.InternalRoutingServiceDiscovery;
 import cotton.network.NetworkPacket;
 import cotton.network.Origin;
 import cotton.network.PathType;
-import cotton.servicediscovery.DiscoveryPacket;
-import cotton.servicediscovery.GlobalServiceDiscovery;
 import cotton.servicediscovery.ServiceDiscovery;
 import cotton.services.ServiceHandler;
 import java.io.ByteArrayInputStream;

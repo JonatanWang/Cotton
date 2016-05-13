@@ -29,7 +29,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-package cotton.internalRouting;
+package cotton.internalrouting;
 
 import cotton.network.DestinationMetaData;
 import cotton.network.Origin;
@@ -49,10 +49,7 @@ import cotton.services.BridgeServiceBuffer;
 import cotton.services.ServiceBuffer;
 import cotton.services.ServicePacket;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import cotton.servicediscovery.LocalServiceDiscovery;
-import cotton.servicediscovery.GlobalServiceDiscovery;
+
 import cotton.requestqueue.RequestQueueManager;
 import cotton.servicediscovery.DiscoveryPacket;
 import cotton.systemsupport.Console;

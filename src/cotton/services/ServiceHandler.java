@@ -33,16 +33,16 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package cotton.services;
 
-import cotton.internalRouting.InternalRoutingServiceHandler;
+import cotton.internalrouting.InternalRoutingServiceHandler;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
-import java.io.Serializable;
+
 import cotton.systemsupport.StatisticsProvider;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatType;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Set;
+
 public class ServiceHandler implements Runnable,StatisticsProvider{
     private ActiveServiceLookup serviceLookup;
     private InternalRoutingServiceHandler internalRouting;

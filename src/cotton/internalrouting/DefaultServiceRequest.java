@@ -30,11 +30,59 @@ POSSIBILITY OF SUCH DAMAGE.
 
  */
 
-package cotton.internalRouting;
-import cotton.network.SocketLatch;
-import cotton.network.NetworkPacket;
+package cotton.internalrouting;
 
-public interface InternalRoutingNetwork {
-    public void pushNetworkPacket(NetworkPacket networkPacket);
-    public void pushKeepAlivePacket(NetworkPacket networkPacket,SocketLatch latch);
+import java.util.concurrent.CountDownLatch;
+
+/**
+ *
+ * @author tony
+ */
+public class DefaultServiceRequest implements ServiceRequest{
+    private byte[] data = null;
+    private CountDownLatch latch = new CountDownLatch(1);
+    private long timeStamp = 0;
+    private String errorMessage;
+    public DefaultServiceRequest(){
+        
+    }
+    public DefaultServiceRequest(long timeStamp){
+        this.timeStamp = timeStamp;
+    }
+    public byte[] getData() {
+        boolean loop = false;
+        do {
+            try {
+                latch.await();
+                loop = false;
+            } catch (InterruptedException ex) {loop = true;}
+        }while(loop);
+        return data;
+    }
+
+    public void setData(byte[] data) {
+        this.data = data;
+        latch.countDown();
+    }
+    public void setFailed(String errorMessage) {
+        data = null;
+        this.errorMessage = errorMessage;
+        latch.countDown();
+    }
+
+    public long getTimeStamp(){
+        return timeStamp;
+    }
+
+    public void setTimeStamp(long timeStamp){
+        this.timeStamp = timeStamp;
+    }
+    /**
+     * This method returns an error message if the fail has triggered data equals null
+     * @return errorMessage  
+     */
+    @Override
+    public String getErrorMessage() {
+        return errorMessage;
+    }
 }

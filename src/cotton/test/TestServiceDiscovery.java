@@ -51,12 +51,10 @@ import cotton.services.ServiceLookup;
 import cotton.test.services.MathPowV2;
 import cotton.network.NetworkHandler;
 import cotton.servicediscovery.ServiceDiscovery;
-import cotton.internalRouting.ServiceRequest;
+import cotton.internalrouting.ServiceRequest;
 import java.nio.ByteBuffer;
-import cotton.internalRouting.DefaultInternalRouting;
-import cotton.internalRouting.InternalRoutingClient;
-import cotton.services.Service;
-import cotton.services.ServiceFactory;
+import cotton.internalrouting.DefaultInternalRouting;
+import cotton.internalrouting.InternalRoutingClient;
 import cotton.services.ServiceHandler;
 import cotton.services.ServiceMetaData;
 

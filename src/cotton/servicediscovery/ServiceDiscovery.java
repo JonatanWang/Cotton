@@ -33,7 +33,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package cotton.servicediscovery;
 
-import cotton.internalRouting.InternalRoutingServiceDiscovery;
+import cotton.internalrouting.InternalRoutingServiceDiscovery;
 import cotton.network.DestinationMetaData;
 import cotton.network.Origin;
 import cotton.network.ServiceChain;

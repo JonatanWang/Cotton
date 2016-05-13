@@ -30,18 +30,11 @@ POSSIBILITY OF SUCH DAMAGE.
 
  */
 
-package cotton.internalRouting;
+package cotton.internalrouting;
+import cotton.network.SocketLatch;
+import cotton.network.NetworkPacket;
 
-import cotton.network.DestinationMetaData;
-import cotton.network.ServiceChain;
-import cotton.internalRouting.ServiceRequest;
-
-/**
- *
- * @author tony
- */
-public interface InternalRoutingLogger {
-    public boolean sendToNextService(byte[] data, ServiceChain chain);
-    public boolean loggerToDestination(DestinationMetaData dest, byte[] data);
-    public ServiceRequest loggerWithResponse(DestinationMetaData dest, byte[] data);
+public interface InternalRoutingNetwork {
+    public void pushNetworkPacket(NetworkPacket networkPacket);
+    public void pushKeepAlivePacket(NetworkPacket networkPacket,SocketLatch latch);
 }

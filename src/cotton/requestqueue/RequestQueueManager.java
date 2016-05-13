@@ -31,14 +31,13 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.requestqueue;
 
-import cotton.internalRouting.InternalRoutingRequestQueue;
+import cotton.internalrouting.InternalRoutingRequestQueue;
 import cotton.network.NetworkPacket;
 import cotton.network.Origin;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import cotton.network.NetworkHandler;
 import java.io.IOException;
 import cotton.network.PathType;
 import cotton.servicediscovery.CircuitBreakerPacket;
@@ -50,7 +49,6 @@ import cotton.systemsupport.StatisticsProvider;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author Tony

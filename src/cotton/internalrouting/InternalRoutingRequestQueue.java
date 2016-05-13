@@ -29,61 +29,28 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
+package cotton.internalrouting;
 
-package cotton.internalRouting;
+import cotton.network.NetworkPacket;
+import cotton.servicediscovery.DiscoveryPacket;
+import java.io.IOException;
+import java.net.SocketAddress;
 
-import cotton.internalRouting.ServiceRequest;
-import java.util.concurrent.CountDownLatch;
-import java.util.Date;
 /**
  *
- * @author tony
+ * @author Tony
+ * @author Magnus
  */
-public class DefaultServiceRequest implements ServiceRequest{
-    private byte[] data = null;
-    private CountDownLatch latch = new CountDownLatch(1);
-    private long timeStamp = 0;
-    private String errorMessage;
-    public DefaultServiceRequest(){
-        
-    }
-    public DefaultServiceRequest(long timeStamp){
-        this.timeStamp = timeStamp;
-    }
-    public byte[] getData() {
-        boolean loop = false;
-        do {
-            try {
-                latch.await();
-                loop = false;
-            } catch (InterruptedException ex) {loop = true;}
-        }while(loop);
-        return data;
-    }
+public interface InternalRoutingRequestQueue {
 
-    public void setData(byte[] data) {
-        this.data = data;
-        latch.countDown();
-    }
-    public void setFailed(String errorMessage) {
-        data = null;
-        this.errorMessage = errorMessage;
-        latch.countDown();
-    }
-
-    public long getTimeStamp(){
-        return timeStamp;
-    }
-
-    public void setTimeStamp(long timeStamp){
-        this.timeStamp = timeStamp;
-    }
     /**
-     * This method returns an error message if the fail has triggered data equals null
-     * @return errorMessage  
+     * Sends data wrapped in a <code>NetworkPacket</code> over the network.
+     *
+     * @param netPacket contains the data and the <code>metadata</code> needed
+     * to send the packet.
+     * @param dest defines the <code>SocketAddress</code> to send through.
+     * @throws java.io.IOException
      */
-    @Override
-    public String getErrorMessage() {
-        return errorMessage;
-    }
+    public void sendWork(NetworkPacket netPacket, SocketAddress dest) throws IOException;
+    public void notifyDiscovery(DiscoveryPacket packet);
 }
