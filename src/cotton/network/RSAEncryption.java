@@ -56,6 +56,13 @@ public class RSAEncryption implements Encryption {
     private KeyPair keyPair;
     
     /**
+     * Constructs a <code>RSAEncryption</code> without setting the <code>keyPair</code>.
+     */
+    public RSAEncryption() {
+        keyPair = null;
+    }
+    
+    /**
      * Encrypts the data with <strong>RSA</strong> and returns the result.
      * 
      * @param data the data to be encrypted.
@@ -68,6 +75,8 @@ public class RSAEncryption implements Encryption {
             NoSuchAlgorithmException, 
             NoSuchPaddingException 
     {
+        if(keyPair == null) throw new NullPointerException("keyPair: null");
+        
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPublic());
 
@@ -87,6 +96,8 @@ public class RSAEncryption implements Encryption {
             NoSuchAlgorithmException, 
             NoSuchPaddingException 
     {
+        if(keyPair == null) throw new NullPointerException("keyPair: null");
+        
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.DECRYPT_MODE, keyPair.getPrivate());
 
