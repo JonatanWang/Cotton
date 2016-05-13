@@ -32,6 +32,8 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.systemsupport;
 
 import cotton.internalRouting.InternalRoutingServiceDiscovery;
+import cotton.internalRouting.ServiceRequest;
+import cotton.network.DestinationMetaData;
 import cotton.network.NetworkPacket;
 import cotton.network.Origin;
 import cotton.network.PathType;
@@ -85,11 +87,15 @@ public class Console {
         return new EmptyProvider("Unknown provider: " + type.toString());
     }
 
+    /**
+     * Process a command locally on this node
+     * @param packet containing the command
+     */
     public void processCommand(NetworkPacket packet) {
         if (packet == null) {
             return;
         }
-        Command command = packetUnpack(packet.getData());
+        Command command = commandUnpack(packet.getData());
         if (!command.isQuery()) {
             sendCommandToSubSystem(command);
         } else {
@@ -146,6 +152,69 @@ public class Console {
         }
     }
 
+    /**
+     * Sends a query command to a remote node and gets StatisticsData for that query 
+     * @param command the query command that should be sent
+     * @param destination the destination for the node
+     * @return StatisticsData[] with the result of the query
+     * @throws IOException 
+     */
+    public StatisticsData[] sendQueryCommand(Command command, DestinationMetaData destination) throws IOException {
+        StatisticsData[] empty = new StatisticsData[0];
+        InternalRoutingServiceDiscovery internalRouting = (InternalRoutingServiceDiscovery) getProvider(StatType.INTERNALROUTING);
+        if (internalRouting == null) {
+            return empty;
+        }
+        command.setQuery(true);
+        byte[] data = serializeToBytes(command);
+        DestinationMetaData dest = new DestinationMetaData(destination);
+        dest.setPathType(PathType.COMMANDCONTROL);
+        ServiceRequest req = internalRouting.sendWithResponse(dest, data, 500);
+        if (req == null || req.getData() == null) {
+            return empty;
+        }
+        byte[] reqData = req.getData(); 
+        StatisticsData[] res = null;
+        switch (command.getCommandType()) {
+            case STATISTICS_FORSUBSYSTEM:
+                res = statArrayUnpack(reqData);
+                if(res == null){
+                    return empty;
+                }
+                break;
+            case STATISTICS_FORSYSTEM:
+                StatisticsData statistics = statUnpack(reqData);
+                if(statistics == null){
+                    return empty;
+                }
+                res = new StatisticsData[1];
+                res[0] = statistics;
+                break;
+            default:
+                System.out.println("Unkown console QueryCommand");
+                return empty;
+        }
+        return res;
+    }
+
+    /**
+     * Sends a command to a remote node 
+     * @param command the command that should be sent
+     * @param destination the destination for the node
+     * @throws IOException 
+     */
+    public void sendCommand(Command command, DestinationMetaData destination) throws IOException {
+        InternalRoutingServiceDiscovery internalRouting = (InternalRoutingServiceDiscovery) getProvider(StatType.INTERNALROUTING);
+        if (internalRouting == null) {
+            return;
+        }
+        command.setQuery(false);
+        byte[] data = serializeToBytes(command);
+        DestinationMetaData dest = new DestinationMetaData(destination);
+        dest.setPathType(PathType.COMMANDCONTROL);
+        internalRouting.sendToDestination(dest, data);
+    }
+    
     private byte[] serializeToBytes(Serializable data) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         ObjectOutputStream objectStream = new ObjectOutputStream(stream);
@@ -160,7 +229,33 @@ public class Console {
         return stream.toByteArray();
     }
 
-    private Command packetUnpack(byte[] data) {
+    private StatisticsData statUnpack(byte[] data) {
+        StatisticsData statistics = null;
+        try {
+            ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
+            statistics = (StatisticsData) input.readObject();
+        } catch (IOException ex) {
+            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return statistics;
+    }
+
+    private StatisticsData[] statArrayUnpack(byte[] data) {
+        StatisticsData[] statistics = null;
+        try {
+            ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
+            statistics = (StatisticsData[]) input.readObject();
+        } catch (IOException ex) {
+            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return statistics;
+    }
+
+    private Command commandUnpack(byte[] data) {
         Command command = null;
         try {
             ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
