@@ -60,6 +60,8 @@ import java.util.Random;
 import cotton.requestqueue.RequestQueueManager;
 import cotton.systemsupport.Console;
 import cotton.systemsupport.StatisticsProvider;
+import cotton.configuration.Configurator;
+import cotton.configuration.ServiceConfigurator;
 import java.net.UnknownHostException;
 
 /**
@@ -76,6 +78,19 @@ public class Cotton {
     private ServiceDiscovery discovery;
     private DefaultInternalRouting internalRouting;
     private Console console = new Console();
+
+    public Cotton(Configurator config) throws java.net.UnknownHostException,
+                                              java.net.MalformedURLException,
+                                              ClassNotFoundException,
+                                              InstantiationException,
+                                              IllegalAccessException{
+
+        initNetwork(new DefaultNetworkHandler(config.getNetworkConfigurator()));
+        initDiscovery(config.isGlobal(), null);
+        initLookup(config.getServiceConfigurator());
+        initRouting();
+        initServiceHandler();
+    }
 
     /**
 
@@ -182,6 +197,14 @@ public class Cotton {
 
     private void initLookup() {
         this.lookup = new ServiceLookup();
+        this.discovery.setLocalServiceTable(lookup);
+    }
+
+    private void initLookup(ServiceConfigurator config) throws java.net.MalformedURLException,
+                                                               ClassNotFoundException,
+                                                               InstantiationException,
+                                                               IllegalAccessException{
+        this.lookup = new ServiceLookup(config);
         this.discovery.setLocalServiceTable(lookup);
     }
 

@@ -57,10 +57,16 @@ public class ServiceTemplate implements Service {
     public byte[] execute(CloudContext ctx, Origin origin, byte[] data, ServiceChain to) {
         return "none".getBytes();
     }
-    
+
     public static ServiceFactory getFactory(){
         return new Factory();
     }
+
+    @Override
+    public ServiceFactory loadFactory(){
+        return new Factory();
+    }
+
     public static class Factory implements ServiceFactory {
         @Override
         public Service newService() {

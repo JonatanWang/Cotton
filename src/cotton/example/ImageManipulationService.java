@@ -128,6 +128,10 @@ public class ImageManipulationService implements Service {
         return new ImageFactory();
     }
 
+    public ServiceFactory loadFactory(){
+        return new ImageFactory();
+    }
+
     public static class ImageFactory implements ServiceFactory {
 
         private ImageFactory () {

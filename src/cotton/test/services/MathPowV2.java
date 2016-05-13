@@ -67,6 +67,11 @@ public class MathPowV2 implements Service{
         return new Factory();
     }
 
+    @Override
+    public ServiceFactory loadFactory() {
+        return new Factory();
+    }
+
     public static class Factory implements ServiceFactory {
 
         @Override
