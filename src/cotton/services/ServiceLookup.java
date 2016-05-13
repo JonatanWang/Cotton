@@ -29,8 +29,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
 package cotton.services;
 
 import java.util.Enumeration;
@@ -44,35 +42,35 @@ import java.io.File;
 import java.net.URL;
 
 /**
-*
-* @author Tony
-* @author Jonathan Kåhre
-*/
-public class ServiceLookup implements ActiveServiceLookup{
+ *
+ * @author Tony
+ * @author Jonathan Kåhre
+ */
+public class ServiceLookup implements ActiveServiceLookup {
 
-  	private ConcurrentHashMap<String,ServiceMetaData> hashMap;
+    private ConcurrentHashMap<String, ServiceMetaData> hashMap;
 
-  	public ServiceLookup(){
+    public ServiceLookup() {
         this.hashMap = new ConcurrentHashMap<>();
-  	}
+    }
 
     public ServiceLookup(ServiceConfigurator config) throws java.net.MalformedURLException,
-                                                            ClassNotFoundException,
-                                                            InstantiationException,
-                                                            IllegalAccessException{
+            ClassNotFoundException,
+            InstantiationException,
+            IllegalAccessException {
 
         this.hashMap = new ConcurrentHashMap<>();
 
-        if(config.hasServices()){
+        if (config.hasServices()) {
             String workingDirectory = System.getProperty("user.dir");
-            File f = new File(workingDirectory+"/services/");
+            File f = new File(workingDirectory + "/services/");
             URL url = f.toURL();
             URL[] urls = new URL[]{url};
             ClassLoader classloader = new URLClassLoader(urls);
 
-            for(ServiceConfigurator.ServiceData serviceInfo: config.getServices()){
+            for (ServiceConfigurator.ServiceData serviceInfo : config.getServices()) {
                 Class s = classloader.loadClass(serviceInfo.getName());
-                Service service = (Service)s.newInstance();
+                Service service = (Service) s.newInstance();
                 registerService(serviceInfo.getName(), service.loadFactory(), serviceInfo.getLimit());
             }
         }
@@ -80,17 +78,17 @@ public class ServiceLookup implements ActiveServiceLookup{
 
     /**
      * Registers a service to the lookup table. To register a service the user
-     * has to define the service name, the factory used to make instances of the service
-     * and the maximum capacity of the service instances.
+     * has to define the service name, the factory used to make instances of the
+     * service and the maximum capacity of the service instances.
      *
      * @param serviceName defines what the service is called.
      * @param serviceFactory the factory used to make instances of the service.
      * @param maxCapacity defines how many instances of the service are allowed.
      * @return whether the registration was successful or not.
      */
-    public boolean registerService(String serviceName, ServiceFactory serviceFactory, int maxCapacity){
+    public boolean registerService(String serviceName, ServiceFactory serviceFactory, int maxCapacity) {
         ServiceMetaData metaData = new ServiceMetaData(serviceFactory, maxCapacity);
-        if(hashMap.putIfAbsent(serviceName, metaData) == null) {
+        if (hashMap.putIfAbsent(serviceName, metaData) == null) {
             return true;    // no mapping for this key
         }
         return false;
@@ -103,19 +101,19 @@ public class ServiceLookup implements ActiveServiceLookup{
      * @param serviceName the specified service.
      * @return the meta data of the service.
      */
-  	public ServiceMetaData getService(String serviceName){
-  		return hashMap.get(serviceName);
-  	}
+    public ServiceMetaData getService(String serviceName) {
+        return hashMap.get(serviceName);
+    }
 
     /**
-     * Returns an <code>String Enumeration</code> of the keys in the lookup table.
-     * The order of the keys will be kept from the lookup table.
+     * Returns an <code>String Enumeration</code> of the keys in the lookup
+     * table. The order of the keys will be kept from the lookup table.
      *
      * @return the keys in the lookup table.
      */
-  	public Enumeration<String> getServiceEnumeration(){
-  		return hashMap.keys();
-  	}
+    public Enumeration<String> getServiceEnumeration() {
+        return hashMap.keys();
+    }
 
     /**
      * Returns the key set in the hash map table. The order of the keys will be
@@ -123,25 +121,27 @@ public class ServiceLookup implements ActiveServiceLookup{
      *
      * @return the key set of the hash map.
      */
-  	public ConcurrentHashMap.KeySetView<String, ServiceMetaData> getKeySet(){
-  		return hashMap.keySet();
-  	}
+    public ConcurrentHashMap.KeySetView<String, ServiceMetaData> getKeySet() {
+        return hashMap.keySet();
+    }
+
     /**
-     * Returns a set of key value pairs. The order of the key value pairs will be
-     * unpredictable
+     * Returns a set of key value pairs. The order of the key value pairs will
+     * be unpredictable
+     *
      * @return the entrys of the hash map.
      */
-    public Set<Map.Entry<String,ServiceMetaData>> getEntrySet(){
+    public Set<Map.Entry<String, ServiceMetaData>> getEntrySet() {
         return hashMap.entrySet();
     }
-    
+
     /**
      * Removes a service entry from the lookup table.
      *
      * @param service the service name.
      * @return the meta data about the removed service.
      */
-  	public ServiceMetaData removeServiceEntry(String service){
-  		return hashMap.remove(service);
-  	}
+    public ServiceMetaData removeServiceEntry(String service) {
+        return hashMap.remove(service);
+    }
 }

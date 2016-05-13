@@ -76,7 +76,7 @@ public class MathResult implements Service{
 
     @Override
     public ServiceFactory loadFactory() {
-        return new Factory(new AtomicInteger(1));
+        return new Factory(new AtomicInteger(0));
     }
 
     public static class Factory implements ServiceFactory {
