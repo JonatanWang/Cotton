@@ -93,6 +93,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             SocketAddress[] addrArr = globalDNS.getGlobalDiscoveryAddress();
             for (int i = 0; i < addrArr.length; i++) {
                 DestinationMetaData gAddr = new DestinationMetaData(addrArr[i], PathType.DISCOVERY);
+                System.out.println("GlobalDiscovery adddress:" + gAddr.toString());
                 discoveryCache.addAddress(gAddr);
             }
         }
@@ -613,9 +614,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     }
 
     /**
-     * Announces active queues
-     *
-     * @param queueList a list of names for the queues.
+     * Announces active queues.
      */
     public boolean announceQueues(RequestQueueManager queueManager) {
         this.queueManager = queueManager;
@@ -630,7 +629,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         if (pool == null) {
             return;
         }
-        DestinationMetaData dest = pool.getAddress();
+        DestinationMetaData dest = new DestinationMetaData(pool.getAddress());
         dest.setPathType(PathType.COMMANDCONTROL);
         Command com = new Command(StatType.SERVICEHANDLER, circuit.getCircuitName(), null, 100, CommandType.CHANGE_ACTIVEAMOUNT);
         sendCommandPacket(dest, com);
@@ -677,6 +676,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     }
 
     private void processConfigPacket(ConfigurationPacket packet) {
+        System.out.println("processConfigPacket: ");
         if (packet == null) {
             return;
         }

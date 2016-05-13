@@ -60,6 +60,7 @@ import java.util.Random;
 import cotton.requestqueue.RequestQueueManager;
 import cotton.systemsupport.Console;
 import cotton.systemsupport.StatisticsProvider;
+import java.net.UnknownHostException;
 
 /**
  *
@@ -76,70 +77,46 @@ public class Cotton {
     private DefaultInternalRouting internalRouting;
     private Console console = new Console();
 
+    /**
+
+     * This starts a new cotton node for your cloud application
+     * @param globalServiceDiscovery if this should be a globalDiscovery node that other ask for directions from
+     * @throws java.net.UnknownHostException can resolve localhost address
+     */
     public Cotton(boolean globalServiceDiscovery) throws java.net.UnknownHostException {
-        Random rnd = new Random();
-        GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
-        NetworkHandler net = null;
-        if (globalServiceDiscovery) {
-            net = new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
-            discovery = new GlobalServiceDiscovery(globalDiscoveryDNS);
-
-        } else {
-            net = new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
-            discovery = new LocalServiceDiscovery(globalDiscoveryDNS);
-
-        }
-        lookup = new ServiceLookup();
-        discovery.setLocalServiceTable(lookup);
-        this.internalRouting = new DefaultInternalRouting(net, discovery);
-        this.services = new ServiceHandler(lookup, internalRouting);
-        //clientNetwork = net;
-        //services = new DeprecatedServiceHandler(lookup, network);
-        //TODO swap for current versions
-        this.network = net;
+        initNetwork(null);
+        initDiscovery(globalServiceDiscovery,null);
+        initLookup();
+        initRouting();
+        initServiceHandler();
     }
 
-    public Cotton(boolean globalServiceDiscovery, GlobalDiscoveryDNS globalDiscoveryDNS) throws java.net.UnknownHostException {
-        Random rnd = new Random();
-        if(globalDiscoveryDNS == null) {
-            globalDiscoveryDNS = new GlobalDiscoveryDNS();
-        }
-        NetworkHandler net = null;
-        if (globalServiceDiscovery) {
-            net = new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
-            discovery = new GlobalServiceDiscovery(globalDiscoveryDNS);
-
-        } else {
-            net = new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
-            discovery = new LocalServiceDiscovery(globalDiscoveryDNS);
-
-        }
-        lookup = new ServiceLookup();
-        discovery.setLocalServiceTable(lookup);
-        this.internalRouting = new DefaultInternalRouting(net, discovery);
-        this.services = new ServiceHandler(lookup, internalRouting);
-        //clientNetwork = net;
-        //services = new DeprecatedServiceHandler(lookup, network);
-        //TODO swap for current versions
-        this.network = net;
+    /**
+     * This starts a new cotton node for your cloud application
+     * @param globalServiceDiscovery if this should be a globalDiscovery node that other ask for directions from
+     * @param globalDiscoveryDNS tells this node where to find globalServiceDiscoverys to reach the cloud
+     * @throws java.net.UnknownHostException
+     */
+    public Cotton(boolean globalServiceDiscovery,GlobalDiscoveryDNS globalDiscoveryDNS) throws java.net.UnknownHostException {
+        initNetwork(null);
+        initDiscovery(globalServiceDiscovery,globalDiscoveryDNS);
+        initLookup();
+        initRouting();
+        initServiceHandler();
     }
 
+    /**
+     * This starts a new cotton node for your cloud application
+     * @param globalServiceDiscovery if this should be a globalDiscovery node that other ask for directions from
+     * @param portNumber what port this node should listen on
+     * @throws java.net.UnknownHostException
+     */
     public Cotton (boolean globalServiceDiscovery, int portNumber) throws java.net.UnknownHostException {
-        //TODO swap for current versions
-        GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
-        NetworkHandler net = null;
-        if(globalServiceDiscovery) {
-            net = new DefaultNetworkHandler(portNumber);
-            discovery = new GlobalServiceDiscovery(globalDiscoveryDNS);
-        }else {
-            net = new DefaultNetworkHandler(portNumber);
-            discovery = new LocalServiceDiscovery(globalDiscoveryDNS);
-        }
-        lookup = new ServiceLookup();
-        discovery.setLocalServiceTable(lookup);
-        this.internalRouting = new DefaultInternalRouting(net,discovery);
-        this.services = new ServiceHandler(lookup,internalRouting);
-        this.network = net;
+        initNetwork(new DefaultNetworkHandler(portNumber));
+        initDiscovery(globalServiceDiscovery,null);
+        initLookup();
+        initRouting();
+        initServiceHandler();
     }
 
     public void start(){
@@ -147,7 +124,9 @@ public class Cotton {
         internalRouting.setCommandControl(console);
         internalRouting.start();
         new Thread(services).start();
-        discovery.announce();
+        if(!discovery.announce()){
+            System.out.println("Announce failed");
+        }
         this.console.addSubSystem(discovery);
         this.console.addSubSystem(services);
         this.console.addSubSystem(internalRouting);
@@ -181,7 +160,39 @@ public class Cotton {
         this.internalRouting.setRequestQueueManager(requestQueueManager);
         this.console.addSubSystem(requestQueueManager);
     }
-    
+
+    private void initNetwork(NetworkHandler net) throws UnknownHostException {
+        if(net == null) {
+            Random rnd = new Random();
+            net = new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
+        }
+        this.network = net;
+    }
+
+    private void initDiscovery(boolean globalServiceDiscovery,GlobalDiscoveryDNS globalDiscoveryDNS) {
+        if(globalDiscoveryDNS == null) {
+            globalDiscoveryDNS = new GlobalDiscoveryDNS();
+        }
+        if (globalServiceDiscovery) {
+            this.discovery = new GlobalServiceDiscovery(globalDiscoveryDNS);
+        } else {
+            this.discovery = new LocalServiceDiscovery(globalDiscoveryDNS);
+        }
+    }
+
+    private void initLookup() {
+        this.lookup = new ServiceLookup();
+        this.discovery.setLocalServiceTable(lookup);
+    }
+
+    private void initRouting() {
+        this.internalRouting = new DefaultInternalRouting(this.network, this.discovery);
+    }
+
+    private void initServiceHandler() {
+        this.services = new ServiceHandler(lookup, internalRouting);
+    }
+
     public static void main(String[] args) {
         Cotton c = null;
         try{

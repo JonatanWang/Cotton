@@ -29,8 +29,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
 package cotton.example.cloudexample;
 
 import cotton.Cotton;
@@ -50,12 +48,15 @@ import java.util.logging.Logger;
  * @author Magnus
  */
 public class ServiceExample1 {
+
     public static void main(String[] args) throws UnknownHostException {
-        GlobalDnsStub gDns = getDnsStub("127.0.0.1", 9546);
+        GlobalDnsStub gDns = getDnsStub(null, 9546);
         Cotton cotton = new Cotton(false, gDns);
         ServiceFactory factory = MathResult.getFactory(new AtomicInteger(0));
         cotton.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
         cotton.getServiceRegistation().registerService("result", factory, 10);
+
+        System.out.println("ServiceExample1 starts");
         cotton.start();
         try {
             Thread.sleep(80000);
@@ -65,9 +66,14 @@ public class ServiceExample1 {
         cotton.shutdown();
     }
 
-    private static GlobalDnsStub getDnsStub(String dest, int port) {
+    private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
         GlobalDnsStub gDns = new GlobalDnsStub();
-        InetSocketAddress gdAddr = new InetSocketAddress(dest,port);
+        InetSocketAddress gdAddr = null;
+        if (dest == null) {
+            gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
+        } else {
+            gdAddr = new InetSocketAddress(dest, port);
+        }
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = gdAddr;
         gDns.setGlobalDiscoveryAddress(arr);
