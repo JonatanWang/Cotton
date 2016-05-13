@@ -52,6 +52,7 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import cotton.configuration.NetworkConfigurator;
 
 /**
  * Handles all of the packet buffering and relaying.
@@ -69,16 +70,37 @@ public class DefaultNetworkHandler implements NetworkHandler {
     private AtomicBoolean running;
     private SocketAddress localSocketAddress;
     private ConcurrentHashMap<SocketAddress, Connection> openSockets;
-    
     private boolean encryption = false;
-    
+
     /**
-     * Returns a <code>DefaultNetworkHandler</code> with the option to set <strong>SSL</strong> encryption. 
-     * For the encryption to work a <code>keystore</code> must exists on all machines. 
+     * Returns a <code>DefaultNetworkHandler</code> configured with the options in the <code>NetworkConfigurator</code>.
+     *
+     * @param config The configuration to follow.
+     */
+    public DefaultNetworkHandler(NetworkConfigurator config){
+        this.localSocketAddress = config.getAddress();
+        this.localPort = config.getAddress().getPort();
+        this.localIP = config.getAddress().getAddress();
+        if((this.encryption = config.isEncryptionEnabled()) == true){
+            String keystorePath = System.getProperty("user.dir")+config.getKeystore();
+            System.setProperty("javax.net.ssl.trustStore", keystorePath);
+            System.setProperty("javax.net.ssl.trustStorePassword", config.getPassword());
+            System.setProperty("javax.net.ssl.keyStore", keystorePath);
+            System.setProperty("javax.net.ssl.keyStorePassword", config.getPassword());
+        }
+
+        threadPool = Executors.newFixedThreadPool(10);
+        running = new AtomicBoolean(true);
+        openSockets = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * Returns a <code>DefaultNetworkHandler</code> with the option to set <strong>SSL</strong> encryption.
+     * For the encryption to work a <code>keystore</code> must exists on all machines.
      * The <code>keystore</code> is required to be the same on all machines.
-     * 
+     *
      * @param encryption whether the data should be encrypted or not.
-     * @throws UnknownHostException 
+     * @throws UnknownHostException
      */
     public DefaultNetworkHandler(boolean encryption) throws UnknownHostException {
         this.localPort = 3333; // TODO: Remove hardcoded port
@@ -154,7 +176,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         else
             throw new NullPointerException("InternalRoutingNetwork points to null");
     }
-    
+
     private ServerSocket createServerSocket() throws IOException {
         if(encryption) {
             SSLServerSocketFactory sf = (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
@@ -163,7 +185,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             return new ServerSocket();
         }
     }
-    
+
     private Socket createSocket(InetSocketAddress address) throws IOException{
         if(encryption) {
             SSLSocketFactory sf = (SSLSocketFactory)SSLSocketFactory.getDefault();

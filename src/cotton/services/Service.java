@@ -57,4 +57,6 @@ public interface Service {
      */
     public byte[] execute(CloudContext ctx, Origin origin, byte[] data, ServiceChain to);
 
+    public ServiceFactory loadFactory();
+
 }

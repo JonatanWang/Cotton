@@ -92,6 +92,11 @@ public class TestDASL {
                 number *= 2;
                 return ByteBuffer.allocate(4).putInt(number).array();
             }
+
+            @Override
+            public ServiceFactory loadFactory(){
+                return new TestServiceFactory();
+            }
         }
     }
 

@@ -76,6 +76,12 @@ public class StringModifier2 implements Service{
     public static ServiceFactory getFactory(){
         return new Factory();
     }
+
+    @Override
+    public ServiceFactory loadFactory(){
+        return new Factory();
+    }
+
     private static class Factory implements ServiceFactory{
         @Override
         public Service newService(){

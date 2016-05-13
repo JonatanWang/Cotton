@@ -74,6 +74,11 @@ public class MathResult implements Service{
         return new Factory(counter);
     }
 
+    @Override
+    public ServiceFactory loadFactory() {
+        return new Factory(new AtomicInteger(1));
+    }
+
     public static class Factory implements ServiceFactory {
         private  AtomicInteger resCount ;
         public Factory(AtomicInteger counter) {

@@ -38,18 +38,47 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentHashMap.KeySetView;
 import java.util.Set;
 import java.util.Map;
+import cotton.configuration.ServiceConfigurator;
+import java.net.URLClassLoader;
+import java.io.File;
+import java.net.URL;
+
 /**
 *
-* @author Tony 
+* @author Tony
+* @author Jonathan Kåhre
 */
 public class ServiceLookup implements ActiveServiceLookup{
 
   	private ConcurrentHashMap<String,ServiceMetaData> hashMap;
 
   	public ServiceLookup(){
-  		this.hashMap = new ConcurrentHashMap<>();
+        this.hashMap = new ConcurrentHashMap<>();
   	}
-	/**
+
+    public ServiceLookup(ServiceConfigurator config) throws java.net.MalformedURLException,
+                                                            ClassNotFoundException,
+                                                            InstantiationException,
+                                                            IllegalAccessException{
+
+        this.hashMap = new ConcurrentHashMap<>();
+
+        if(config.hasServices()){
+            String workingDirectory = System.getProperty("user.dir");
+            File f = new File(workingDirectory+"/services/");
+            URL url = f.toURL();
+            URL[] urls = new URL[]{url};
+            ClassLoader classloader = new URLClassLoader(urls);
+
+            for(ServiceConfigurator.ServiceData serviceInfo: config.getServices()){
+                Class s = classloader.loadClass(serviceInfo.getName());
+                Service service = (Service)s.newInstance();
+                registerService(serviceInfo.getName(), service.loadFactory(), serviceInfo.getLimit());
+            }
+        }
+    }
+
+    /**
      * Registers a service to the lookup table. To register a service the user
      * has to define the service name, the factory used to make instances of the service
      * and the maximum capacity of the service instances.
@@ -59,8 +88,8 @@ public class ServiceLookup implements ActiveServiceLookup{
      * @param maxCapacity defines how many instances of the service are allowed.
      * @return whether the registration was successful or not.
      */
-    public boolean registerService(String serviceName, ServiceFactory serviceFactory,int maxCapacity){
-      ServiceMetaData metaData = new ServiceMetaData(serviceFactory, maxCapacity);
+    public boolean registerService(String serviceName, ServiceFactory serviceFactory, int maxCapacity){
+        ServiceMetaData metaData = new ServiceMetaData(serviceFactory, maxCapacity);
         if(hashMap.putIfAbsent(serviceName, metaData) == null) {
             return true;    // no mapping for this key
         }
