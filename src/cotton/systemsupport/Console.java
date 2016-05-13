@@ -101,7 +101,7 @@ public class Console {
         switch (command.getType()) {
             case SERVICEHANDLER:
                 ServiceHandler serviceHandler = (ServiceHandler) getProvider(StatType.SERVICEHANDLER);
-                serviceHandler.setServiceConfig(command.getName(), command.getAmount());
+                serviceHandler.processCommand(command);
                 break;
             case DISCOVERY:
                 ServiceDiscovery serviceDiscovery = (ServiceDiscovery) getProvider(StatType.DISCOVERY);

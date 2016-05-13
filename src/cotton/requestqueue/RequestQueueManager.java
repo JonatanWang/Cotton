@@ -391,6 +391,7 @@ public class RequestQueueManager implements StatisticsProvider {
             if (timer != null) {
                 timer.cancel();
                 timer.purge();
+                
             }
             timer = new Timer();
             timer.scheduleAtFixedRate(new TimeSliceTask(System.currentTimeMillis()), 0, this.samplingRate);

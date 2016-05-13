@@ -470,7 +470,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         ArrayList<UUID> reapedServiceRequest = new ArrayList<>();
         for (Map.Entry<UUID, ServiceRequest> entry : connectionTable.entrySet()) {
             req = (DefaultServiceRequest) entry.getValue();
-            if ((time - req.getTimeStamp()) > 0) {
+            if ((time - req.getTimeStamp()) > 0 && req.getTimeStamp() != 0) {
                 req.setFailed("SocketRequest timed out ");
                 reapedServiceRequest.add(entry.getKey());
             }
@@ -594,6 +594,10 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 }
                 break;
             case NOTFOUND:
+                // sendWithResponse (LocalServ: searchForService):request.getData() == null mathpow2 Signal: NOTFOUND
+                // happens when a node is overwhelmed and start droping connections, if this happens to often its
+                // address is removed from the address pool, and if the pool goes empty then the above happens.
+                // TODO: 
                 System.out.println("resolveDestination: NOTFOUND");
                 break;
 

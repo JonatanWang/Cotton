@@ -66,7 +66,7 @@ public class NetworkHandlerFake implements NetworkHandler {
     public NetworkHandlerFake(int portNumber) throws UnknownHostException {
         this.localAddress = new InetSocketAddress(Inet4Address.getLocalHost(), portNumber);
         this.openSocket = new ConcurrentHashMap<SocketAddress, Socket>();
-        this.threadPool = Executors.newFixedThreadPool(100);
+        this.threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(100);
     }
 
     private Socket getConnection(SocketAddress dest) {
@@ -74,7 +74,7 @@ public class NetworkHandlerFake implements NetworkHandler {
     }
 
     private boolean addConnection(SocketAddress dest, Socket socket) {
-        System.out.println("addConnection openSocketCount: " + this.openSocket.size());
+        //System.out.println("addConnection openSocketCount: " + this.openSocket.size());
         Socket put = this.openSocket.put(dest, socket);
         if (put != null) {
             return false;
@@ -97,7 +97,8 @@ public class NetworkHandlerFake implements NetworkHandler {
         socket.connect(dest);
         //socket.setTcpNoDelay(true);
         int count = createCount.incrementAndGet();
-        System.out.println("createConnection count: " + count);
+        System.out.println("createConnection count: " + count 
+                + " ip: " + localAddress.getAddress().getHostAddress() +" port:" + localAddress.getPort());
         Socket ret = this.openSocket.putIfAbsent(dest, socket);
         if (ret != null) {
             if (ret.isConnected()) {
@@ -123,10 +124,10 @@ public class NetworkHandlerFake implements NetworkHandler {
                 return;
             } catch (SocketException ex) {
                 removeConnection(dest, connection);
-                Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
+                //Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
                 removeConnection(dest, connection);
-                Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
+                //Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         connection = createConnection(dest);
@@ -150,7 +151,7 @@ public class NetworkHandlerFake implements NetworkHandler {
             TransportPacket.Packet pkt = buildTransportPacket(netPacket, true);
             try {
                 pkt.writeDelimitedTo(connection.getOutputStream());
-                
+
             } catch (SocketException ex) {
                 removeConnection(dest, connection);
                 Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
@@ -234,7 +235,7 @@ public class NetworkHandlerFake implements NetworkHandler {
                 if ((client = serverSocket.accept()) != null) {
                     //client.setTcpNoDelay(true);
                     client.setKeepAlive(true);
-                    //client.setSoLinger(true, 0);
+                    client.setSoLinger(true, 0);
                     client.setReuseAddress(true);
                     client.setTcpNoDelay(true);
                     NetworkDataGetter nget = new NetworkDataGetter(client);
@@ -471,15 +472,26 @@ public class NetworkHandlerFake implements NetworkHandler {
 
                 }
                 TransportPacket.Packet incoming = null;
+                int nullThreshold = 0;
                 do {
-                    incoming = proccessIncoming(this.connection);
+                    incoming = null;
+                    try {
+                        incoming = proccessIncoming(this.connection);
+                    } catch (InvalidProtocolBufferException ex) {
+                        //System.out.println("NetworkDataGetter run: InvalidProtocolBufferException null:" 
+                        //+ localAddress.getAddress().getHostAddress() +" port:" + localAddress.getPort()); 
+                        //ex.printStackTrace();
+                    }
                     if (incoming != null) {
                         NetworkPacket np = parseTransportPacket(incoming);
                         internalRouting.pushNetworkPacket(np);
+                    } else {
+                        nullThreshold++;
                     }
-                } while (true);
+                } while (nullThreshold > 1);
             } catch (InvalidProtocolBufferException ex) {
-                System.out.println("NetworkDataGetter run: InvalidProtocolBufferException null"); //proccessIncoming
+                System.out.println("NetworkDataGetter run: InvalidProtocolBufferException null" 
+                        + localAddress.getAddress().getHostAddress() +" port:" + localAddress.getPort()); //proccessIncoming
                 ex.printStackTrace();
             } catch (IOException ex) {
                 Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
