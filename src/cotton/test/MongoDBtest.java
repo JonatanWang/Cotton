@@ -23,6 +23,10 @@ public class MongoDBtest {
     private MongoClient client = null;
     private MongoDatabase db =  null;
 
+    public MongoDBtest (){
+
+    }
+
     @Test
     public  void  dbGetDataServiceTest (){
         addData();

@@ -43,7 +43,7 @@ import cotton.internalrouting.ServiceRequest;
 import cotton.internalrouting.InternalRoutingClient;
 /**
  *
- * @author magnus
+ * @author Magnus
  */
 public class ClientPart2 {
 

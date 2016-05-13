@@ -188,8 +188,13 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         //DestinationMetaData dest = new DestinationMetaData(addr,PathType.DISCOVERY);
         try {
             byte[] data = serializeToBytes(packet);
-            ServiceRequest request = internalRouting.sendWithResponse(dest, data, 0);
-            if (request == null) {
+            ServiceRequest request = internalRouting.sendWithResponse(dest, data, 400);
+            if (request == null ) {
+                System.out.println("sendWithResponse (LocalServ: searchForService): " + serviceName + " Signal: " + signal);
+                return RouteSignal.NOTFOUND;
+            }
+            if(request.getData() == null) {
+                System.out.println("sendWithResponse (LocalServ: searchForService):request.getData() == null " + serviceName + " Signal: " + signal);
                 return RouteSignal.NOTFOUND;
             }
             DiscoveryPacket discoveryPacket = packetUnpack(request.getData());
@@ -225,6 +230,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         if (serviceName == null) {
             signal = resolveOriginRoute(origin);
             if (signal == RouteSignal.NOTFOUND) {
+                System.out.println("Local: (getDestination):resolveOriginRoute-> NOTFOUND");
                 return signal;
             }
             destination.setSocketAddress(origin.getAddress());
@@ -281,6 +287,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
      */
     private RouteSignal resolveOriginRoute(Origin origin) {
         if (origin == null) {
+            System.out.println("Local: resolveOriginRoute: Origin null");
             return RouteSignal.NOTFOUND;
         }
 
@@ -423,12 +430,14 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     public StatType getStatType() {
         return StatType.DISCOVERY;
     }
+
     private void processProbeRequest(Origin origin, DiscoveryProbe probe) {
-        if(probe.getAddress() == null)
+        if (probe.getAddress() == null) {
             return;
+        }
 
         AddressPool pool = null;
-        if(localServiceTable.getService(probe.getName()) == null){
+        if (localServiceTable.getService(probe.getName()) == null) {
             probe.setAddress(null);
         }
 
@@ -616,24 +625,22 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     }
 
     private void triggeredCircuitBreaker(Origin origin, CircuitBreakerPacket circuit) {
-        if (circuit.getCircuitName().equals("mathpow21")) {
-            System.out.println("INCOMMING CIRCUITBREAKER MESSAGE");
-            DestinationMetaData dest = discoveryCache.getAddress();
-            if (dest == null) {
-                return;
-            }
-            DiscoveryPacket discPacket = new DiscoveryPacket(DiscoveryPacketType.CIRCUITBREAKER);
-            circuit.setInstanceAddress(localAddress);
-            discPacket.setCircuitBreakerPacket(circuit);
-            try {
-                byte[] data = serializeToBytes(discPacket);
-                internalRouting.sendToDestination(dest, data);
-            } catch (IOException e) {
-                e.printStackTrace();
-                //TODO: logg errors
-            }
-
+        System.out.println("INCOMMING CIRCUITBREAKER MESSAGE");
+        DestinationMetaData dest = discoveryCache.getAddress();
+        if (dest == null) {
+            return;
         }
+        DiscoveryPacket discPacket = new DiscoveryPacket(DiscoveryPacketType.CIRCUITBREAKER);
+        circuit.setInstanceAddress(localAddress);
+        discPacket.setCircuitBreakerPacket(circuit);
+        try {
+            byte[] data = serializeToBytes(discPacket);
+            internalRouting.sendToDestination(dest, data);
+        } catch (IOException e) {
+            e.printStackTrace();
+            //TODO: logg errors
+        }
+
     }
 
     private void processQueuePacket(QueuePacket packet) {
@@ -700,7 +707,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     public boolean processCommand(Command command) {
         return false;
     }
-    
+
     private void processConfigPacket(ConfigurationPacket packet) {
         if (packet == null) {
             return;

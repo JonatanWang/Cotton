@@ -112,7 +112,8 @@ public class TestServiceDiscovery {
     }
     
     @Test
-    public void ActiveServiceLookupGetCapacity(){
+    public void ActiveServiceLookupGetCapacity(){        
+        System.out.println("Now running: ActiveServiceLookupGetCapacity");
         ActiveServiceLookup lookup = new ServiceLookup();
         lookup.registerService("hej", null, 10);
         ServiceMetaData service = lookup.getService("hej");
@@ -120,7 +121,8 @@ public class TestServiceDiscovery {
     }
 
     @Test
-    public void ActiveServiceLookupRemove(){
+    public void ActiveServiceLookupRemove(){        
+        System.out.println("Now running: ActiveServiceLookupRemove");
         ActiveServiceLookup lookup = new ServiceLookup();
 
         lookup.registerService("test", null, 10);

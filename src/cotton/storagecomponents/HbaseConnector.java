@@ -49,7 +49,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.json.JSONObject;
 
 
-public class HbaseConnector implements DatabaseConnector{
+public class HbaseConnector{
     /*  private Configuration conf;
     private static HbaseConnector instance;
 

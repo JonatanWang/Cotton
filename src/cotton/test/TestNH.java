@@ -101,12 +101,12 @@ public class TestNH {
         }
     }
 
-    private NetworkPacket buildPacket(byte[] data, boolean keepAlive, UUID latch) throws UnknownHostException {
+    private NetworkPacket buildPacket(byte[] data, boolean keepAlive, UUID latch,int port) throws UnknownHostException {
         NetworkPacketBuilder npb = new NetworkPacketBuilder();
 
         npb.setData(data);
         npb.setPath(new DummyServiceChain("sendNumber"));
-        Origin origin = new Origin(new InetSocketAddress(Inet4Address.getLocalHost(), 4455), UUID.randomUUID());
+        Origin origin = new Origin(new InetSocketAddress(Inet4Address.getLocalHost(), port), UUID.randomUUID());
         if(latch != null)
             origin.setSocketLatchID(latch);
         npb.setOrigin(origin);
@@ -120,16 +120,17 @@ public class TestNH {
     public void TestSend() throws IOException, InterruptedException{
         int numberToSend = 5;
 
-        DefaultNetworkHandler clientNH = new DefaultNetworkHandler(4455);
+        int port = 4455;
+        NetworkHandler clientNH = new DefaultNetworkHandler(port);
 
-        DefaultNetworkHandler serverNH = new DefaultNetworkHandler(4466);
+        NetworkHandler serverNH = new DefaultNetworkHandler(4466);
         InternalRoutingStub ir = new InternalRoutingStub(serverNH);
         new Thread(serverNH).start(); 
 
         Thread.sleep(1000);
 
         byte[] numberAsBytes = ByteBuffer.allocate(4).putInt(numberToSend).array();
-        NetworkPacket sendPacket = buildPacket(numberAsBytes, false, null);
+        NetworkPacket sendPacket = buildPacket(numberAsBytes, false, null,port);
 
         clientNH.send(sendPacket, new InetSocketAddress(Inet4Address.getLocalHost(),4466));
 
@@ -145,8 +146,9 @@ public class TestNH {
     public void TestSendKeepAlive() throws IOException, InterruptedException{
         int numberToSend = 5;
 
-        DefaultNetworkHandler clientNH = new DefaultNetworkHandler(5566);
-        DefaultNetworkHandler serverNH = new DefaultNetworkHandler(5577);
+        int port = 5566;
+        NetworkHandler clientNH = new DefaultNetworkHandler(port);
+        NetworkHandler serverNH = new DefaultNetworkHandler(5577);
 
         InternalRoutingStub serverIR = new InternalRoutingStub(serverNH);
         InternalRoutingStub clientIR = new InternalRoutingStub(clientNH);
@@ -157,7 +159,7 @@ public class TestNH {
         Thread.sleep(1000);
 
         byte[] numberAsBytes = ByteBuffer.allocate(4).putInt(numberToSend).array();
-        NetworkPacket sendPacket = buildPacket(numberAsBytes, true, UUID.randomUUID());
+        NetworkPacket sendPacket = buildPacket(numberAsBytes, true, UUID.randomUUID(),port);
 
         clientNH.sendKeepAlive(sendPacket, new InetSocketAddress(Inet4Address.getLocalHost(),5577));
 

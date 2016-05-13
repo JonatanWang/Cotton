@@ -69,6 +69,33 @@ public class DefaultNetworkHandler implements NetworkHandler {
     private AtomicBoolean running;
     private SocketAddress localSocketAddress;
     private ConcurrentHashMap<SocketAddress, Connection> openSockets;
+    
+    private boolean encryption = false;
+    
+    /**
+     * Returns a <code>DefaultNetworkHandler</code> with the option to set <strong>SSL</strong> encryption. 
+     * For the encryption to work a <code>keystore</code> must exists on all machines. 
+     * The <code>keystore</code> is required to be the same on all machines.
+     * 
+     * @param encryption whether the data should be encrypted or not.
+     * @throws UnknownHostException 
+     */
+    public DefaultNetworkHandler(boolean encryption) throws UnknownHostException {
+        this.localPort = 3333; // TODO: Remove hardcoded port
+        try{
+            //this.localIP = InetAddress.getByName(null);
+            this.localIP = Inet4Address.getLocalHost();
+        }catch(java.net.UnknownHostException e){// TODO: Get address from outside
+            logError("initialization process local address "+e.getMessage());
+            throw e;
+        }
+
+        threadPool = Executors.newFixedThreadPool(10);
+        running = new AtomicBoolean(true);
+        localSocketAddress = getLocalAddress();
+        openSockets = new ConcurrentHashMap<>();
+        this.encryption = encryption;
+    }
 
     public DefaultNetworkHandler() throws UnknownHostException {
         this.localPort = 3333; // TODO: Remove hardcoded port
@@ -80,7 +107,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             throw e;
         }
 
-        threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newFixedThreadPool(10);
         running = new AtomicBoolean(true);
         localSocketAddress = getLocalAddress();
         openSockets = new ConcurrentHashMap<>();
@@ -98,7 +125,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
 
         localSocketAddress = socketAddress;
 
-        threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newFixedThreadPool(10);
         running = new AtomicBoolean(true);
         openSockets = new ConcurrentHashMap<>();
     }
@@ -114,7 +141,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             throw e;
         }
 
-        threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newFixedThreadPool(10);
         running = new AtomicBoolean(true);
         localSocketAddress = getLocalAddress();
         openSockets = new ConcurrentHashMap<>();
@@ -128,21 +155,32 @@ public class DefaultNetworkHandler implements NetworkHandler {
             throw new NullPointerException("InternalRoutingNetwork points to null");
     }
     
-    private SSLServerSocket createSSLServerSocket() throws IOException {
-        SSLServerSocketFactory sf = (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
-        return (SSLServerSocket)sf.createServerSocket();
+    private ServerSocket createServerSocket() throws IOException {
+        if(encryption) {
+            SSLServerSocketFactory sf = (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
+            return sf.createServerSocket();
+        } else {
+            return new ServerSocket();
+        }
     }
     
-    private SSLSocket createSSLClientSocket(InetSocketAddress address) throws IOException{
-        SSLSocketFactory sf = (SSLSocketFactory)SSLSocketFactory.getDefault();
-        return (SSLSocket)sf.createSocket(address.getAddress(), address.getPort());
+    private Socket createSocket(InetSocketAddress address) throws IOException{
+        if(encryption) {
+            SSLSocketFactory sf = (SSLSocketFactory)SSLSocketFactory.getDefault();
+            return sf.createSocket(address.getAddress(), address.getPort());
+        } else {
+            Socket socket = new Socket();
+            socket.connect(address);
+            return socket;
+        }
     }
 
     @Override
     public void run(){
         ServerSocket serverSocket = null;
+        
         try{
-            serverSocket = new ServerSocket();
+            serverSocket = createServerSocket();
             serverSocket.bind(getLocalAddress());
             serverSocket.setSoTimeout(80);
         }catch(IOException e){// TODO: Logging
@@ -151,10 +189,13 @@ public class DefaultNetworkHandler implements NetworkHandler {
 
         Socket clientSocket = null;
 
+        int totalThreadStarted = 0;
         while(running.get() == true){
             try {
                 if( (clientSocket = serverSocket.accept()) != null ){
                     NetworkUnpacker pck = new NetworkUnpacker(clientSocket);
+                    totalThreadStarted++;
+                    System.out.println("NewThread net num: " + totalThreadStarted);
                     threadPool.execute(pck);
                 }
             } catch (SocketTimeoutException ignore) {
@@ -170,6 +211,9 @@ public class DefaultNetworkHandler implements NetworkHandler {
         }
 
         try {
+            for(SocketAddress a: openSockets.keySet()){
+                openSockets.get(a).close();
+            }
             threadPool.shutdown();
             serverSocket.close();
         }catch (Throwable e) { //TODO EXCEPTION HANDLING
@@ -249,8 +293,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         }
 
         if(conn == null){
-            Socket socket = new Socket();
-            socket.connect(dest);
+            Socket socket = createSocket(idest);
             conn = new Connection(socket);
             openSockets.putIfAbsent(dest, conn);
             assignListener(conn);
@@ -287,8 +330,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         }
 
         if(conn == null){
-            Socket socket = new Socket();
-            socket.connect(dest);
+            Socket socket = createSocket(idest);
             conn = new Connection(socket, 50000);
             openSockets.putIfAbsent(dest, conn);
             assignListener(conn);

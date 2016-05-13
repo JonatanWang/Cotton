@@ -296,8 +296,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     @Override
     public ServiceRequest sendWithResponse(DestinationMetaData dest, byte[] data, int timeout) {
         Origin origin = new Origin();
-        ServiceRequest request = newServiceRequest(origin, timeout);
         origin.setAddress(this.localAddress);
+        ServiceRequest request = newServiceRequest(origin, timeout);
         
         NetworkPacket packet = prepareForTransmission(origin, null, data, dest.getPathType());
         try {
@@ -448,14 +448,14 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      */
     public void scheduleTask(long timeStamp) {
         long curTime = System.currentTimeMillis();
-        long diff = Math.abs(nextTime - timeStamp);
-        if (diff > 50 || curTime - timeStamp > 0) {
+        long diff =nextTime - timeStamp;
+        if (diff >= 0 || diff < -50 || curTime - timeStamp > 0) {
             taskScheduler.schedule(new Runnable() {
                 @Override
                 public void run() {
                     reapTimedOutRequest();
                 }
-            }, timeStamp - curTime, TimeUnit.MILLISECONDS);
+            }, timeStamp - curTime + 10, TimeUnit.MILLISECONDS);
             nextTime = timeStamp;
         }
 
@@ -467,7 +467,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         ArrayList<UUID> reapedServiceRequest = new ArrayList<>();
         for (Map.Entry<UUID, ServiceRequest> entry : connectionTable.entrySet()) {
             req = (DefaultServiceRequest) entry.getValue();
-            if ((time - req.getTimeStamp()) > 0) {
+            if ((time - req.getTimeStamp()) > 0 && req.getTimeStamp() != 0) {
                 req.setFailed("SocketRequest timed out ");
                 reapedServiceRequest.add(entry.getKey());
             }
@@ -494,11 +494,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
 
     /**
      * @param origin The source who inititated the service request
-     * @param serviceChain The serviceChain , if null a empty serviceChain is
-     * created
+     * @param path The path for the networkpacket.
      * @param data A byte array of data
-     * @param keepAlive A boolean whether the service request needs a keep alive
-     * socket or not.
      * @param pathType The destination type of the sub system.
      * @return A filled in networkpacket ready for transmission.
      *
@@ -591,6 +588,10 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                 }
                 break;
             case NOTFOUND:
+                // sendWithResponse (LocalServ: searchForService):request.getData() == null mathpow2 Signal: NOTFOUND
+                // happens when a node is overwhelmed and start droping connections, if this happens to often its
+                // address is removed from the address pool, and if the pool goes empty then the above happens.
+                // TODO: 
                 System.out.println("resolveDestination: NOTFOUND");
                 break;
 
@@ -620,6 +621,10 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      * sends a stop signal for the routing dispatcher thread
      */
     public void stop() {
+        if(this.requestQueueManager != null)
+            this.requestQueueManager.stop();
+        if(this.taskScheduler != null)
+            this.taskScheduler.shutdownNow();
         dispatcher.stop();
     }
 
@@ -690,6 +695,14 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
 
             if (signal == RouteSignal.ENDPOINT) {
                 DefaultServiceRequest request = (DefaultServiceRequest) removeServiceRequest(packet.getOrigin());
+                if(request == null) {
+                    // TODO: logg request removed
+                    return;
+                }
+                if(packet.getData() == null) {
+                    request.setFailed("ENDPOINT failure no data returned");
+                    return;
+                }
                 request.setData(packet.getData());
                 return;
             } else if (signal == RouteSignal.NETWORKDESTINATION) {

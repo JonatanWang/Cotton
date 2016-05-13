@@ -95,6 +95,7 @@ public class TestPackageInteraction {
 
     @Test
     public void TestTransmission() throws UnknownHostException {
+        System.out.println("Now running: TestTransmission");
         Cotton discovery = new Cotton(true, 6542);
         GlobalDnsStub gDns = new GlobalDnsStub();
         

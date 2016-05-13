@@ -92,6 +92,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             SocketAddress[] addrArr = globalDNS.getGlobalDiscoveryAddress();
             for (int i = 0; i < addrArr.length; i++) {
                 DestinationMetaData gAddr = new DestinationMetaData(addrArr[i], PathType.DISCOVERY);
+                System.out.println("GlobalDiscovery adddress:" + gAddr.toString());
                 discoveryCache.addAddress(gAddr);
             }
         }
@@ -101,7 +102,8 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         this.discoveryCache = new AddressPool();
         initGlobalDiscoveryPool(dnsConfig);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
-        threadPool = Executors.newCachedThreadPool();
+        //threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newFixedThreadPool(10);
         this.activeQueue = new ConcurrentHashMap<>();
     }
 
@@ -235,7 +237,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             signal = RouteSignal.NETWORKDESTINATION;
             return signal;
         }
-
+        System.out.println("Last return (global: getDestination): " + serviceName + " Signal: " + signal);
         return signal;
     }
 
@@ -266,6 +268,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
      */
     private RouteSignal resolveOriginRoute(Origin origin) {
         if (origin == null) {
+            System.out.println("resolveOriginRoute: Origin null");
             return RouteSignal.NOTFOUND;
         }
 
@@ -610,9 +613,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     }
 
     /**
-     * Announces active queues
-     *
-     * @param queueList a list of names for the queues.
+     * Announces active queues.
      */
     public boolean announceQueues(RequestQueueManager queueManager) {
         this.queueManager = queueManager;
@@ -621,22 +622,22 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     private void triggeredCircuitBreaker(Origin origin, CircuitBreakerPacket circuit) {
         AddressPool pool;
-        if (circuit.getCircuitName().equals("mathpow21")) {
-            System.out.println("INCOMMING CIRCUITBREAKER MESSAGE IN GLOBAL SERVICE DISCOVERY");
-            pool = serviceCache.get(circuit.getCircuitName());
-            if (pool == null) {
-                return;
-            }
-            DestinationMetaData dest = pool.getAddress();
-            dest.setPathType(PathType.COMMANDCONTROL);
-            Command com = new Command(StatType.SERVICEHANDLER, "mathpow21",null, 100,CommandType.CHANGEACTIVEAMOUNT);
-            sendCommandPacket(dest, com);
+
+        System.out.println("INCOMMING CIRCUITBREAKER MESSAGE IN GLOBAL SERVICE DISCOVERY: " + circuit.getCircuitName());
+        pool = serviceCache.get(circuit.getCircuitName());
+        if (pool == null) {
+            return;
         }
+        DestinationMetaData dest = new DestinationMetaData(pool.getAddress());
+        dest.setPathType(PathType.COMMANDCONTROL);
+        Command com = new Command(StatType.SERVICEHANDLER, circuit.getCircuitName(), null, 100, CommandType.CHANGE_ACTIVEAMOUNT);
+        sendCommandPacket(dest, com);
+        
     }
 
     @Override
     public boolean processCommand(Command command) {
-        if(command.getCommandType() == CommandType.CHECKREACHABILLITY){
+        if(command.getCommandType() == CommandType.CHECK_REACHABILLITY){
             threadPool.execute(new Runnable(){
                 @Override
                 public void run() {
@@ -674,6 +675,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     }
 
     private void processConfigPacket(ConfigurationPacket packet) {
+        System.out.println("processConfigPacket: ");
         if (packet == null) {
             return;
         }

@@ -55,6 +55,14 @@ public class DestinationMetaData implements Serializable {
     }
 
     /**
+     * This will create a new DestinationMetaData from a old one
+     * @param old the one that should be copy
+     */
+    public DestinationMetaData(DestinationMetaData old) {
+        socketAddress = old.socketAddress;
+        pathType = old.pathType;
+    }
+    /**
      *
      *
      *

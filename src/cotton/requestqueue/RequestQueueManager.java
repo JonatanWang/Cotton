@@ -43,12 +43,21 @@ import cotton.network.PathType;
 import cotton.servicediscovery.CircuitBreakerPacket;
 import cotton.servicediscovery.DiscoveryPacket;
 import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
+import cotton.systemsupport.Command;
+import cotton.systemsupport.CommandType;
 import java.util.Set;
 import java.util.ArrayList;
 import cotton.systemsupport.StatisticsProvider;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
+import cotton.systemsupport.TimeInterval;
+import cotton.systemsupport.UsageHistory;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Tony
@@ -63,19 +72,33 @@ public class RequestQueueManager implements StatisticsProvider {
     private ExecutorService threadPool;
     private InternalRoutingRequestQueue internalRouting;
     private int maxAmountOfQueues = 10;
+    private ConcurrentHashMap<String, String> banList;
 
     public RequestQueueManager() {
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();
+        this.banList = new ConcurrentHashMap<String, String>();
 
     }
 
     public RequestQueueManager(InternalRoutingRequestQueue internalRouting) {
         this.internalQueueMap = new ConcurrentHashMap<>();
-        threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(100);//.newCachedThreadPool();
         this.internalRouting = internalRouting;
+        this.banList = new ConcurrentHashMap<String, String>();
     }
 
+    /**
+     * A list of bannedServices that this node never can start a queue for. It
+     * will not be possible to remove after added
+     *
+     * @param bannedService a array of name of services can get a queue
+     */
+    public void addBanList(String[] bannedService) {
+        for (int i = 0; i < bannedService.length; i++) {
+            this.banList.put(bannedService[i], "b");
+        }
+    }
 
     /**
      * A array of names on different queues.
@@ -96,8 +119,12 @@ public class RequestQueueManager implements StatisticsProvider {
      * @param serviceName the name for a specific service.
      */
     public void startQueue(String serviceName) {
+        if (this.banList.get(serviceName) != null) {
+            return;
+        }
         RequestQueue queuePool = new RequestQueue(serviceName, 100);
         internalQueueMap.putIfAbsent(serviceName, queuePool);
+        threadPool.execute(queuePool);
     }
 
     /**
@@ -113,7 +140,9 @@ public class RequestQueueManager implements StatisticsProvider {
             return;
         }
         queue.queueService(packet);
-        threadPool.execute(queue);
+        if (queue.getThreadCount().get() < 5) {
+            //        threadPool.execute(queue);
+        }
     }
 
     /**
@@ -123,7 +152,6 @@ public class RequestQueueManager implements StatisticsProvider {
      * @param serviceName the name of the service that is supposed to process
      * this data.
      */
-
     public void addAvailableInstance(Origin origin, String serviceName) {
         RequestQueue queue = internalQueueMap.get(serviceName);
         if (queue == null) {
@@ -131,17 +159,27 @@ public class RequestQueueManager implements StatisticsProvider {
         }
         //System.out.println("AvailableInstance: " + origin.getAddress().toString() + " :: " + serviceName);
         queue.addInstance(origin);
-        threadPool.execute(queue);
+        //System.out.println("max capacity1: " + queue.getMaxCapacity());
+        if (queue.getThreadCount().get() < (queue.getMaxCapacity())) {
+          //  System.out.println("max capacity2: " + queue.getMaxCapacity());
+       //     threadPool.execute(queue);
+        }
     }
 
     public void stop() {
+        for (Map.Entry<String, RequestQueue> entry : internalQueueMap.entrySet()) {
+            entry.getValue().stopUsageRecording();
+            entry.getValue().stop();
+        }
+        
         threadPool.shutdown();
+
     }
 
     public StatisticsData[] getStatisticsForSubSystem(String serviceName) {
         ArrayList<StatisticsData> tdata = new ArrayList<>();
         for (Map.Entry<String, RequestQueue> rq : internalQueueMap.entrySet()) {
-            tdata.add(rq.getValue().getStatistics());
+            tdata.add(rq.getValue().getStatistics(new String[]{serviceName, "queueData"}));
         }
         return tdata.toArray(new StatisticsData[tdata.size()]);
     }
@@ -151,9 +189,9 @@ public class RequestQueueManager implements StatisticsProvider {
         if (queue == null) {
             return new StatisticsData();
         }
-        return queue.getStatistics();
+        return queue.getStatistics(serviceName);
     }
-    
+
     @Override
     public StatisticsProvider getProvider() {
         return this;
@@ -163,6 +201,7 @@ public class RequestQueueManager implements StatisticsProvider {
     public StatType getStatType() {
         return StatType.REQUESTQUEUE;
     }
+
     public int getMaxCapacity(String serviceName) {
         RequestQueue queue = internalQueueMap.get(serviceName);
         return queue.getMaxCapacity();
@@ -176,27 +215,96 @@ public class RequestQueueManager implements StatisticsProvider {
         this.maxAmountOfQueues = maxAmountOfQueues;
     }
 
-    public void setInternalRouting(InternalRoutingRequestQueue internalRouting){
+    public void setInternalRouting(InternalRoutingRequestQueue internalRouting) {
         this.internalRouting = internalRouting;
     }
-    
+
+    public boolean processCommand(Command command) {
+        CommandType commandType = command.getCommandType();
+        if (commandType != CommandType.RECORD_USAGEHISTORY) {
+            return false;
+        }
+        String[] tokens = command.getTokens();
+        if (tokens.length < 2) {
+            return false;
+        }
+        String name = tokens[0];
+        String task = tokens[1];
+        int samplingRate = command.getAmount();
+        RequestQueue queue = internalQueueMap.get(name);
+        if (queue == null) {
+            return false;
+        }
+        if (task.equals("setUsageRecordingInterval")) {
+            queue.setUsageRecording(samplingRate);
+        } else if (task.equals("stopUsageRecording")) {
+            queue.stopUsageRecording();
+        } else {
+            return false;
+        }
+        return true;
+    }
+
     private class RequestQueue implements Runnable {
 
         private ConcurrentLinkedQueue<NetworkPacket> processQueue;
         private ConcurrentLinkedQueue<Origin> processingNodes;
         private final String queueName;
         private int maxCapacity;
-
+        private AtomicInteger threadCount = new AtomicInteger(0);
+        private AtomicInteger inputCounter;
+        private AtomicInteger outputCounter;
+        private UsageHistory usageHistory;
+        private Timer timer;
+        private volatile boolean running = true;
+        private int samplingRate = 0;
+        
         public RequestQueue(String queueName, int maxCapacity) {
-            processQueue = new ConcurrentLinkedQueue<>();
-            processingNodes = new ConcurrentLinkedQueue<>();
+            this.processQueue = new ConcurrentLinkedQueue<>();
+            this.processingNodes = new ConcurrentLinkedQueue<>();
             this.queueName = queueName;
             this.maxCapacity = maxCapacity;
+            this.usageHistory = new UsageHistory();
+            this.inputCounter = new AtomicInteger(0);
+            this.outputCounter = new AtomicInteger(0);
         }
 
-        public StatisticsData getStatistics() {
-            int[] data = {maxCapacity, processQueue.size(), processingNodes.size()};
-            return new StatisticsData(StatType.REQUESTQUEUE, queueName, data);
+        /**
+         * getStatistics for this queue
+         *
+         * @return StatisticsData
+         */
+        public StatisticsData getStatistics(String[] statisticsInformation) {
+            if (statisticsInformation.length < 2) {
+                return new StatisticsData();
+            }
+
+            if (statisticsInformation[1].equals("queueData")) {
+                int[] data = {maxCapacity, processQueue.size(), processingNodes.size()};
+                return new StatisticsData(StatType.REQUESTQUEUE, queueName, data);
+            } else if (statisticsInformation[1].equals("getUsageRecordingInterval")) {
+                TimeInterval[] interval = null;
+                if (statisticsInformation.length == 2) {
+                    interval = usageHistory.getUsageHistory();
+                } else if (statisticsInformation.length == 4) {
+                    int first = Integer.parseInt(statisticsInformation[2]);
+                    int last = Integer.parseInt(statisticsInformation[3]);
+                    ArrayList<TimeInterval> tmp = usageHistory.getInterval(first, last);
+                    interval = tmp.toArray(new TimeInterval[tmp.size()]);
+                } else {
+                    return new StatisticsData();
+                }
+                return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], interval);
+            }else if(statisticsInformation[1].equals("isSampling")){
+                if(hasRunningTimer())
+                    return new StatisticsData(StatType.REQUESTQUEUE,statisticsInformation[0],new int[]{1,this.samplingRate,usageHistory.getLastIndex()});
+                return new StatisticsData(StatType.REQUESTQUEUE,statisticsInformation[0],new int[]{0,this.samplingRate,usageHistory.getLastIndex()});
+            }
+            return new StatisticsData();
+        }
+
+        public AtomicInteger getThreadCount() {
+            return threadCount;
         }
 
         /**
@@ -205,11 +313,12 @@ public class RequestQueueManager implements StatisticsProvider {
          * @param packet a networkpacket to be processed
          */
         public void queueService(NetworkPacket packet) {
-            if(maxCapacity < processQueue.size() && (processQueue.size()%100)==0){
+            if (maxCapacity < processQueue.size() && (processQueue.size() % 100) == 0) {
                 DiscoveryPacket discPacket = new DiscoveryPacket(DiscoveryPacketType.CIRCUITBREAKER);
                 discPacket.setCircuitBreakerPacket(new CircuitBreakerPacket(queueName));
                 internalRouting.notifyDiscovery(discPacket);
             }
+            inputCounter.incrementAndGet();
             processQueue.add(packet);
         }
 
@@ -227,27 +336,115 @@ public class RequestQueueManager implements StatisticsProvider {
          *
          */
         public void run() {
-            Origin origin = null;
-            while ((origin = processingNodes.poll()) != null) {
-                NetworkPacket packet = processQueue.poll();
-                if (packet == null) {
-                    processingNodes.add(origin);
-                    return;
-                }
-                packet.setPathType(PathType.SERVICE);
-                try {
-                    //networkHandler.send(packet,origin.getAddress());
-                    internalRouting.sendWork(packet, origin.getAddress());
-                    //System.out.println("Queue sent work to " + origin.getAddress().toString());
-                } catch (IOException e) {
-                    processQueue.add(packet);
-                    // TODO: LOGGING
-                }
+            int thcount = this.threadCount.getAndIncrement();
+            if (thcount > processingNodes.size() || thcount > processQueue.size()) {
+                this.threadCount.getAndDecrement();
+                return;
             }
+
+            Origin origin = null;
+            do {
+                while ((origin = processingNodes.poll()) != null) {
+                    NetworkPacket packet = processQueue.poll();
+                    if (packet == null) {
+                        processingNodes.add(origin);
+                        if (threadCount.get() > 1) {
+                            break;
+                        }
+                        continue;
+                    }
+                    packet.setPathType(PathType.SERVICE);
+                    try {
+                        //networkHandler.send(packet,origin.getAddress());
+
+                        outputCounter.incrementAndGet();
+                        internalRouting.sendWork(packet, origin.getAddress());
+                        //System.out.println("Queue sent work to " + origin.getAddress().toString());
+                    } catch (IOException e) {
+                        processQueue.add(packet);
+                        System.out.println("ERROR IN REQUEST QUEUE SEND WORK");
+                        // TODO: LOGGING
+                    }
+                }
+                try{
+                    Thread.sleep(5);
+                }catch(InterruptedException e){
+                    //e.printStackTrace();
+                }
+            } while (running);
+            this.threadCount.getAndDecrement();
         }
 
         public int getMaxCapacity() {
             return this.maxCapacity;
+        }
+
+        /**
+         * Start the Usage History recording and sets the sampling rate
+         *
+         * @param samplingRate
+         * @return
+         */
+        public boolean setUsageRecording(long samplingRate) {
+            this.samplingRate = (int) samplingRate;
+            if (timer != null) {
+                timer.cancel();
+                timer.purge();
+                
+            }
+            timer = new Timer();
+            timer.scheduleAtFixedRate(new TimeSliceTask(System.currentTimeMillis()), 0, this.samplingRate);
+            return true;
+        }
+        
+        /**
+         * Stop the Usage History recording
+         *
+         * @return
+         */
+        public boolean stopUsageRecording() {
+            if (timer != null) {
+                timer.cancel();
+                timer.purge();
+                timer = null;
+            }
+            return true;
+        }
+        
+        public boolean hasRunningTimer(){
+            if(timer == null){
+                return false;
+            }
+            return true;
+        }
+        
+        public void stop(){
+            running = false;
+        }
+        
+        private class TimeSliceTask extends TimerTask {
+
+            private long startTime;
+
+            public TimeSliceTask(long startTime) {
+                this.startTime = startTime;
+            }
+
+            @Override
+            public void run() {
+                long endTime = System.currentTimeMillis();
+                long deltaTime = endTime - startTime;
+                int in = inputCounter.get();
+                inputCounter.set(0);
+                int out = outputCounter.get();
+                outputCounter.set(0);
+                TimeInterval timeInterval = new TimeInterval(deltaTime);
+                timeInterval.setCurrentQueueCount(processQueue.size());
+                timeInterval.setInputCount(in);
+                timeInterval.setOutputCount(out);
+                usageHistory.add(timeInterval);
+                startTime = System.currentTimeMillis();
+            }
         }
 
     }

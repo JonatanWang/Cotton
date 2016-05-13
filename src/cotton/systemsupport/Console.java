@@ -31,10 +31,16 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.systemsupport;
 
+
 import cotton.internalrouting.InternalRoutingServiceDiscovery;
+import cotton.internalrouting.ServiceRequest;
+import cotton.network.DestinationMetaData;
 import cotton.network.NetworkPacket;
 import cotton.network.Origin;
 import cotton.network.PathType;
+import cotton.requestqueue.RequestQueueManager;
+import cotton.servicediscovery.DiscoveryPacket;
+import cotton.servicediscovery.GlobalServiceDiscovery;
 import cotton.servicediscovery.ServiceDiscovery;
 import cotton.services.ServiceHandler;
 import java.io.ByteArrayInputStream;
@@ -56,12 +62,6 @@ public class Console {
 
     private ArrayList<StatisticsProvider> subSystems;
 
-    /**
-     *
-     * @param serviceDiscovery
-     * @param queueManager
-     * @param serviceHandler
-     */
     public Console(StatisticsProvider[] subSystems) {
         this.subSystems = new ArrayList<>();
         this.subSystems.addAll(Arrays.asList(subSystems));
@@ -88,11 +88,15 @@ public class Console {
         return new EmptyProvider("Unknown provider: " + type.toString());
     }
 
+    /**
+     * Process a command locally on this node
+     * @param packet containing the command
+     */
     public void processCommand(NetworkPacket packet) {
         if (packet == null) {
             return;
         }
-        Command command = packetUnpack(packet.getData());
+        Command command = commandUnpack(packet.getData());
         if (!command.isQuery()) {
             sendCommandToSubSystem(command);
         } else {
@@ -104,11 +108,15 @@ public class Console {
         switch (command.getType()) {
             case SERVICEHANDLER:
                 ServiceHandler serviceHandler = (ServiceHandler) getProvider(StatType.SERVICEHANDLER);
-                serviceHandler.setServiceConfig(command.getName(), command.getAmount());
+                serviceHandler.processCommand(command);
                 break;
             case DISCOVERY:
                 ServiceDiscovery serviceDiscovery = (ServiceDiscovery) getProvider(StatType.DISCOVERY);
                 serviceDiscovery.processCommand(command);
+                break;
+            case REQUESTQUEUE:
+                RequestQueueManager rqManager = (RequestQueueManager) getProvider(StatType.REQUESTQUEUE);
+                rqManager.processCommand(command);
                 break;
             default:
                 System.out.println("WRONG COMMAND TYPE IN CLASS CONSOLE PROCESSCOMMAND" + command.getType());
@@ -121,30 +129,93 @@ public class Console {
         InternalRoutingServiceDiscovery internalRouting = (InternalRoutingServiceDiscovery) getProvider(StatType.INTERNALROUTING);
         StatisticsProvider provider = getProvider(command.getType());
         byte[] data;
-        try{
-        if (provider.getStatType() == StatType.UNKNOWN) {
-            data = serializeToBytes(new StatisticsData[0]);
-            internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
-        }
-        switch (command.getCommandType()) {
-            case STATISTICSFORSUBSYSTEM:
-                StatisticsData[] statisticsForSubSystem = provider.getStatisticsForSubSystem(command.getName());
-                data = serializeToBytes(statisticsForSubSystem);
+        try {
+            if (provider.getStatType() == StatType.UNKNOWN) {
+                data = serializeToBytes(new StatisticsData[0]);
                 internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
-                break;
-            case STATISTICSFORSYSTEM:
-                StatisticsData statistics = provider.getStatistics(command.getTokens());
-                data = serializeToBytes(statistics);
-                internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
-                break;
-            default:
-                break;
-        }
-        }catch(IOException e){
+            }
+            switch (command.getCommandType()) {
+                case STATISTICS_FORSUBSYSTEM:
+                    StatisticsData[] statisticsForSubSystem = provider.getStatisticsForSubSystem(command.getName());
+                    data = serializeToBytes(statisticsForSubSystem);
+                    internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
+                    break;
+                case STATISTICS_FORSYSTEM:
+                    StatisticsData statistics = provider.getStatistics(command.getTokens());
+                    data = serializeToBytes(statistics);
+                    internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
+                    break;
+                default:
+                    break;
+            }
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * Sends a query command to a remote node and gets StatisticsData for that query 
+     * @param command the query command that should be sent
+     * @param destination the destination for the node
+     * @return StatisticsData[] with the result of the query
+     * @throws IOException 
+     */
+    public StatisticsData[] sendQueryCommand(Command command, DestinationMetaData destination) throws IOException {
+        StatisticsData[] empty = new StatisticsData[0];
+        InternalRoutingServiceDiscovery internalRouting = (InternalRoutingServiceDiscovery) getProvider(StatType.INTERNALROUTING);
+        if (internalRouting == null) {
+            return empty;
+        }
+        command.setQuery(true);
+        byte[] data = serializeToBytes(command);
+        DestinationMetaData dest = new DestinationMetaData(destination);
+        dest.setPathType(PathType.COMMANDCONTROL);
+        ServiceRequest req = internalRouting.sendWithResponse(dest, data, 500);
+        if (req == null || req.getData() == null) {
+            return empty;
+        }
+        byte[] reqData = req.getData(); 
+        StatisticsData[] res = null;
+        switch (command.getCommandType()) {
+            case STATISTICS_FORSUBSYSTEM:
+                res = statArrayUnpack(reqData);
+                if(res == null){
+                    return empty;
+                }
+                break;
+            case STATISTICS_FORSYSTEM:
+                StatisticsData statistics = statUnpack(reqData);
+                if(statistics == null){
+                    return empty;
+                }
+                res = new StatisticsData[1];
+                res[0] = statistics;
+                break;
+            default:
+                System.out.println("Unkown console QueryCommand");
+                return empty;
+        }
+        return res;
+    }
+
+    /**
+     * Sends a command to a remote node 
+     * @param command the command that should be sent
+     * @param destination the destination for the node
+     * @throws IOException 
+     */
+    public void sendCommand(Command command, DestinationMetaData destination) throws IOException {
+        InternalRoutingServiceDiscovery internalRouting = (InternalRoutingServiceDiscovery) getProvider(StatType.INTERNALROUTING);
+        if (internalRouting == null) {
+            return;
+        }
+        command.setQuery(false);
+        byte[] data = serializeToBytes(command);
+        DestinationMetaData dest = new DestinationMetaData(destination);
+        dest.setPathType(PathType.COMMANDCONTROL);
+        internalRouting.sendToDestination(dest, data);
+    }
+    
     private byte[] serializeToBytes(Serializable data) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         ObjectOutputStream objectStream = new ObjectOutputStream(stream);
@@ -152,7 +223,40 @@ public class Console {
         return stream.toByteArray();
     }
 
-    private Command packetUnpack(byte[] data) {
+    private byte[] serializeToBytes(Serializable[] data) throws IOException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ObjectOutputStream objectStream = new ObjectOutputStream(stream);
+        objectStream.writeObject(data);
+        return stream.toByteArray();
+    }
+
+    private StatisticsData statUnpack(byte[] data) {
+        StatisticsData statistics = null;
+        try {
+            ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
+            statistics = (StatisticsData) input.readObject();
+        } catch (IOException ex) {
+            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return statistics;
+    }
+
+    private StatisticsData[] statArrayUnpack(byte[] data) {
+        StatisticsData[] statistics = null;
+        try {
+            ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
+            statistics = (StatisticsData[]) input.readObject();
+        } catch (IOException ex) {
+            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return statistics;
+    }
+
+    private Command commandUnpack(byte[] data) {
         Command command = null;
         try {
             ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));

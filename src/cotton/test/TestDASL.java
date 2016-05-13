@@ -101,7 +101,8 @@ public class TestDASL {
      * <code>getMaxCapacity()</code> function.
      */
     @Test
-    public void testCapacity() {
+    public void TestCapacity() {
+        System.out.println("Now running: TestCapacity");
         ServiceLookup dasl = new ServiceLookup();
         dasl.registerService("Coloring", null, 10);
 
@@ -117,6 +118,7 @@ public class TestDASL {
      */
     @Test
     public void testWrongCapacity() {
+        System.out.println("Now running: testWrongCapacity");
         ServiceLookup dasl = new ServiceLookup();
         dasl.registerService("Coloring", new TestServiceFactory(), 10);
         int maxCapacity = dasl.getService("Coloring").getMaxCapacity();
@@ -130,6 +132,7 @@ public class TestDASL {
      */
     @Test
     public void testHashMapKeys() {
+        System.out.println("Now running: testHashMapKeys");
         ServiceLookup dasl = new ServiceLookup();
 
         String[] services = new String[3];
@@ -159,6 +162,7 @@ public class TestDASL {
      */
     @Test
     public void testRemove() {
+        System.out.println("Now running: testRemove");
         ServiceLookup dasl = new ServiceLookup();
 
         String[] services = new String[3];
@@ -188,6 +192,7 @@ public class TestDASL {
      */
     @Test
     public void testFactory() throws IOException {
+        System.out.println("Now running: testFactory");
         ServiceFactory sf = new TestServiceFactory();
         TestServiceFactory.TestService si = (TestServiceFactory.TestService)sf.newService();
 

@@ -60,7 +60,7 @@ public interface Encryption {
      * @throws javax.crypto.IllegalBlockSizeException if invalid block size.
      * @throws java.security.InvalidAlgorithmParameterException if algorithm parameter is invalid.
      * @throws java.security.InvalidKeyException if <code>key</code> is invalid.
-     * @throws java.security.NoSuchAlgorithmException if algorithm does not exist.
+     * @throws java.security.NoSuchAlgorithmException if the algorithm does not exist.
      * @throws javax.crypto.NoSuchPaddingException if padding does not exist.
      * @throws java.io.UnsupportedEncodingException if encoding is unsupported.
      */
@@ -83,7 +83,7 @@ public interface Encryption {
      * @throws javax.crypto.IllegalBlockSizeException if invalid block size.
      * @throws java.security.InvalidAlgorithmParameterException if algorithm parameter is invalid.
      * @throws java.security.InvalidKeyException if <code>key</code> is invalid.
-     * @throws java.security.NoSuchAlgorithmException if algorithm does not exist.
+     * @throws java.security.NoSuchAlgorithmException if the algorithm does not exist.
      * @throws javax.crypto.NoSuchPaddingException if padding does not exist.
      * @throws java.io.UnsupportedEncodingException if encoding is unsupported.
      */

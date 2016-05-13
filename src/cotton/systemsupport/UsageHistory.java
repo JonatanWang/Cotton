@@ -29,49 +29,42 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-package cotton.example.cloudexample;
+package cotton.systemsupport;
 
-import cotton.Cotton;
-import cotton.requestqueue.RequestQueueManager;
-import cotton.test.services.GlobalDnsStub;
-import java.net.Inet4Address;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
 
 /**
  *
+ * @author Tony
  * @author Magnus
  */
-public class RequestQueueExample {
-
-    public static void main(String[] args) throws UnknownHostException {
-        GlobalDnsStub gDns = getDnsStub(null, 9546);
-        Cotton queueInstance = new Cotton(false, gDns);
-        RequestQueueManager requestQueueManager = new RequestQueueManager();
-        requestQueueManager.startQueue("mathpow21");
-        requestQueueManager.startQueue("mathpow2");
-        queueInstance.setRequestQueueManager(requestQueueManager);
-        queueInstance.start();
-        try {
-            Thread.sleep(80000);
-        } catch (InterruptedException ex) {
-            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        queueInstance.shutdown();
+public class UsageHistory implements Serializable{
+    private Vector<TimeInterval> usageHistoryList;
+    
+    public UsageHistory(){
+        this.usageHistoryList = new Vector<>();
     }
-
-    private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
-        GlobalDnsStub gDns = new GlobalDnsStub();
-        InetSocketAddress gdAddr = null;
-        if (dest == null) {
-            gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
-            System.out.println("discAddr:" + Inet4Address.getLocalHost().toString() +" port: " + port);
-        }else {
-            gdAddr = new InetSocketAddress(dest, port);
-        }
-        InetSocketAddress[] arr = new InetSocketAddress[1];
-        arr[0] = gdAddr;
-        gDns.setGlobalDiscoveryAddress(arr);
-        return gDns;
+    
+    public void add(TimeInterval element){
+        usageHistoryList.add(element);
+    }
+    
+    public TimeInterval[] getUsageHistory(){
+        TimeInterval[] tmp = new TimeInterval[usageHistoryList.size()];
+        usageHistoryList.copyInto(tmp);
+        return tmp;
+    }
+    
+    public synchronized ArrayList<TimeInterval> getInterval(int first, int last){  
+        int lastIndex = (last >= usageHistoryList.size()) ? usageHistoryList.size() : last;
+        int firstIndex = (first <= 0) ? 0 : first;
+        return new ArrayList<>(usageHistoryList.subList(firstIndex, lastIndex));
+    }
+    
+    public int getLastIndex(){
+        return usageHistoryList.size();
     }
 }

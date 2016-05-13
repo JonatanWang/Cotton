@@ -60,6 +60,15 @@ public class AESEncryption implements Encryption{
     private String initVector;
     
     /**
+     * Constructs a <code>AESEncryption</code> without setting the <code>key</code> or 
+     * the <code>initVector</code>.
+     */
+    public AESEncryption() {
+        key = null;
+        initVector = null;
+    }
+    
+    /**
      * Encrypts the data with <strong>AES</strong> and returns the result.
      * 
      * @param data the data to be encrypted.
@@ -74,6 +83,9 @@ public class AESEncryption implements Encryption{
             IllegalBlockSizeException, 
             BadPaddingException 
     {
+        if(key == null) throw new NullPointerException("key: null");
+        if(initVector == null) throw new NullPointerException("initVector: null");
+        
         IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
         SecretKeySpec keySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
 
@@ -98,6 +110,9 @@ public class AESEncryption implements Encryption{
             IllegalBlockSizeException, 
             BadPaddingException 
     {
+        if(key == null) throw new NullPointerException("key: null");
+        if(initVector == null) throw new NullPointerException("initVector: null");
+        
         IvParameterSpec iv = new IvParameterSpec(initVector.getBytes("UTF-8"));
         SecretKeySpec keySpec = new SecretKeySpec(key.getBytes("UTF-8"), "AES");
 
@@ -112,7 +127,6 @@ public class AESEncryption implements Encryption{
      * The key is required to be a multiple of 16.
      * 
      * @param key the <strong>AES</strong> key to be set.
-     * @throws java.io.IOException
      */
     @Override
     public void setKey(byte[] key) throws IOException, ClassNotFoundException{

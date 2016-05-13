@@ -52,7 +52,6 @@ import java.text.SimpleDateFormat;
  *@author Mats
  *@author Jonathan
  */
-
 public class MongoDBConnector implements DatabaseConnector {
 
     private MongoClient client = null;

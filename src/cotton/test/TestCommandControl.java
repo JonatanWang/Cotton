@@ -105,123 +105,9 @@ public class TestCommandControl {
     public void tearDown() {
     }
 
-    @Test
-    public void TestWorkFloodRequestQueue() throws UnknownHostException, IOException {
-        Cotton discovery = new Cotton(true, 8266);
-        GlobalDnsStub gDns = new GlobalDnsStub();
-
-        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 8266);
-        InetSocketAddress[] arr = new InetSocketAddress[1];
-        arr[0] = gdAddr;
-        gDns.setGlobalDiscoveryAddress(arr);
-
-        discovery.start();
-
-        Cotton queueInstance = new Cotton(false, gDns);
-        RequestQueueManager requestQueueManager = new RequestQueueManager();
-        requestQueueManager.startQueue("mathpow21");
-        requestQueueManager.startQueue("mathpow2");
-        requestQueueManager.startQueue("result");
-        queueInstance.setRequestQueueManager(requestQueueManager);
-        queueInstance.start();
-
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException ex) {
-            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        StatisticsProvider queueManager = queueInstance.getConsole().getProvider(StatType.REQUESTQUEUE);
-        Cotton ser1 = new Cotton(false, gDns);
-        Cotton ser2 = new Cotton(false, gDns);
-        Cotton ser3 = new Cotton(false, gDns);
-
-        AtomicInteger counter = new AtomicInteger(0);
-        MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
-        ser1.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 100);
-        ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 1);
-        ser3.getServiceRegistation().registerService("result", resFactory, 1000);
-
-        Cotton cCotton = new Cotton(false, gDns);
-        cCotton.start();
-
-        InternalRoutingClient client = cCotton.getClient();
-        ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
-        //ServiceChainBuilder builder = new ServiceChainBuilder();
-        DummyServiceChain.ServiceChainBuilder builder = new DummyServiceChain.ServiceChainBuilder().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
-        int num = 2;
-        byte[] data = ByteBuffer.allocate(4).putInt(num).array();
-        int sentChains = 1000;
-        //ServiceRequest req = client.sendWithResponse(data, chain);
-        //chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
-        for (int i = 0; i < sentChains; i++) {
-            //chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
-            chain = builder.build();
-            client.sendToService(data, chain);
-            if (i % 200 == 0) {
-                StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
-                System.out.println(dataArrToStr(stats));
-            }
-            if (i == 600) {
-                ser1.start();
-                ser2.start();
-                ser3.start();
-            }
-            if (i > 600 && (i % 20) == 0) {
-                StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
-                System.out.println(dataArrToStr(stats));
-            }
-        }
-        for (int i = 0; i < 100; i++) {
-            try {
-                Thread.sleep(100);
-                StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
-                System.out.println(dataArrToStr(stats));
-                if (resFactory.getCounter().intValue() == sentChains) {
-                    break;
-                }
-            } catch (InterruptedException ex) {
-                //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-            }/*
-            if (i == 50) {
-                Command com = new Command(StatType.SERVICEHANDLER, "mathpow21", 100);
-                Console console = ser2.getConsole();
-                byte[] data1 = serializeToBytes(com);
-                NetworkPacket packet = NetworkPacket.newBuilder().setData(data1).build();
-                console.processCommand(packet);
-            }*/
-        }
-        StatisticsData[] stats = queueManager.getStatisticsForSubSystem("");
-        System.out.println(dataArrToStr(stats));
-        for (int i = 0; i < 100; i++) {
-            try {
-                Thread.sleep(10);
-                if (resFactory.getCounter().intValue() == sentChains) {
-                    break;
-                }
-            } catch (InterruptedException ex) {
-                //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-        }
-        stats = queueManager.getStatisticsForSubSystem("");
-        System.out.println(dataArrToStr(stats));
-
-        //Cotton discovery = new Cotton(true,3333);
-        //Cotton discovery = new Cotton(true,3333);
-        int completedChains = resFactory.getCounter().intValue();
-        System.out.println("Completed chains: " + completedChains);
-        queueInstance.shutdown();
-        discovery.shutdown();
-        ser1.shutdown();
-        ser2.shutdown();
-        ser3.shutdown();
-        cCotton.shutdown();
-        assertTrue(sentChains == completedChains);
-    }
-
     //@Test
     public void TestCommandServiceHandler() throws UnknownHostException {
+        System.out.println("Now running: TestCommandServiceHandler");
         Cotton discovery = new Cotton(true, 11243);
         GlobalDnsStub gDns = new GlobalDnsStub();
 
@@ -299,8 +185,9 @@ public class TestCommandControl {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+        chain = new DummyServiceChain().into("mathpow2").into("mathpow2").into("mathpow2").into("mathpow2");
         ServiceRequest req = client.sendWithResponse(data, chain);
-        if (req != null) {
+        if (req != null && req.getData() != null) {
             byte[] data2 = req.getData();
             int num2 = ByteBuffer.wrap(data2).getInt();
             //System.out.println("result: " + i + " : " + num2);
@@ -338,6 +225,7 @@ public class TestCommandControl {
 
     @Test
     public void TestServiceRequestTimeout() {
+        System.out.println("Now running: TestServiceRequestTimeout");
         GlobalDnsStub stub = new GlobalDnsStub();
         stub.setGlobalDiscoveryAddress(new InetSocketAddress[0]);
         DefaultInternalRouting internalRouting = new DefaultInternalRouting(new NetworkHandlerStub(new InetSocketAddress("127.0.0.1", 16392)), new LocalServiceDiscovery(stub));
@@ -346,18 +234,13 @@ public class TestCommandControl {
             @Override
             public void run() {
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(300);
                 } catch (InterruptedException ex) {
                     //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 req.setData("Hej".getBytes());
             }
         }).start();
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException ex) {
-            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
 
         byte[] data = req.getData();
         String s = null;
@@ -370,6 +253,7 @@ public class TestCommandControl {
 
     @Test
     public void TestNodesServiceReachabillity() throws UnknownHostException {
+        System.out.println("Now running: TestNodesServiceReachabillity");
         Cotton discovery = new Cotton(true, 14490);
         GlobalDnsStub gDns = new GlobalDnsStub();
 
@@ -379,7 +263,13 @@ public class TestCommandControl {
         gDns.setGlobalDiscoveryAddress(arr);
 
         discovery.start();
+        try {
+            Thread.sleep(900);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
 
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
         Cotton ser1 = new Cotton(false, gDns);
         Cotton ser2 = new Cotton(false, gDns);
 
@@ -397,13 +287,13 @@ public class TestCommandControl {
         }
         ser2.shutdown();
         try {
-            Thread.sleep(1000);
+            Thread.sleep(500);
         } catch (InterruptedException ex) {
             ex.printStackTrace();
 
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        Command command = new Command(StatType.DISCOVERY, null,null, 0, CommandType.CHECKREACHABILLITY);
+        Command command = new Command(StatType.DISCOVERY, null, null, 0, CommandType.CHECK_REACHABILLITY);
         byte[] data = null;
         try {
             data = serializeToBytes(command);
@@ -432,7 +322,8 @@ public class TestCommandControl {
     }
 
     @Test
-    public void addressPoolTest() {
+    public void AddressPoolTest() {
+        System.out.println("Now running: AddressPoolTest");
         AddressPool pool = new AddressPool();
         DestinationMetaData dest = new DestinationMetaData(new InetSocketAddress("127.0.0.1", 18762), PathType.DISCOVERY);
         DestinationMetaData dest1 = new DestinationMetaData(new InetSocketAddress("127.0.0.1", 18762), PathType.SERVICE);
@@ -446,12 +337,13 @@ public class TestCommandControl {
         boolean b4 = pool.remove(dest);
         assertTrue(!b && !b1 && !b2 && b3 && !b4);
     }
-    
+
     @Test
     public void TestQuerySubSystem() throws UnknownHostException {
+        System.out.println("Now running: TestQuerySubSystem");
         Cotton discovery = new Cotton(true, 19876);
         GlobalDnsStub gDns = new GlobalDnsStub();
-        InetSocketAddress discoveryAddress = new InetSocketAddress(Inet4Address.getLocalHost(),19876);
+        InetSocketAddress discoveryAddress = new InetSocketAddress(Inet4Address.getLocalHost(), 19876);
         InetSocketAddress gdAddr = discoveryAddress;
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = gdAddr;
@@ -474,7 +366,7 @@ public class TestCommandControl {
 
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        Command command = new Command(StatType.DISCOVERY, "serviceNodes",null, 0, CommandType.STATISTICSFORSUBSYSTEM);
+        Command command = new Command(StatType.DISCOVERY, "serviceNodes", null, 0, CommandType.STATISTICS_FORSUBSYSTEM);
         command.setQuery(true);
         byte[] data = null;
         try {
@@ -492,15 +384,15 @@ public class TestCommandControl {
 
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        InternalRoutingServiceDiscovery internalRouting =(InternalRoutingServiceDiscovery) ser1.getConsole().getProvider(StatType.INTERNALROUTING);
-        ServiceRequest req = internalRouting.sendWithResponse(new DestinationMetaData(discoveryAddress,PathType.COMMANDCONTROL), data, 1000);
-        
-        if(req == null){
+
+        InternalRoutingServiceDiscovery internalRouting = (InternalRoutingServiceDiscovery) ser1.getConsole().getProvider(StatType.INTERNALROUTING);
+        ServiceRequest req = internalRouting.sendWithResponse(new DestinationMetaData(discoveryAddress, PathType.COMMANDCONTROL), data, 1000);
+
+        if (req == null) {
             System.out.println("REQ IS NULL");
             assertFalse(true);
         }
-        if(req.getData() == null){
+        if (req.getData() == null) {
             System.out.println("REQ GETDATA IS NULL");
             assertFalse(true);
         }
@@ -511,7 +403,8 @@ public class TestCommandControl {
         System.out.println("INFORMATION" + Arrays.toString(statistics));
         assertTrue(true);
     }
-   private StatisticsData[] packetUnpack(byte[] data) {
+
+    private StatisticsData[] packetUnpack(byte[] data) {
         StatisticsData[] statistics = null;
         try {
             ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
@@ -523,6 +416,5 @@ public class TestCommandControl {
         }
         return statistics;
     }
-   
 
 }
