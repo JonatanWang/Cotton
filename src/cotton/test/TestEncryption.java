@@ -58,7 +58,7 @@ import static org.junit.Assert.*;
  */
 public class TestEncryption {
     
-    //@Test
+    @Test
     public void TestEncryption() throws NoSuchAlgorithmException, 
             IOException, 
             ClassNotFoundException, 
@@ -106,6 +106,7 @@ public class TestEncryption {
         TokenManager tm = new TokenManager();
         tm.setKey();
         
+        Token t = new Token(4, "user", "123");
         System.out.println("Initial token:\n" + t.toString());
         
         byte[] encryptedToken = tm.encryptToken(t);
