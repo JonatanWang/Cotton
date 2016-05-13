@@ -35,6 +35,8 @@ package cotton.test;
 
 import cotton.network.AESEncryption;
 import cotton.network.RSAEncryption;
+import cotton.network.Token;
+import cotton.network.TokenManager;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -43,6 +45,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Date;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
@@ -89,6 +92,28 @@ public class TestEncryption {
         System.out.println("AES Decrypted data: " + Arrays.toString(dec));
         
         assertTrue(Arrays.equals(data, dec));
+    }
+    
+    @Test
+    public void TestTokenManager() throws IOException, 
+            ClassNotFoundException, 
+            NoSuchAlgorithmException, 
+            IllegalBlockSizeException, 
+            BadPaddingException, 
+            InvalidKeyException, 
+            NoSuchPaddingException 
+    {
+        TokenManager tm = new TokenManager();
+        tm.setKey();
+        
+        Token t = new Token(4, "user", "123");
+        System.out.println("Initial token:\n" + t.toString());
+        
+        byte[] encryptedToken = tm.encryptToken(t);
+        System.out.println("\nToken as bytes: " + Arrays.toString(encryptedToken));
+        
+        t = tm.decryptToken(encryptedToken);
+        System.out.println(t.toString());
     }
 
     private byte[] stringToByteArray(String s) throws IOException {

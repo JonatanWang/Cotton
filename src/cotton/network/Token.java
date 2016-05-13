@@ -33,44 +33,89 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package cotton.network;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
- * The <code>class Token</code> acts as a security authentication token.
+ * The <code>Token class</code> acts as a security authentication token.
  * 
  * @author Gunnlaugur Juliusson
  */
-public class Token {
-    private int secLevel;
-    private Date timeStamp;
-    private String name;
-    private String id;
+public class Token implements Serializable{
+    private final int secLevel;
+    private final Date timeStamp;
+    private final String name;
+    private final String id;
 
-    public Token(int secLevel, Date timeStamp, String name, String id) {
+    /**
+     * Constructs a authentication token with the given parameters. As the 
+     * parameters are set they cannot be changed.
+     * 
+     * @param secLevel the security level.
+     * @param name the username.
+     * @param id the user id.
+     */
+    public Token(int secLevel, String name, String id) {
         if(secLevel < 0) throw new UnsupportedOperationException("secLevel: null");
-        if(timeStamp == null) throw new NullPointerException("timeStamp: nulll");
         if(name == null) throw new NullPointerException("name: null");
         if(id == null) throw new NullPointerException("id: null");
         
+        this.timeStamp = new Date();
         this.secLevel = secLevel;
-        this.timeStamp = timeStamp;
         this.name = name;
         this.id = id;
     }
     
+    /**
+     * Returns the users security level in the cloud.
+     * 
+     * @return the security level.
+     */
     public int getSecLevel() {
         return secLevel;
     }
 
+    /**
+     * Returns the time when the token was created.
+     * 
+     * @return time of creation.
+     */
     public Date getTimeStamp() {
         return timeStamp;
     }
 
+    /**
+     * Returns the username in the token.
+     * 
+     * @return the username.
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Returns the user <code>id</code> in the token.
+     * 
+     * @return the id.
+     */
     public String getId() {
         return id;
+    }
+    
+    /**
+     * Returns a string containing all the <code>Token</code> information.
+     * 
+     * @return the <code>Token</code> information.
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        
+        sb.append("secLevel: ").append(secLevel).append(", ");
+        sb.append("timeStamp: ").append(timeStamp.toString()).append(", ");
+        sb.append("name: ").append(name).append(", ");
+        sb.append("id: ").append(id);
+        
+        return sb.toString();
     }
 }

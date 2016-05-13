@@ -44,9 +44,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 /**
  *
  * @author Tony
@@ -67,10 +67,80 @@ public class CloudAnalyzer implements Serializable {
     }
 
     public void analyze(int samplingRate, int samplingPeriod) throws IOException {
-        ArrayList<TimeInterval[]> statistics = gatherStatistics(samplingRate,samplingPeriod);
+        ArrayList<TimeInterval[]> statistics = gatherStatistics(samplingRate, samplingPeriod);
+        Bucket[] buckets = calculateStatistics(statistics);
+        double[] outInRatio = new double[buckets.length];
+        double[] offeredTrafic = new double[buckets.length];
+        double p0 = 0;
+        for(int i =0; i<buckets.length; i++){
+            outInRatio[i] = buckets[i].getOutputIntensities()/buckets[i].getInputIntensities();
+            offeredTrafic[i] = buckets[i].getInputIntensities()/buckets[i].getOutputIntensities();
+            
+        }
+        double totalTrafic = 0;
+        double[] avgQueueSize = new double[statistics.size()];
+        double min = 0;
+        for(int i =0; i<outInRatio.length; i++){
+            totalTrafic += outInRatio[i];
+            if(min > outInRatio[i])
+                min = outInRatio[i];
+        }
+        
+        int butlers = pool.copyPoolData().length;
+        for (int i = 0; i < buckets.length; i++) {
+            if(butlers > 1.5*buckets[i].getQueueSize() && min > 0.30*offeredTrafic[i]){
+                
+            }
+        }
+        int j = 0;
+        for(TimeInterval[] interval :statistics){
+            for (int i = 0; i < interval.length; i++) {
+                avgQueueSize[j] += interval[i].getCurrentQueueCount();
+            }
+            j++;
+        }
+        
+        
+        /*
+        for (int i = 0; i < avgQueueSize.length; i++) {
+           if(avgQueueSize[i] > totalTraffic){
+               //SPAWN THREADS
+           }else{
+               //if(queuSize >= 0.7*totalTraffic)
+                    //spawn queue
+           } 
+        }*/
+        
+        //TODO: finnish this method.
     }
 
-    private ArrayList<TimeInterval[]> gatherStatistics(int samplingRate, int samplingPeriod) throws IOException{
+    private Bucket[] calculateStatistics(ArrayList<TimeInterval[]> statisticsData) {
+        Bucket[] buckets = new Bucket[statisticsData.size()];
+        int i =0;
+        for (TimeInterval[] timeIntervals : statisticsData) {
+            int sampleLength = timeIntervals.length;
+            double[] inputIntensity = new double[sampleLength];
+            double[] outputIntensity = new double[sampleLength];
+            long totalTime = 0;
+            long inputCount = 0;
+            long outputCount = 0;
+            
+            for (int j =0; j<sampleLength; j++) {
+                inputIntensity[j] += timeIntervals[j].calculateInputIntensity();
+                outputIntensity[j] += timeIntervals[j].calculateOutputIntensity();
+                totalTime += timeIntervals[j].getDeltaTime();
+                inputCount += timeIntervals[j].getInputCount();
+                outputCount += timeIntervals[j].getOutputCount();
+            }
+            buckets[i] = new Bucket(inputIntensity[i]/sampleLength,outputIntensity[i]/sampleLength,
+                    totalTime,inputCount,outputCount,timeIntervals[i].getCurrentQueueCount());
+            i++;
+            
+        }
+        return buckets;
+    }
+
+    private ArrayList<TimeInterval[]> gatherStatistics(int samplingRate, int samplingPeriod) throws IOException {
         if (pool == null) {
             return null;
         }
@@ -120,26 +190,27 @@ public class CloudAnalyzer implements Serializable {
         ServiceRequest[] timeIntervals = new ServiceRequest[destinations.length];
         for (int i = 0; i < destinations.length; i++) {
             String start = "" + startIndex[i];
-            String end = "" + (startIndex[i] + (samplingPeriod/samplingRate));
-            String[] collectRequests = new String[]{name, "getUsageRecordingInterval",start,end};
-            
+            String end = "" + (startIndex[i] + (samplingPeriod / samplingRate));
+            String[] collectRequests = new String[]{name, "getUsageRecordingInterval", start, end};
+
             Command collectSamples = new Command(subSystemType, name, collectRequests, samplingRate, CommandType.RECORD_USAGEHISTORY);
             byte[] serializedCommand = serializeToBytes(collectSamples);
 
             timeIntervals[i] = internalRouting.sendWithResponse(destinations[i], serializedCommand, 80);
         }
-        
+
         for (int i = 0; i < timeIntervals.length; i++) {
             ServiceRequest timeInterval = timeIntervals[i];
-            if(timeInterval == null)
+            if (timeInterval == null) {
                 continue;
+            }
             byte[] tmp = timeInterval.getData();
             StatisticsData<TimeInterval> statistics = packetUnpack(tmp);
             intervalCollection.add(statistics.getData());
         }
         return intervalCollection;
     }
-    
+
     private static byte[] serializeToBytes(Serializable data) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         ObjectOutputStream objectStream = new ObjectOutputStream(stream);
@@ -160,4 +231,47 @@ public class CloudAnalyzer implements Serializable {
         return statistics;
     }
 
+    private class Bucket {
+
+        private double inputIntensities;
+        private double outputIntensities;
+        private long inputAmount;
+        private long outputAmount;
+        private long totalTime;
+        private long queueSize;
+        public Bucket(double inputIntensities, double outputIntensities, long inputAmount, 
+                long outputAmount, long totalTime,long queueSize) {
+            this.inputIntensities = inputIntensities;
+            this.outputIntensities = outputIntensities;
+            this.inputAmount = inputAmount;
+            this.outputAmount = outputAmount;
+            this.totalTime = totalTime;
+            this.queueSize = queueSize;
+        }
+
+        public long getQueueSize(){
+            return this.queueSize;
+        }
+        
+        public double getInputIntensities() {
+            return inputIntensities;
+        }
+
+        public double getOutputIntensities() {
+            return outputIntensities;
+        }
+
+        public long getInputAmount() {
+            return inputAmount;
+        }
+
+        public long getOutputAmount() {
+            return outputAmount;
+        }
+
+        public long getTotalTime() {
+            return totalTime;
+        }
+    }
+    
 }

@@ -51,6 +51,10 @@ public class TimeInterval implements Serializable {
         this.deltaTime = deltaTime;
     }
 
+    public long getDeltaTime(){
+        return deltaTime;
+    }
+    
     public double calculateInputIntensity() {
         double time = (double) deltaTime / 1000;
         return (deltaTime == 0) ? 0 : ((float) inputCount / time);
@@ -79,11 +83,11 @@ public class TimeInterval implements Serializable {
         this.currentQueueCount = currentQueueCount;
     }
 
-    public long getInputIntensity() {
+    public long getInputCount() {
         return inputCount;
     }
 
-    public long getOutputIntensity() {
+    public long getOutputCount() {
         return outputCount;
     }
 

@@ -71,8 +71,10 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
     public void run() {
         while (active) {
             ServicePacket packet = workBuffer.nextPacket();
-            if (packet == null) {
-                try {
+
+            //TODO: if the threadcap met put packet back into buffer.
+            if(packet == null){
+                try{
                     Thread.sleep(5); //change to exponential fallback strategy.
                 } catch (InterruptedException ex) {
                 }
