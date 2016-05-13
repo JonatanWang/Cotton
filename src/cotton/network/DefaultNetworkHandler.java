@@ -154,7 +154,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         else
             throw new NullPointerException("InternalRoutingNetwork points to null");
     }
-    
+
     private ServerSocket createServerSocket() throws IOException {
         if(encryption) {
             SSLServerSocketFactory sf = (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
@@ -163,7 +163,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             return new ServerSocket();
         }
     }
-    
+
     private Socket createSocket(InetSocketAddress address) throws IOException{
         if(encryption) {
             SSLSocketFactory sf = (SSLSocketFactory)SSLSocketFactory.getDefault();

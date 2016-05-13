@@ -98,8 +98,8 @@ public class Cotton {
         //TODO swap for current versions
         this.network = net;
     }
-    
-    public Cotton(boolean globalServiceDiscovery,GlobalDiscoveryDNS globalDiscoveryDNS) throws java.net.UnknownHostException {
+
+    public Cotton(boolean globalServiceDiscovery, GlobalDiscoveryDNS globalDiscoveryDNS) throws java.net.UnknownHostException {
         Random rnd = new Random();
         if(globalDiscoveryDNS == null) {
             globalDiscoveryDNS = new GlobalDiscoveryDNS();
@@ -123,7 +123,7 @@ public class Cotton {
         //TODO swap for current versions
         this.network = net;
     }
-    
+
     public Cotton (boolean globalServiceDiscovery, int portNumber) throws java.net.UnknownHostException {
         //TODO swap for current versions
         GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
@@ -131,31 +131,17 @@ public class Cotton {
         if(globalServiceDiscovery) {
             net = new DefaultNetworkHandler(portNumber);
             discovery = new GlobalServiceDiscovery(globalDiscoveryDNS);
-        
         }else {
             net = new DefaultNetworkHandler(portNumber);
             discovery = new LocalServiceDiscovery(globalDiscoveryDNS);
-        
         }
         lookup = new ServiceLookup();
         discovery.setLocalServiceTable(lookup);
         this.internalRouting = new DefaultInternalRouting(net,discovery);
         this.services = new ServiceHandler(lookup,internalRouting);
         this.network = net;
-        
     }
-    /*  
-    public Cotton () throws java.net.UnknownHostException {
-        lookup = new DefaultActiveServiceLookup();
-        GlobalDiscoveryDNS globalDiscoveryDNS = new GlobalDiscoveryDNS();
-        this.discovery = new DefaultLocalServiceDiscovery(lookup,globalDiscoveryDNS);
-        NetworkHandler net = new DefaultNetworkHandler();
-        network = net;
-        //clientNetwork = net;
-        //services = new DeprecatedServiceHandler(lookup, network);
-        //TODO swap for current versions
-    }
-*/
+
     public void start(){
         new Thread(network).start();
         internalRouting.setCommandControl(console);
@@ -195,6 +181,7 @@ public class Cotton {
         this.internalRouting.setRequestQueueManager(requestQueueManager);
         this.console.addSubSystem(requestQueueManager);
     }
+    
     public static void main(String[] args) {
         Cotton c = null;
         try{
