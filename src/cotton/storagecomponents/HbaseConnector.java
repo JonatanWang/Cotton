@@ -32,7 +32,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 
 package cotton.storagecomponents;
-
+/*
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -47,7 +47,7 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.json.JSONObject;
-
+*/
 
 public class HbaseConnector{
     /*  private Configuration conf;

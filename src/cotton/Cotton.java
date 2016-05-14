@@ -190,6 +190,12 @@ public class Cotton {
         tm  = new TokenManager();
         db.setTokenManager(tm);
     }
+    
+    public void databaseWrapperStart() {
+        MongoDBConnector db = new MongoDBConnector();
+        tm  = new TokenManager();
+        db.setTokenManager(tm);
+    }
 
     private void initNetwork(NetworkHandler net) throws UnknownHostException {
         if(net == null) {
