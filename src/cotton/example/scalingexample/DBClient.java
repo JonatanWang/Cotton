@@ -29,50 +29,82 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-package cotton.example.cloudexample;
+
+package cotton.example.scalingexample;
 
 import cotton.Cotton;
-import cotton.configuration.Configurator;
-import cotton.requestqueue.RequestQueueManager;
+import cotton.internalrouting.InternalRoutingClient;
+import cotton.internalrouting.ServiceRequest;
+import cotton.network.DummyServiceChain;
+import cotton.network.ServiceChain;
 import cotton.test.services.GlobalDnsStub;
-import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
+import org.json.JSONObject;
 
 /**
  *
- * @author Magnus
+ * @author Gunnlaugur
  */
-public class RequestQueueExample {
-
-    public static void main(String[] args) throws UnknownHostException, IOException {
-        GlobalDnsStub gDns = getDnsStub(null, 9546);
-        Cotton queueInstance = new Cotton(false, gDns);
-        Configurator config = new Configurator();
-        config.loadConfigFromFile("configurationtemplate.cfg");
-        RequestQueueManager requestQueueManager = new RequestQueueManager();
-        requestQueueManager.startQueue("mathpow21");
-        requestQueueManager.startQueue("mathpow2");
-        requestQueueManager.startQueue("result");
-        queueInstance.setRequestQueueManager(requestQueueManager);
-        queueInstance.start();
+public class DBClient {
+    public static void main(String[] args) throws UnknownHostException {
+        GlobalDnsStub gDns = getDnsStub(null, 5888);
+        Cotton clientInstance = new Cotton(false, gDns);
         
-        Scanner scan = new Scanner(System.in);
-        scan.next();
-        System.out.println("bad");
- 
-        queueInstance.shutdown();
+        clientInstance.start();
+        
+        InternalRoutingClient clientNetwork = clientInstance.getClient();
+        ServiceChain chain = new DummyServiceChain().into("database");
+        ServiceRequest serviceRequest = null;
+        
+        byte[] data = jsonToByteArray("authoriseRequest");
+        clientNetwork.sendToService(data, chain);
+        
+        data = jsonToByteArray("getDataFromDatabase");
+        serviceRequest = clientNetwork.sendWithResponse(data, chain);
+        
+        data = jsonToByteArray("removeDataFromDatabase");
+        clientNetwork.sendToService(data, chain);
+        System.out.println("Waiting for response");
+        if(serviceRequest != null) {
+            data = serviceRequest.getData();
+            JSONObject j = byteArrayToJson(data);
+            
+            System.out.println("this is the result: " + j.toString());
+        }else {
+            System.out.println("Failed to send");
+        }
+        
+        clientInstance.shutdown();
     }
-
+    
+    private static JSONObject byteArrayToJson(byte[] data) {
+        String convertToJson = new String(data);
+        return new JSONObject(convertToJson);
+    }
+    
+    private static byte[] jsonToByteArray(String command) {
+        JSONObject j = new JSONObject();
+        
+        j.put("command", command);
+        j.put("data", "data test one");
+        j.put("accessLevel", 1);
+        
+        String data = j.toString();
+        
+        return data.getBytes(StandardCharsets.UTF_8);
+    }
+    
     private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
         GlobalDnsStub gDns = new GlobalDnsStub();
         InetSocketAddress gdAddr = null;
         if (dest == null) {
             gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
-            System.out.println("discAddr:" + Inet4Address.getLocalHost().toString() + " port: " + port);
-        } else {
+            System.out.println("discAddr:" + Inet4Address.getLocalHost().toString() +" port: " + port);
+        }else {
             gdAddr = new InetSocketAddress(dest, port);
         }
         InetSocketAddress[] arr = new InetSocketAddress[1];

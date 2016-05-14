@@ -29,13 +29,13 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-package cotton.example.cloudexample;
+
+
+package cotton.example.scalingexample;
 
 import cotton.Cotton;
-import cotton.configuration.Configurator;
 import cotton.requestqueue.RequestQueueManager;
 import cotton.test.services.GlobalDnsStub;
-import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -43,36 +43,32 @@ import java.util.Scanner;
 
 /**
  *
- * @author Magnus
+ * @author Gunnlaugur Juliusson
  */
-public class RequestQueueExample {
-
-    public static void main(String[] args) throws UnknownHostException, IOException {
-        GlobalDnsStub gDns = getDnsStub(null, 9546);
-        Cotton queueInstance = new Cotton(false, gDns);
-        Configurator config = new Configurator();
-        config.loadConfigFromFile("configurationtemplate.cfg");
-        RequestQueueManager requestQueueManager = new RequestQueueManager();
-        requestQueueManager.startQueue("mathpow21");
-        requestQueueManager.startQueue("mathpow2");
-        requestQueueManager.startQueue("result");
-        queueInstance.setRequestQueueManager(requestQueueManager);
-        queueInstance.start();
+public class RequestQueueRunning {
+    public static void main(String[] args) throws UnknownHostException {
+        GlobalDnsStub gDns = getDnsStub(null, 2365);
+        Cotton rqInstance = new Cotton(false, gDns);
+        
+        RequestQueueManager rqm = new RequestQueueManager();
+        rqm.startQueue("database");
+        rqInstance.setRequestQueueManager(rqm);
+        
+        rqInstance.start();
         
         Scanner scan = new Scanner(System.in);
         scan.next();
-        System.out.println("bad");
- 
-        queueInstance.shutdown();
+        
+        rqInstance.shutdown();
     }
-
+    
     private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
         GlobalDnsStub gDns = new GlobalDnsStub();
         InetSocketAddress gdAddr = null;
         if (dest == null) {
             gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
-            System.out.println("discAddr:" + Inet4Address.getLocalHost().toString() + " port: " + port);
-        } else {
+            System.out.println("discAddr:" + Inet4Address.getLocalHost().toString() +" port: " + port);
+        }else {
             gdAddr = new InetSocketAddress(dest, port);
         }
         InetSocketAddress[] arr = new InetSocketAddress[1];

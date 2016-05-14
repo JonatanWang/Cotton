@@ -145,7 +145,12 @@ public class DatabaseService implements Service{
         return new Factory();
     }
     
-    public class Factory implements ServiceFactory{
+
+    public static ServiceFactory getFactory() {
+        return new Factory();
+    }
+
+    public static class Factory implements ServiceFactory{
 
         @Override
         public Service newService() {

@@ -33,6 +33,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package cotton;
 
+import cotton.configuration.DatabaseConfigurator;
+import cotton.network.TokenManager;
 import cotton.servicediscovery.GlobalDiscoveryDNS;
 import cotton.network.NetworkHandler;
 import cotton.servicediscovery.ServiceDiscovery;
@@ -46,6 +48,8 @@ import cotton.internalrouting.InternalRoutingClient;
 import cotton.network.DefaultNetworkHandler;
 import java.util.Random;
 import cotton.requestqueue.RequestQueueManager;
+import cotton.storagecomponents.DatabaseConnector;
+import cotton.storagecomponents.MongoDBConnector;
 import cotton.systemsupport.Console;
 import cotton.configuration.Configurator;
 import cotton.configuration.ServiceConfigurator;
@@ -57,6 +61,7 @@ import java.net.UnknownHostException;
  * @author Magnus
  * @author Gunnlaugur
  * @author Tony
+ * @author Mats
  */
 public class Cotton {
     private ActiveServiceLookup lookup;
@@ -65,6 +70,7 @@ public class Cotton {
     private ServiceDiscovery discovery;
     private DefaultInternalRouting internalRouting;
     private Console console = new Console();
+    private TokenManager tm;
 
     public Cotton(Configurator config) throws java.net.UnknownHostException,
                                               java.net.MalformedURLException,
@@ -72,6 +78,7 @@ public class Cotton {
                                               InstantiationException,
                                               IllegalAccessException{
 
+        dataBaseWrapperStart(config);
         initNetwork(new DefaultNetworkHandler(config.getNetworkConfigurator()));
         initDiscovery(config.isGlobal(), null);
         initLookup(config.getServiceConfigurator());
@@ -176,6 +183,18 @@ public class Cotton {
     public void setRequestQueueManager(RequestQueueManager requestQueueManager){
         this.internalRouting.setRequestQueueManager(requestQueueManager);
         this.console.addSubSystem(requestQueueManager);
+    }
+
+    public void dataBaseWrapperStart (Configurator con){
+        MongoDBConnector db = new MongoDBConnector(con.getDatabaseConfigurator());
+        tm  = new TokenManager();
+        db.setTokenManager(tm);
+    }
+    
+    public void databaseWrapperStart() {
+        MongoDBConnector db = new MongoDBConnector();
+        tm  = new TokenManager();
+        db.setTokenManager(tm);
     }
 
     private void initNetwork(NetworkHandler net) throws UnknownHostException {

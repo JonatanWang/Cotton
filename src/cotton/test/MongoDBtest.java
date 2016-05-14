@@ -201,7 +201,7 @@ public class MongoDBtest {
 
     //prints out the database table recived in the method
     private void printDB(String table){
-        MongoClient client = null;
+        /*MongoClient client = null;
         MongoDatabase db =  null;
 
         client = new MongoClient("localhost", 27017);
@@ -212,7 +212,7 @@ public class MongoDBtest {
         for(Document d: request){
             System.out.print("\n" +d.toString() +",\n ");
         }
-
+*/
     }
 
 }

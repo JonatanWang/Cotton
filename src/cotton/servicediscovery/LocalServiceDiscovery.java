@@ -60,6 +60,14 @@ import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatisticsProvider;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -77,6 +85,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     private ConcurrentHashMap<String, AddressPool> activeQueue;
     private ConcurrentHashMap<DestinationMetaData, AtomicInteger> destFailStat = new ConcurrentHashMap();
     private RequestQueueManager queueManager;
+    private final ScheduledExecutorService taskScheduler;
 
     /**
      * Fills in a list of all pre set globalServiceDiscovery addresses
@@ -98,6 +107,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         initGlobalDiscoveryPool(dnsConfig);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         this.activeQueue = new ConcurrentHashMap<>();
+        this.taskScheduler= Executors.newScheduledThreadPool(40);
     }
 
     /**
@@ -452,9 +462,38 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, data);
     }
 
+    private long announceDelay = 2;
+    private ScheduledFuture<?> announceLaterTask = null;
+    private void tryAnnounceLater() {
+        announceDelay = (announceDelay < 10) ? announceDelay : 10;
+        final Runnable run = new Runnable() {
+            @Override
+            public void run() {
+                if(announce()) {
+                    System.out.println("Announce: done");
+                }else{
+                    System.out.println("Announce: failed");
+                }
+                
+            }
+        };
+                
+        System.out.println("try Announce in: " + announceDelay + " seconds again" );
+   
+        final ScheduledFuture<?> schedule = this.taskScheduler.schedule(run, announceDelay, TimeUnit.SECONDS);
+;
+        this.taskScheduler.schedule(new Runnable() {
+            @Override
+            public void run() {
+                schedule.cancel(true);
+            }
+        }, announceDelay + 10, TimeUnit.SECONDS);
+    }
+    
     @Override
     public boolean announce() {
         if (localServiceTable == null) {
+            System.out.println("Announce: no services to announce");
             return false;
         }
 //        InetSocketAddress destAddr = (InetSocketAddress) discoveryCache.getAddress();
@@ -462,6 +501,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
 //            return false;
         DestinationMetaData dest = discoveryCache.getAddress();
         if (dest == null) {
+            System.out.println("Announce: discovery addresses, check dns config");
             return false;
         }
         ArrayList<ConfigEntry> entryList = new ArrayList<>();
@@ -502,7 +542,15 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
                 dest = destinationUnreachable(dest, null);
                 success = internalRouting.sendToDestination(dest, bytes);
             }
+            if(!success){
+                tryAnnounceLater();
+                //announceDelay++;
+                return false;
+            }
         } catch (IOException ex) {
+            tryAnnounceLater();
+            ex.printStackTrace();
+            //announceDelay++;
             return false;
         }
 
@@ -519,6 +567,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
 
     @Override
     public void stop() {
+        this.taskScheduler.shutdownNow();
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
