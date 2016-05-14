@@ -144,7 +144,7 @@ public class DatabaseService implements Service{
     public ServiceFactory loadFactory (){
         return new Factory();
     }
-
+    
     public class Factory implements ServiceFactory{
 
         @Override

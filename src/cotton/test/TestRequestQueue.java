@@ -217,9 +217,9 @@ try {
         AtomicInteger counter = new AtomicInteger(0);
         MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
 
-        ser1.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
-        ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
-        ser3.getServiceRegistation().registerService("result", resFactory, 10);
+        ser1.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 1);
+        ser2.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 1);
+        ser3.getServiceRegistation().registerService("result", resFactory, 1);
 
         Cotton cCotton = new Cotton(false, gDns);
         cCotton.start();

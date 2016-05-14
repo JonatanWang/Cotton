@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.InetAddress;
 import java.util.Properties;
+import java.util.Random;
 
 /**
  * Configurator for the cotton cloud server
@@ -52,6 +53,7 @@ public class Configurator {
 
         try{
             config.loadConfigFromFile("config.cfg");
+            //config.loadConfigFromFile("configurationtemplate.cfg");
         }catch(Exception e){
             e.printStackTrace();
         }
@@ -81,11 +83,11 @@ public class Configurator {
         if(prop == null)
             throw new IllegalStateException("Configurator empty / not initialised.");
         NetworkConfigurator.Builder builder = new NetworkConfigurator.Builder();
-
+        int defualtPort = new Random().nextInt(40000) + 5000; // so the port dont conflict
         String addressPort;
         InetSocketAddress address = null;
         if((addressPort = prop.getProperty("networkAddress")) == null || addressPort.equalsIgnoreCase("localhost"))
-            address = new InetSocketAddress(InetAddress.getByName(null), 3333);
+            address = new InetSocketAddress(InetAddress.getByName(null), defualtPort);
 
         if(address == null){
             String[] splitAddress = addressPort.split(":");
@@ -99,11 +101,11 @@ public class Configurator {
                     address = new InetSocketAddress(splitAddress[0], port);
             }else if(splitAddress.length > 0){
                 if(splitAddress[0].equalsIgnoreCase("localhost"))
-                    address = new InetSocketAddress(InetAddress.getByName(null), 3333);
+                    address = new InetSocketAddress(InetAddress.getByName(null), defualtPort);
                 else
-                    address = new InetSocketAddress(splitAddress[0], 3333);
+                    address = new InetSocketAddress(splitAddress[0], defualtPort);
             }else
-                address = new InetSocketAddress(InetAddress.getByName(null), 3333);
+                address = new InetSocketAddress(InetAddress.getByName(null), defualtPort);
         }
         builder.setAddress(address);
 
