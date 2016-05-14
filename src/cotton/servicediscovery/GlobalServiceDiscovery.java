@@ -63,6 +63,10 @@ import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatType;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -81,6 +85,8 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     private ConcurrentHashMap<String, AddressPool> activeQueue;
     private ConcurrentHashMap<DestinationMetaData, AtomicInteger> destFailStat = new ConcurrentHashMap();
     private RequestQueueManager queueManager;
+    private final ScheduledThreadPoolExecutor deadAddressValidator;
+    private ConcurrentLinkedQueue<ReapedAddress> deadAddresses;
 
     /**
      * Fills in a list of all pre set globalServiceDiscovery addresses
@@ -105,6 +111,9 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         //threadPool = Executors.newCachedThreadPool();
         threadPool = Executors.newFixedThreadPool(10);
         this.activeQueue = new ConcurrentHashMap<>();
+        this.deadAddresses = new ConcurrentLinkedQueue<>();
+        deadAddressValidator = new ScheduledThreadPoolExecutor(1);
+
     }
 
     /**
@@ -154,16 +163,37 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
      */
     @Override
     public DestinationMetaData destinationUnreachable(DestinationMetaData dest, String serviceName) {
-        AtomicInteger failCount = new AtomicInteger(1);
+        AtomicInteger failCount = null;
+        AtomicInteger newFailCount = new AtomicInteger(1);
         failCount = this.destFailStat.putIfAbsent(dest, failCount);
         int value = 1;
+
         if (failCount != null) {
             value = failCount.incrementAndGet();
+        } else {
+            value = newFailCount.incrementAndGet();
         }
-
+        PathType type = dest.getPathType();
+        AddressPool currentPool = null;
+        switch (type) {
+            case REQUESTQUEUE:
+                currentPool = activeQueue.get(serviceName);
+                break;
+            case DISCOVERY:
+                currentPool = discoveryCache;
+                break;
+            case SERVICE:
+                currentPool = serviceCache.get(serviceName);
+                break;
+        }
         // TODO: change to threashold over time
         if (value > 5) {
-            return destinationRemove(dest, serviceName);
+            DestinationMetaData newAddress = destinationRemove(dest, serviceName);
+            this.deadAddresses.add(new ReapedAddress(serviceName, dest));
+            if (currentPool.size() < 2) {
+                checkDeadAddresses(currentPool);
+            }
+            return newAddress;
         }
         if (serviceName != null) {
             AddressPool pool = serviceCache.get(serviceName);
@@ -371,31 +401,71 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         return stream.toByteArray();
     }
 
-    private void validateServiceActivity(){
-        AddressPool pool;
-        DestinationMetaData[] destinations;
-        for(Map.Entry<String,AddressPool>entry: serviceCache.entrySet()){
-            pool = entry.getValue();
-            destinations = pool.copyPoolData();
-            String key = entry.getKey();;
-            for(int i =0; i<destinations.length; i++){
-                DiscoveryProbe probe = new DiscoveryProbe(key,destinations[i]);
-                DiscoveryPacket response = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
-                response.setProbe(probe);
-                byte[] data = null;
-                try{
-                    data = serializeToBytes(response);
-                }catch(IOException e){}
-                DestinationMetaData target = new DestinationMetaData(destinations[i].getSocketAddress(),PathType.DISCOVERY);
-                ServiceRequest request = internalRouting.sendWithResponse(target, data, 70);
-                if(request == null || request.getData() == null){
-                    boolean flag =pool.remove(destinations[i]);
-                    System.out.println("FLAG VALUE" + flag);
-                }
+    private void checkPoolReachabillity(AddressPool pool, String key) {
+        if (pool == null || key == null) {
+            return;
+        }
+        DestinationMetaData[] destinations = pool.copyPoolData();
+        for (int i = 0; i < destinations.length; i++) {
+            DiscoveryProbe probe = new DiscoveryProbe(key, destinations[i]);
+            DiscoveryPacket response = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
+            response.setProbe(probe);
+            byte[] data = null;
+            try {
+                data = serializeToBytes(response);
+            } catch (IOException e) {
+            }
+            DestinationMetaData target = new DestinationMetaData(destinations[i].getSocketAddress(), PathType.DISCOVERY);
+            ServiceRequest request = internalRouting.sendWithResponse(target, data, 70);
+            if (request == null || request.getData() == null) {
+                boolean flag = pool.remove(destinations[i]);
+                System.out.println("FLAG VALUE" + flag);
             }
         }
     }
-    
+
+    private void checkDeadAddresses(AddressPool pool) {
+        ConcurrentLinkedQueue<ReapedAddress> reapedAddresses = this.deadAddresses;
+
+        InternalRoutingServiceDiscovery routing = this.internalRouting;
+        Runnable command = new Runnable() {
+            @Override
+            public void run() {
+                for (ReapedAddress addr : reapedAddresses) {
+                    DiscoveryProbe probe = new DiscoveryProbe(addr.getName(), addr.getReapedAddress());
+                    DiscoveryPacket response = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
+                    response.setProbe(probe);
+                    byte[] data = null;
+                    try {
+                        data = serializeToBytes(response);
+                    } catch (IOException e) {
+                    }
+                    DestinationMetaData target = new DestinationMetaData(addr.getReapedAddress().getSocketAddress(), PathType.DISCOVERY);
+                    ServiceRequest request = routing.sendWithResponse(target, data, 70);
+                    if (request != null || request.getData() != null) {
+                        pool.addAddress(addr.getReapedAddress());
+                    }
+                }
+            }
+        };
+        ScheduledFuture<?> addressValidator = this.deadAddressValidator.scheduleAtFixedRate(command, 10, 10, TimeUnit.SECONDS);
+        this.deadAddressValidator.schedule(new Runnable() {
+            public void run() {
+                addressValidator.cancel(true);
+            }
+        }, 2 * 10 * 10, TimeUnit.SECONDS);
+    }
+
+    private void validateServiceActivity() {
+        AddressPool pool;
+        DestinationMetaData[] destinations;
+        for (Map.Entry<String, AddressPool> entry : serviceCache.entrySet()) {
+            pool = entry.getValue();
+            String key = entry.getKey();
+            checkPoolReachabillity(pool, key);
+        }
+    }
+
     @Override
     public void stop() {
         threadPool.shutdown();
@@ -632,13 +702,13 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         dest.setPathType(PathType.COMMANDCONTROL);
         Command com = new Command(StatType.SERVICEHANDLER, circuit.getCircuitName(), null, 100, CommandType.CHANGE_ACTIVEAMOUNT);
         sendCommandPacket(dest, com);
-        
+
     }
 
     @Override
     public boolean processCommand(Command command) {
-        if(command.getCommandType() == CommandType.CHECK_REACHABILLITY){
-            threadPool.execute(new Runnable(){
+        if (command.getCommandType() == CommandType.CHECK_REACHABILLITY) {
+            threadPool.execute(new Runnable() {
                 @Override
                 public void run() {
                     validateServiceActivity();
@@ -646,10 +716,9 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             });
             return true;
         }
-       return false;
+        return false;
     }
 
-    
     private boolean sendCommandPacket(DestinationMetaData destination, Command command) {
         byte[] data;
         try {
@@ -874,8 +943,26 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         @Override
         public void run() {
             DiscoveryPacket packet = packetUnpack(data);
-            decodeDiscoveryPacket(origin,packet);
+            decodeDiscoveryPacket(origin, packet);
+        }
+    }
+
+    private class ReapedAddress {
+
+        private String name;
+        private DestinationMetaData reapedAddress;
+
+        public ReapedAddress(String name, DestinationMetaData reapedAddress) {
+            this.name = name;
+            this.reapedAddress = reapedAddress;
         }
 
+        public String getName() {
+            return this.name;
+        }
+
+        public DestinationMetaData getReapedAddress() {
+            return this.reapedAddress;
+        }
     }
 }
