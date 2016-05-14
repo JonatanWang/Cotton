@@ -83,7 +83,7 @@ public class RequestQueueManager implements StatisticsProvider {
         this.banList = new ConcurrentHashMap<String, String>();
 
     }
-    
+
     public RequestQueueManager(QueueConfigurator config) {
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(100);//.newCachedThreadPool();
@@ -94,7 +94,7 @@ public class RequestQueueManager implements StatisticsProvider {
         System.out.println("Config :" + config.toString());
     }
 
-    public RequestQueueManager(QueueConfigurator config,InternalRoutingRequestQueue internalRouting) {
+    public RequestQueueManager(QueueConfigurator config, InternalRoutingRequestQueue internalRouting) {
         this.internalQueueMap = new ConcurrentHashMap<>();
         this.threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(100);//.newCachedThreadPool();
         this.internalRouting = internalRouting;
@@ -293,7 +293,8 @@ public class RequestQueueManager implements StatisticsProvider {
         private AtomicInteger inputCounter;
         private AtomicInteger outputCounter;
         private UsageHistory usageHistory;
-        private Timer timer;
+        private Timer timer = new Timer();
+        private TimeSliceTask sliceTask = null;
         private volatile boolean running = true;
         private int samplingRate = 0;
 
@@ -426,13 +427,12 @@ public class RequestQueueManager implements StatisticsProvider {
          */
         public boolean setUsageRecording(long samplingRate) {
             this.samplingRate = (int) samplingRate;
-            if (timer != null) {
-                timer.cancel();
-                timer.purge();
+            if (this.sliceTask != null) {
+                sliceTask.cancel();
 
             }
-            timer = new Timer();
-            timer.scheduleAtFixedRate(new TimeSliceTask(System.currentTimeMillis()), 0, this.samplingRate);
+            this.sliceTask = new TimeSliceTask(System.currentTimeMillis());
+            timer.scheduleAtFixedRate(sliceTask, 0, this.samplingRate);
             return true;
         }
 
@@ -442,10 +442,8 @@ public class RequestQueueManager implements StatisticsProvider {
          * @return
          */
         public boolean stopUsageRecording() {
-            if (timer != null) {
-                timer.cancel();
-                timer.purge();
-                timer = null;
+            if (sliceTask != null) {
+                sliceTask.cancel();
             }
             return true;
         }
@@ -459,6 +457,12 @@ public class RequestQueueManager implements StatisticsProvider {
 
         public void stop() {
             running = false;
+            if(this.sliceTask != null) {
+                this.sliceTask.cancel();
+            }
+            timer.cancel();
+            timer.purge();
+            timer = null;
         }
 
         private class TimeSliceTask extends TimerTask {

@@ -51,13 +51,14 @@ public class RequestQueueExample {
         Cotton queueInstance = new Cotton(false, gDns);
         Configurator config = new Configurator();
         config.loadConfigFromFile("configurationtemplate.cfg");
-        RequestQueueManager requestQueueManager = new RequestQueueManager(config.getQueueConfigurator());
+        RequestQueueManager requestQueueManager = new RequestQueueManager();
         requestQueueManager.startQueue("mathpow21");
         requestQueueManager.startQueue("mathpow2");
+        requestQueueManager.startQueue("result");
         queueInstance.setRequestQueueManager(requestQueueManager);
         queueInstance.start();
         try {
-            Thread.sleep(80000);
+            Thread.sleep(120000);
         } catch (InterruptedException ex) {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }

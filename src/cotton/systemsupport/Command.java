@@ -45,13 +45,14 @@ public class Command implements Serializable {
     private final String[] tokens;
     private final int amount;
     private final CommandType command;
-    private boolean query;
+    private boolean query = false;
 
     /**
      * This class creates a command that can be sent to notify other nodes.
      *
      * @param type
      * @param name
+     * @param tokens
      * @param amount
      * @param command
      */
@@ -61,7 +62,6 @@ public class Command implements Serializable {
         this.tokens = tokens;
         this.amount = amount;
         this.command = command;
-        this.query = false;
     }
 
     /**
@@ -115,7 +115,7 @@ public class Command implements Serializable {
      * @return true or false whether the command should respond back to origin.
      */
     public boolean isQuery() {
-        return query;
+        return this.query;
     }
 
     /**

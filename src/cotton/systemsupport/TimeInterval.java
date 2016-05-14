@@ -93,7 +93,7 @@ public class TimeInterval implements Serializable {
 
     @Override
     public String toString() {
-        return "\t TimeInterval{" + "inputIntensity=" + calculateInputIntensity() + ", outputIntensity=" + calculateOutputIntensity() + ", deltaTime=" + deltaTime + ", currentQueueCount=" + currentQueueCount + '}' + "\n";
+        return "TimeInterval{" + "inputIntensity=" + calculateInputIntensity() + ", outputIntensity=" + calculateOutputIntensity() + "in/out count:" +this.inputCount + "/" + this.outputCount + ", deltaTime=" + deltaTime + ", currentQueueCount=" + currentQueueCount + '}';
     }
 
 }

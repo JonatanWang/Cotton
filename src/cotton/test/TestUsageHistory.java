@@ -35,6 +35,7 @@ import cotton.Cotton;
 import cotton.internalRouting.InternalRoutingClient;
 import cotton.internalRouting.InternalRoutingNetwork;
 import cotton.network.DefaultNetworkHandler;
+import cotton.network.DestinationMetaData;
 import cotton.network.DummyServiceChain;
 import cotton.network.NetworkPacket;
 import cotton.network.NetworkPacket.NetworkPacketBuilder;
@@ -62,9 +63,12 @@ import cotton.test.services.GlobalDnsStub;
 import cotton.test.services.MathPowV2;
 import cotton.test.services.MathResult;
 import java.io.Serializable;
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -86,7 +90,7 @@ public class TestUsageHistory {
         //discovery.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
 
         //AtomicInteger counter = new AtomicInteger(0);
-       // MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
+        // MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
         //discovery.getServiceRegistation().registerService("result", resFactory, 10);
         RequestQueueManager qm = new RequestQueueManager();
         qm.startQueue("result");
@@ -139,7 +143,7 @@ public class TestUsageHistory {
 
         Cotton cCotton = new Cotton(false, gDns);
         cCotton.start();
-        
+
         InternalRoutingClient client = cCotton.getClient();
         ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
 
@@ -174,7 +178,7 @@ public class TestUsageHistory {
         StatisticsData statistics = requestQueueManager.getStatistics(new String[]{"mathpow21", "getUsageRecordingInterval", "0", "20"});
 
         TimeInterval[] interval = (TimeInterval[]) statistics.getData();
-        System.out.println("Statistics name: " + statistics.getName() + " TIMEINTERVAL:" + Arrays.toString(interval));
+        System.out.println("Statistics name: " + statistics.getName() + " TIMEINTERVAL:" + intervalToString("\t",interval,"\n"));
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
@@ -185,27 +189,122 @@ public class TestUsageHistory {
         cCotton.shutdown();
         discovery.shutdown();
         assertTrue(true);
-        //console.processCommand();
-//        int port = new Random().nextInt(25000) + 5000;
-//        Cotton discovery = new Cotton(true,port);
-//        
-//        GlobalDnsStub gDns = new GlobalDnsStub();
-//        InetSocketAddress[] arr = new InetSocketAddress[1];
-//        arr[0] = new InetSocketAddress(Inet4Address.getLocalHost(), port);
-//        gDns.setGlobalDiscoveryAddress(arr);
-//        try {
-//            Thread.sleep(500);
-//        } catch (InterruptedException ex) {
-//            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        
-//        Cotton queue = new Cotton(false,gDns);
-//        RequestQueueManager requestQueueManager = new RequestQueueManager();
-//        requestQueueManager.startQueue("mathpow21");
-//        queue.setRequestQueueManager(requestQueueManager);
-//        queue.start();
-//
-//        
+      
+    }
+    
+    private String intervalToString(String prefix, TimeInterval[] interval, String sufix) {
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < interval.length; i++) {
+            b.append(prefix + interval[i] + sufix);
+        }
+        return b.toString();
+    }
+
+    @Test
+    public void TestUsageHistoryQuery() throws UnknownHostException {
+        System.out.println("TestQueueUsage");
+        InetAddress ip = Inet4Address.getLocalHost();
+        int port = new Random().nextInt(25000) + 5000;
+        InetSocketAddress addr = new InetSocketAddress(ip, port);
+        Cotton discovery = new Cotton(true, port);
+        //discovery.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
+
+        //AtomicInteger counter = new AtomicInteger(0);
+        // MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
+        //discovery.getServiceRegistation().registerService("result", resFactory, 10);
+        String name = "result";
+        String pow = "mathpow21";
+        RequestQueueManager qm = new RequestQueueManager();
+        qm.startQueue(name);
+        qm.startQueue(pow);
+        discovery.setRequestQueueManager(qm);
+
+        discovery.start();
+        GlobalDnsStub gDns = new GlobalDnsStub();
+        InetSocketAddress[] arr = new InetSocketAddress[1];
+        arr[0] = new InetSocketAddress(Inet4Address.getLocalHost(), port);
+        gDns.setGlobalDiscoveryAddress(arr);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Cotton ser1 = new Cotton(false, gDns);
+        Cotton ser2 = new Cotton(false, gDns);
+
+        AtomicInteger counter = new AtomicInteger(0);
+        MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
+
+        ser1.getServiceRegistation().registerService(name, resFactory, 10);
+        ser2.getServiceRegistation().registerService(pow, MathPowV2.getFactory(), 10);
+
+        ser1.start();
+        ser2.start();
+        
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Cotton c = new Cotton(false, gDns);
+        c.start();
+        Console cl = c.getConsole();
+        Command cmd = new Command(StatType.REQUESTQUEUE, null, new String[]{pow, "setUsageRecordingInterval"}, 200, CommandType.RECORD_USAGEHISTORY);
+        DestinationMetaData dest = new DestinationMetaData(addr, PathType.COMMANDCONTROL);
+        try {
+            cl.sendCommand(cmd, dest);
+        } catch (IOException ex) {
+        }
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        InternalRoutingClient client = c.getClient();
+        ServiceChain chain = new DummyServiceChain().into(pow).into(name).into(pow).into(pow).into(name);
+        int num = 2;
+        byte[] data = ByteBuffer.allocate(4).putInt(num).array();
+        client.sendToService(data, chain);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        String[] cmdline = new String[]{pow, "getUsageRecordingInterval"};
+        Command query = new Command(StatType.REQUESTQUEUE, null, cmdline, 200, CommandType.STATISTICS_FORSYSTEM);
+        StatisticsData<TimeInterval>[] res = null;
+        try {
+            res = cl.sendQueryCommand(query, dest);
+        } catch (IOException ex) {
+            System.out.println("send2");
+        }
+        if (res == null || res.length < 1) {
+            System.out.println("getStatData: fail");
+
+        }
+
+        Command stopCmd = new Command(StatType.REQUESTQUEUE, null, new String[]{pow, "stopUsageRecording"}, 0, CommandType.RECORD_USAGEHISTORY);
+
+        try {
+
+            cl.sendCommand(stopCmd, dest);
+        } catch (IOException ex) {
+            System.out.println("send2");
+            return;
+        }
+        System.out.println("res: size" + res.length);
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Result: \n" + res[0].toString());
+
+        ser1.shutdown();
+        ser2.shutdown();
+        discovery.shutdown();
+        c.shutdown();
     }
 
 }

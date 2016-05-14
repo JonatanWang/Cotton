@@ -53,7 +53,7 @@ public class DiscoveryExample {
 
         discovery.start();
         try {
-            Thread.sleep(90000);
+            Thread.sleep(120000);
         } catch (InterruptedException ex) {
         }
         discovery.shutdown();

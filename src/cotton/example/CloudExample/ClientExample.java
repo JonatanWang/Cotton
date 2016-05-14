@@ -79,6 +79,7 @@ public class ClientExample {
         InetSocketAddress gdAddr = null;
         if (dest == null) {
             gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
+            System.out.println("discAddr:" + Inet4Address.getLocalHost().toString() +" port: " + port);
         } else {
             gdAddr = new InetSocketAddress(dest, port);
         }

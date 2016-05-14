@@ -144,6 +144,8 @@ public class Console {
                     data = serializeToBytes(statistics);
                     internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
                     break;
+                case RECORD_USAGEHISTORY:
+                    break;
                 default:
                     break;
             }
