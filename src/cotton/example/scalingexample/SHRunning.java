@@ -63,7 +63,13 @@ public class SHRunning {
         shInstance.start();
         
         Scanner scan = new Scanner(System.in);
-        scan.next();
+        boolean run = true;
+        while(run) {
+            try {
+                if(Integer.parseInt(scan.nextLine()) == 1)
+                    run = false;
+            } catch(Exception e) {}
+        }
         
         shInstance.shutdown();
     }
