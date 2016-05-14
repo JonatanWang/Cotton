@@ -180,7 +180,7 @@ public class TestRequestQueue {
     @Test
     public void TestWorkFloodRequestQueue() throws UnknownHostException {
         System.out.println("Now running: TestWorkFloodRequestQueue");
-        int port = 9999;//new Random().nextInt(25000) + 5000;
+        int port = /*9999;*/new Random().nextInt(25000) + 5000;
         Cotton discovery = new Cotton(true, port);
         GlobalDnsStub gDns = new GlobalDnsStub();
 
