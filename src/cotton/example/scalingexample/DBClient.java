@@ -51,7 +51,7 @@ import org.json.JSONObject;
  */
 public class DBClient {
     public static void main(String[] args) throws UnknownHostException {
-        GlobalDnsStub gDns = getDnsStub(null, 2365);
+        GlobalDnsStub gDns = getDnsStub(null, 5888);
         Cotton clientInstance = new Cotton(false, gDns);
         
         clientInstance.start();

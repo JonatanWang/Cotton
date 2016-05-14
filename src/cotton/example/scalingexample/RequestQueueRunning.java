@@ -47,7 +47,7 @@ import java.util.Scanner;
  */
 public class RequestQueueRunning {
     public static void main(String[] args) throws UnknownHostException {
-        GlobalDnsStub gDns = getDnsStub(null, 2365);
+        GlobalDnsStub gDns = getDnsStub(null, 5888);
         Cotton rqInstance = new Cotton(false, gDns);
         
         RequestQueueManager rqm = new RequestQueueManager();
@@ -57,7 +57,13 @@ public class RequestQueueRunning {
         rqInstance.start();
         
         Scanner scan = new Scanner(System.in);
-        scan.next();
+        boolean run = true;
+        while(run) {
+            try {
+                if(Integer.parseInt(scan.nextLine()) == 1)
+                    run = false;
+            } catch(Exception e) {}
+        }
         
         rqInstance.shutdown();
     }
