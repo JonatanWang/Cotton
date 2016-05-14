@@ -33,7 +33,7 @@ package cotton.test;
 
 import cotton.network.*;
 import com.google.protobuf.InvalidProtocolBufferException;
-import cotton.internalRouting.InternalRoutingNetwork;
+import cotton.internalrouting.InternalRoutingNetwork;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;

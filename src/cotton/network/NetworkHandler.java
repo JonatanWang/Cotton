@@ -32,7 +32,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package cotton.network;
 
-import cotton.internalRouting.InternalRoutingNetwork;
+import cotton.internalrouting.InternalRoutingNetwork;
 import java.io.IOException;
 import java.net.SocketAddress;
 

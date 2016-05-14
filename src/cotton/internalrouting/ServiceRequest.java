@@ -30,48 +30,15 @@ POSSIBILITY OF SUCH DAMAGE.
 
  */
 
-package cotton.network;
-
-import cotton.internalrouting.ServiceRequest;
-import java.util.concurrent.CountDownLatch;
+package cotton.internalrouting;
 
 /**
  *
- * @author Tony
- * @author Jonathan
- * @author Gunnlaugur
+ * @author tony
  * @author Magnus
- **/
-@Deprecated
-public class DefaultServiceRequest implements ServiceRequest{
-    private byte[] data= null;
-    private CountDownLatch latch = new CountDownLatch(1);
-
-    @Override
-    public byte[] getData() {
-        boolean loop = false;
-        do {
-            try {
-                latch.await();
-                loop = false;
-            } catch (InterruptedException ex) {loop = true;}
-        }while(loop);
-        return data;
-    }
-
-    public void setData(byte[] data) {
-        this.data = data;
-        latch.countDown();
-    }
-    
-    @Override
-    public void setFailed(String errorMessage) {
-        this.data = null;
-        latch.countDown();
-    }
-
-    @Override
-    public String getErrorMessage() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+ */
+public interface ServiceRequest {
+    public byte[] getData();
+    public void setFailed(String errorMessage);
+    public String getErrorMessage();
 }

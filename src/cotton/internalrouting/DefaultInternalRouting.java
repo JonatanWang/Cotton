@@ -29,7 +29,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-package cotton.internalRouting;
+package cotton.internalrouting;
 
 import cotton.network.DestinationMetaData;
 import cotton.network.Origin;
@@ -49,10 +49,7 @@ import cotton.services.BridgeServiceBuffer;
 import cotton.services.ServiceBuffer;
 import cotton.services.ServicePacket;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import cotton.servicediscovery.LocalServiceDiscovery;
-import cotton.servicediscovery.GlobalServiceDiscovery;
+
 import cotton.requestqueue.RequestQueueManager;
 import cotton.servicediscovery.DiscoveryPacket;
 import cotton.systemsupport.Console;
@@ -497,11 +494,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
 
     /**
      * @param origin The source who inititated the service request
-     * @param serviceChain The serviceChain , if null a empty serviceChain is
-     * created
+     * @param path The path for the networkpacket.
      * @param data A byte array of data
-     * @param keepAlive A boolean whether the service request needs a keep alive
-     * socket or not.
      * @param pathType The destination type of the sub system.
      * @return A filled in networkpacket ready for transmission.
      *

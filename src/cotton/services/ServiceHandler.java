@@ -31,7 +31,7 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.services;
 
-import cotton.internalRouting.InternalRoutingServiceHandler;
+import cotton.internalrouting.InternalRoutingServiceHandler;
 import cotton.systemsupport.Command;
 import cotton.systemsupport.CommandType;
 import java.util.concurrent.Executors;
@@ -40,15 +40,12 @@ import cotton.systemsupport.StatisticsProvider;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.TimeInterval;
-import cotton.systemsupport.UsageHistory;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServiceHandler implements Runnable, StatisticsProvider {
 

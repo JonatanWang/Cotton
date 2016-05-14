@@ -35,13 +35,12 @@ package cotton.example.systemintegrationexample;
 import cotton.Cotton;
 import cotton.network.DummyServiceChain;
 import cotton.network.ServiceChain;
-import java.io.Serializable;
-import java.io.IOException;
+
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import cotton.internalRouting.ServiceRequest;
-import cotton.internalRouting.InternalRoutingClient;
+import cotton.internalrouting.ServiceRequest;
+import cotton.internalrouting.InternalRoutingClient;
 /**
  *
  * @author Magnus

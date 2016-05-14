@@ -29,28 +29,12 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-package cotton.internalRouting;
 
+package cotton.internalrouting;
+import cotton.network.SocketLatch;
 import cotton.network.NetworkPacket;
-import cotton.servicediscovery.DiscoveryPacket;
-import java.io.IOException;
-import java.net.SocketAddress;
 
-/**
- *
- * @author Tony
- * @author Magnus
- */
-public interface InternalRoutingRequestQueue {
-
-    /**
-     * Sends data wrapped in a <code>NetworkPacket</code> over the network.
-     *
-     * @param netPacket contains the data and the <code>metadata</code> needed
-     * to send the packet.
-     * @param dest defines the <code>SocketAddress</code> to send through.
-     * @throws java.io.IOException
-     */
-    public void sendWork(NetworkPacket netPacket, SocketAddress dest) throws IOException;
-    public void notifyDiscovery(DiscoveryPacket packet);
+public interface InternalRoutingNetwork {
+    public void pushNetworkPacket(NetworkPacket networkPacket);
+    public void pushKeepAlivePacket(NetworkPacket networkPacket,SocketLatch latch);
 }

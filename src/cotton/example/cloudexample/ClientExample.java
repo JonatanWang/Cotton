@@ -32,12 +32,11 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.example.cloudexample;
 
 import cotton.Cotton;
-import cotton.internalRouting.InternalRoutingClient;
-import cotton.internalRouting.ServiceRequest;
+import cotton.internalrouting.InternalRoutingClient;
+import cotton.internalrouting.ServiceRequest;
 import cotton.network.DummyServiceChain;
 import cotton.network.ServiceChain;
 import cotton.test.services.GlobalDnsStub;
-import cotton.test.services.MathPowV2;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;

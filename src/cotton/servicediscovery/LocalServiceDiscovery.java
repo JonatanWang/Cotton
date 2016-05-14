@@ -31,7 +31,7 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.servicediscovery;
 
-import cotton.internalRouting.InternalRoutingServiceDiscovery;
+import cotton.internalrouting.InternalRoutingServiceDiscovery;
 import cotton.network.DestinationMetaData;
 import cotton.network.Origin;
 import cotton.network.PathType;
@@ -48,12 +48,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
-import java.util.concurrent.ConcurrentHashMap.KeySetView;
+
 import cotton.services.ServiceMetaData;
 import java.util.ArrayList;
 import java.io.Serializable;
-import cotton.internalRouting.ServiceRequest;
-import cotton.network.DestinationMetaData;
+import cotton.internalrouting.ServiceRequest;
 import cotton.requestqueue.RequestQueueManager;
 import cotton.systemsupport.Command;
 import cotton.systemsupport.StatType;
@@ -665,7 +664,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             ServiceMetaData service = this.localServiceTable.getService(s);
             if (service != null) {
                 int num = service.getMaxCapacity() - service.getCurrentThreadCount();
-                //this.internalRouting.notifyRequestQueue(qAddr, RouteSignal.NETWORKDESTINATION, s);
+                //this.internalrouting.notifyRequestQueue(qAddr, RouteSignal.NETWORKDESTINATION, s);
                 notifyQueue(num, s, qAddr);
             }
         }

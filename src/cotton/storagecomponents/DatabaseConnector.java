@@ -31,18 +31,32 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 
 
-package cotton.internalRouting;
+package cotton.storagecomponents;
 
-import cotton.network.Origin;
-import cotton.network.ServiceChain;
-import cotton.services.ServiceBuffer;
+import org.json.JSONObject;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 
 /**
+ *@author Mats
+ *@author Jonathan
  *
- * @author tony
  */
-public interface InternalRoutingServiceHandler {
-    public boolean forwardResult(Origin origin, ServiceChain serviceChain, byte[] result);
-    public ServiceBuffer getServiceBuffer();
-    public boolean notifyRequestQueue(String serviceName);
+public interface DatabaseConnector {
+    public JSONObject getDataFromDatabase (JSONObject searchKeys);
+
+    public boolean removeDataFromDatabase (JSONObject removeKey);
+
+    public boolean removeUserFromDatabase (JSONObject removeKey);
+
+    public boolean authoriseRequest (JSONObject newData);
+
+    public boolean addUserInDatabase (JSONObject newUserData);
+
+    public byte[] authoriseUser (JSONObject newData) throws IllegalBlockSizeException, NoSuchAlgorithmException, IOException, BadPaddingException, NoSuchPaddingException, InvalidKeyException;
 }

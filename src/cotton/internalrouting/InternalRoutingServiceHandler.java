@@ -30,18 +30,19 @@ POSSIBILITY OF SUCH DAMAGE.
 
  */
 
-package cotton.internalRouting;
 
+package cotton.internalrouting;
+
+import cotton.network.Origin;
 import cotton.network.ServiceChain;
-import cotton.internalRouting.ServiceRequest;
+import cotton.services.ServiceBuffer;
 
 /**
  *
- * @author Tony
+ * @author tony
  */
-public interface InternalRoutingClient {
-    public boolean sendToService(byte[] data,ServiceChain serviceChain);
-    public ServiceRequest sendKeepAlive(byte[] data,ServiceChain serviceChain);
-    public ServiceRequest sendWithResponse(byte[] data,ServiceChain serviceChain);
-    
+public interface InternalRoutingServiceHandler {
+    public boolean forwardResult(Origin origin, ServiceChain serviceChain, byte[] result);
+    public ServiceBuffer getServiceBuffer();
+    public boolean notifyRequestQueue(String serviceName);
 }

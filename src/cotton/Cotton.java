@@ -33,18 +33,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package cotton;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
-
-import javax.imageio.ImageIO;
-
-import cotton.example.FileWriterService;
-import cotton.example.ImageManipulationPacket;
-import cotton.example.ImageManipulationService;
-import cotton.network.ServiceChain;
 import cotton.servicediscovery.GlobalDiscoveryDNS;
-import cotton.network.DummyServiceChain;
-import java.util.concurrent.ThreadLocalRandom;
 import cotton.network.NetworkHandler;
 import cotton.servicediscovery.ServiceDiscovery;
 import cotton.services.ActiveServiceLookup;
@@ -52,14 +41,12 @@ import cotton.services.ServiceHandler;
 import cotton.servicediscovery.GlobalServiceDiscovery;
 import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.services.ServiceLookup;
-import cotton.services.ServiceFactory;
-import cotton.internalRouting.DefaultInternalRouting;
-import cotton.internalRouting.InternalRoutingClient;
+import cotton.internalrouting.DefaultInternalRouting;
+import cotton.internalrouting.InternalRoutingClient;
 import cotton.network.DefaultNetworkHandler;
 import java.util.Random;
 import cotton.requestqueue.RequestQueueManager;
 import cotton.systemsupport.Console;
-import cotton.systemsupport.StatisticsProvider;
 import cotton.configuration.Configurator;
 import cotton.configuration.ServiceConfigurator;
 import java.net.UnknownHostException;

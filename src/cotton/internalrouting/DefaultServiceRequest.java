@@ -30,18 +30,65 @@ POSSIBILITY OF SUCH DAMAGE.
 
  */
 
-package cotton.internalRouting;
+package cotton.internalrouting;
 
-import cotton.network.DestinationMetaData;
-import cotton.network.ServiceChain;
-import cotton.internalRouting.ServiceRequest;
+import java.util.concurrent.CountDownLatch;
 
 /**
  *
  * @author tony
  */
-public interface InternalRoutingLogger {
-    public boolean sendToNextService(byte[] data, ServiceChain chain);
-    public boolean loggerToDestination(DestinationMetaData dest, byte[] data);
-    public ServiceRequest loggerWithResponse(DestinationMetaData dest, byte[] data);
+public class DefaultServiceRequest implements ServiceRequest{
+    private byte[] data = null;
+    private CountDownLatch latch = new CountDownLatch(1);
+    private long timeStamp = 0;
+    private String errorMessage;
+
+    public DefaultServiceRequest(){
+        
+    }
+
+    public DefaultServiceRequest(long timeStamp){
+        this.timeStamp = timeStamp;
+    }
+
+    public byte[] getData() {
+        boolean loop = false;
+        do {
+            try {
+                latch.await();
+                loop = false;
+            } catch (InterruptedException ex) {loop = true;}
+        }while(loop);
+        return data;
+    }
+
+    public void setData(byte[] data) {
+        this.data = data;
+        latch.countDown();
+    }
+
+    public void setFailed(String errorMessage) {
+        if(data == null){
+            this.errorMessage = errorMessage;
+            latch.countDown();
+        }
+    }
+
+    public long getTimeStamp(){
+        return timeStamp;
+    }
+
+    public void setTimeStamp(long timeStamp){
+        this.timeStamp = timeStamp;
+    }
+
+    /**
+     * This method returns an error message if the fail has triggered data equals null
+     * @return errorMessage  
+     */
+    @Override
+    public String getErrorMessage() {
+        return errorMessage;
+    }
 }
