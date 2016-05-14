@@ -51,7 +51,7 @@ import java.util.Scanner;
  */
 public class SHRunning {
     public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        GlobalDnsStub gDns = getDnsStub(null, 2365);
+        GlobalDnsStub gDns = getDnsStub(null, 5888);
         Cotton shInstance = new Cotton(false, gDns);
         
         shInstance.databaseWrapperStart();
@@ -63,7 +63,13 @@ public class SHRunning {
         shInstance.start();
         
         Scanner scan = new Scanner(System.in);
-        scan.next();
+        boolean run = true;
+        while(run) {
+            try {
+                if(Integer.parseInt(scan.nextLine()) == 1)
+                    run = false;
+            } catch(Exception e) {}
+        }
         
         shInstance.shutdown();
     }

@@ -127,6 +127,13 @@ public class Cotton {
         initRouting();
         initServiceHandler();
     }
+
+    /**
+     *
+     * @param globalServiceDiscovery
+     * @param net
+     * @throws java.net.UnknownHostException
+     */
     public Cotton (boolean globalServiceDiscovery, NetworkHandler net) throws java.net.UnknownHostException {
         initNetwork(net);
         initDiscovery(globalServiceDiscovery,null);
@@ -135,6 +142,13 @@ public class Cotton {
         initServiceHandler();
     }
 
+    /**
+     *
+     * @param globalServiceDiscovery
+     * @param globalDiscoveryDNS
+     * @param net
+     * @throws java.net.UnknownHostException
+     */
     public Cotton(boolean globalServiceDiscovery,GlobalDiscoveryDNS globalDiscoveryDNS, NetworkHandler net) throws java.net.UnknownHostException {
         initNetwork(net);
         initDiscovery(globalServiceDiscovery,globalDiscoveryDNS);
@@ -143,6 +157,9 @@ public class Cotton {
         initServiceHandler();
     }
 
+    /**
+     *
+     */
     public void start(){
         new Thread(network).start();
         internalRouting.setCommandControl(console);
@@ -156,10 +173,17 @@ public class Cotton {
         this.console.addSubSystem(internalRouting);
     }
 
+    /**
+     *
+     * @return
+     */
     public Console getConsole() {
         return console;
     }
 
+    /**
+     *
+     */
     public void shutdown() {
         services.stop();
         discovery.stop();
@@ -168,23 +192,44 @@ public class Cotton {
 
     }
 
+    /**
+     *
+     * @return
+     */
     public ActiveServiceLookup getServiceRegistation() {
         return lookup;
     }
 
+    /**
+     *
+     * @return
+     */
     public NetworkHandler getNetwork() {
         return network;
     }
 
+    /**
+     *
+     * @return
+     */
     public InternalRoutingClient getClient(){
         return internalRouting;
     }
 
+    /**
+     *
+     * @param requestQueueManager
+     */
     public void setRequestQueueManager(RequestQueueManager requestQueueManager){
         this.internalRouting.setRequestQueueManager(requestQueueManager);
         this.console.addSubSystem(requestQueueManager);
     }
 
+    /**
+     * Creates the connector to the database so that it's possible to send and receive data to the database.
+     *
+     * @param con configuration file containing information regarding database connection.
+     */
     public void dataBaseWrapperStart (Configurator con){
         MongoDBConnector db = new MongoDBConnector(con.getDatabaseConfigurator());
         tm  = new TokenManager();

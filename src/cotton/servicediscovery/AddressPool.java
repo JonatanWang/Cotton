@@ -100,4 +100,11 @@ public class AddressPool {
         }
         return addr;
     }
+    /**
+     * returns the amount of addresses in the pool
+     * @return size of the pool.
+     */
+    public int size(){
+        return pool.size();
+    }
 }
