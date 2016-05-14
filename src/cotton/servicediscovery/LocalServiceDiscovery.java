@@ -107,7 +107,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         initGlobalDiscoveryPool(dnsConfig);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         this.activeQueue = new ConcurrentHashMap<>();
-        this.taskScheduler= Executors.newScheduledThreadPool(40);
+        this.taskScheduler= Executors.newScheduledThreadPool(5);
     }
 
     /**
