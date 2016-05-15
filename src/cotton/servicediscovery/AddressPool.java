@@ -107,4 +107,9 @@ public class AddressPool {
     public int size(){
         return pool.size();
     }
+
+    @Override
+    public String toString() {
+        return "AddressPool{" + "pool=" + pool + '}';
+    }
 }

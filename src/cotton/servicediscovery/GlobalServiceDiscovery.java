@@ -623,6 +623,24 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     }
 
+    private void sendToPool(byte[] data, AddressPool pool, PathType type) {
+        if (pool == null) {
+            return;
+        }
+        int size = pool.size();
+        DestinationMetaData dest = null;
+        for (int i = 0; i < size; i++) {
+            DestinationMetaData tmp = pool.getAddress();
+            if (type != null) {
+                dest = new DestinationMetaData(tmp);
+                dest.setPathType(type);
+            } else {
+                dest = tmp;
+            }
+            this.internalRouting.sendToDestination(dest, data);
+        }
+    }
+
     private void addQueue(DestinationMetaData addr, String queue) {
         AddressPool pool = new AddressPool();
         AddressPool oldPool = this.activeQueue.putIfAbsent(queue, pool);
@@ -631,6 +649,16 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         } else {
             pool.addAddress(addr);
         }
+        QueuePacket q = new QueuePacket(addr.getSocketAddress(),queue);
+        DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
+        discoveryPacket.setQueue(q);
+        byte[] data;
+        try {
+            data = serializeToBytes(discoveryPacket);
+        } catch (IOException e) {
+            return;
+        }
+        sendToPool(data,this.serviceCache.get(queue),PathType.DISCOVERY);
     }
 
     private void processQueuePacket(QueuePacket packet) {
@@ -746,6 +774,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     private void processConfigPacket(ConfigurationPacket packet) {
         System.out.println("processConfigPacket: ");
         if (packet == null) {
+            System.out.println("GlobalServiceDiscovery:processConfigPacket: packet null");
             return;
         }
         SocketAddress addr = packet.getInstanceAddress();

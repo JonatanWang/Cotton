@@ -165,7 +165,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         }
 
         // TODO: change to threashold over time
-        if (value > 5) {
+        if (value > 50) {
             return destinationRemove(dest, serviceName);
         }
         if (serviceName != null) {
@@ -205,6 +205,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             }
             if(request.getData() == null) {
                 System.out.println("sendWithResponse (LocalServ: searchForService):request.getData() == null " + serviceName + " Signal: " + signal);
+                System.out.println("\t" + this.discoveryCache.toString());
                 return RouteSignal.NOTFOUND;
             }
             DiscoveryPacket discoveryPacket = packetUnpack(request.getData());
@@ -213,6 +214,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             if (discoveryProbe != null && (destMeta = discoveryProbe.getAddress()) != null) {
                 destination.setSocketAddress(destMeta.getSocketAddress());
                 destination.setPathType(destMeta.getPathType());
+                this.addService(dest, serviceName);
                 return RouteSignal.NETWORKDESTINATION;
             }
         } catch (IOException ex) {
@@ -259,6 +261,14 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
 //        if (pool == null) {
 //            return searchForService(destination, serviceName);
 //            }
+//        AddressPool pool = this.activeQueue.get(serviceName);
+//        DestinationMetaData tmp = null;
+//        if(pool != null && (tmp = pool.getAddress()) != null){
+//            signal = RouteSignal.NETWORKDESTINATION;
+//            destination.setSocketAddress(tmp.getSocketAddress());
+//            destination.setPathType(tmp.getPathType());
+//            return signal;
+//        }
         return searchForService(destination, serviceName);
 //           DestinationMetaData addr = pool.getAddress();
 //        if (addr != null) {

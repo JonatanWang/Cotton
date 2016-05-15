@@ -34,6 +34,7 @@ package cotton.test;
 import cotton.network.*;
 import com.google.protobuf.InvalidProtocolBufferException;
 import cotton.internalrouting.InternalRoutingNetwork;
+import cotton.test.experimental.NetworkOut;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
@@ -66,8 +67,11 @@ public class NetworkHandlerFake implements NetworkHandler {
     public NetworkHandlerFake(int portNumber) throws UnknownHostException {
         this.localAddress = new InetSocketAddress(Inet4Address.getLocalHost(), portNumber);
         this.openSocket = new ConcurrentHashMap<SocketAddress, Socket>();
+        this.openOutput = new ConcurrentHashMap<InetSocketAddress, NetworkOut>();
         this.threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(100);
     }
+
+    private ConcurrentHashMap<InetSocketAddress, NetworkOut> openOutput;
 
     private Socket getConnection(SocketAddress dest) {
         return openSocket.get(dest);
@@ -97,8 +101,8 @@ public class NetworkHandlerFake implements NetworkHandler {
         socket.connect(dest);
         //socket.setTcpNoDelay(true);
         int count = createCount.incrementAndGet();
-        System.out.println("createConnection count: " + count 
-                + " ip: " + localAddress.getAddress().getHostAddress() +" port:" + localAddress.getPort());
+        System.out.println("createConnection count: " + count
+                + " ip: " + localAddress.getAddress().getHostAddress() + " port:" + localAddress.getPort());
         Socket ret = this.openSocket.putIfAbsent(dest, socket);
         if (ret != null) {
             if (ret.isConnected()) {
@@ -113,35 +117,37 @@ public class NetworkHandlerFake implements NetworkHandler {
         return socket;
     }
 
+    private void startNewNetOut(NetworkPacket netPacket, InetSocketAddress dest) throws IOException {
+        NetworkOut out = new NetworkOut(dest, this.threadPool);
+        out.bufferData(netPacket);
+        if (!out.sendData()) {
+            throw new IOException("Failed startNewNetOut  send data");
+        }
+        NetworkOut p = this.openOutput.putIfAbsent(dest, out);
+        if (p != null) {
+            out.close();
+        }
+        int count = createCount.incrementAndGet();
+        System.out.println("createConnection count: " + count);
+    }
+
+    private void sendNetOut(NetworkPacket netPacket, SocketAddress dest) throws IOException {
+        InetSocketAddress addr = (InetSocketAddress)dest;
+        NetworkOut out = this.openOutput.get(addr);
+        if (out == null) {
+            startNewNetOut(netPacket, addr);
+            return;
+        }
+        boolean success = out.bufferData(netPacket) && out.sendData();
+        if (!success) {
+            this.openOutput.remove((InetSocketAddress)dest, out);
+            startNewNetOut(netPacket, addr);
+        }
+    }
+
     @Override
     public void send(NetworkPacket netPacket, SocketAddress dest) throws IOException {
-        Socket connection = getConnection(dest);
-        //System.out.println("OpenSockets: " + this.openSocket.size());
-        if (connection != null) {
-            TransportPacket.Packet pkt = buildTransportPacket(netPacket);
-            try {
-                pkt.writeDelimitedTo(connection.getOutputStream());
-                return;
-            } catch (SocketException ex) {
-                removeConnection(dest, connection);
-                //Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (IOException ex) {
-                removeConnection(dest, connection);
-                //Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-        connection = createConnection(dest);
-        TransportPacket.Packet pkt = this.buildTransportPacket(netPacket, this.localAddress.getPort());//buildTransportPacket(netPacket);
-        try {
-            pkt.writeDelimitedTo(connection.getOutputStream());
-            NetworkDataGetter nget = new NetworkDataGetter(connection, dest);
-            this.threadPool.execute(nget);
-            return;
-        } catch (IOException ex) {
-            removeConnection(dest, connection);
-            Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
+        sendNetOut(netPacket,dest);
     }
 
     @Override
@@ -316,7 +322,7 @@ public class NetworkHandlerFake implements NetworkHandler {
         return packet;
     }
 
-    private TransportPacket.Packet.Builder parseNetworkPacket(NetworkPacket input) {
+    private static TransportPacket.Packet.Builder parseNetworkPacket(NetworkPacket input) {
         TransportPacket.Packet.Builder builder = TransportPacket.Packet.newBuilder();
 
         while (input.getPath() != null && input.getPath().peekNextServiceName() != null) {
@@ -349,26 +355,26 @@ public class NetworkHandlerFake implements NetworkHandler {
         return builder;
     }
 
-    public TransportPacket.Packet buildTransportPacket(NetworkPacket input) throws IOException {
+    public static TransportPacket.Packet buildTransportPacket(NetworkPacket input) throws IOException {
         TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
         builder.setKeepalive(false);
         return builder.build();
     }
 
-    public TransportPacket.Packet buildTransportPacket(NetworkPacket input, boolean keepAlive) throws IOException {
+    public static TransportPacket.Packet buildTransportPacket(NetworkPacket input, boolean keepAlive) throws IOException {
         TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
         builder.setKeepalive(keepAlive);
         return builder.build();
     }
 
-    public TransportPacket.Packet buildTransportPacket(NetworkPacket input, int port) throws IOException {
+    public static TransportPacket.Packet buildTransportPacket(NetworkPacket input, int port) throws IOException {
         TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
         builder.setKeepalive(false);
         builder.setLastHopPort(port);
         return builder.build();
     }
 
-    public TransportPacket.Packet buildTransportPacket(NetworkPacket input, boolean keepAlive, int port) throws IOException {
+    public static TransportPacket.Packet buildTransportPacket(NetworkPacket input, boolean keepAlive, int port) throws IOException {
         TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
         builder.setKeepalive(keepAlive);
         builder.setLastHopPort(port);
@@ -490,8 +496,8 @@ public class NetworkHandlerFake implements NetworkHandler {
                     }
                 } while (nullThreshold > 1);
             } catch (InvalidProtocolBufferException ex) {
-                System.out.println("NetworkDataGetter run: InvalidProtocolBufferException null" 
-                        + localAddress.getAddress().getHostAddress() +" port:" + localAddress.getPort()); //proccessIncoming
+                System.out.println("NetworkDataGetter run: InvalidProtocolBufferException null"
+                        + localAddress.getAddress().getHostAddress() + " port:" + localAddress.getPort()); //proccessIncoming
                 ex.printStackTrace();
             } catch (IOException ex) {
                 Logger.getLogger(NetworkHandlerFake.class.getName()).log(Level.SEVERE, null, ex);

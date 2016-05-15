@@ -61,7 +61,7 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         this.internalRouting = internalRouting;
         this.serviceLookup = serviceLookup;
         this.workBuffer = internalRouting.getServiceBuffer();
-        this.threadPool = Executors.newFixedThreadPool(10);
+        this.threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(10);
         this.timers = new ConcurrentHashMap<UUID, TimeSliceTask>();
     }
 

@@ -304,6 +304,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
             //networkHandler.send(packet, dest.getSocketAddress());
             networkHandler.send(packet, dest.getSocketAddress());
         } catch (IOException ex) {
+            System.out.println("InternalRoutingServiceDiscovery:sendWithResponse: send fail");
             removeServiceRequest(origin);
             return null;
             // TODO Logging
