@@ -69,16 +69,37 @@ public class Configurator {
         }
     }
 
+    /**
+     * Returns whether this node is configured to be a global service discovery or not.
+     *
+     * @return whether this node is configured to be a global service discovery or not
+     */
     public boolean isGlobal(){
-        return false;//TODO: NO
+        if(prop == null)
+            throw new IllegalStateException("Configurator empty / not initialised");
+        String serviceDiscovery;
+        if((serviceDiscovery = prop.getProperty("serviceDiscovery")) == null || serviceDiscovery.equals("local"))
+            return false;
+        else
+            return true;
     }
 
+    /**
+     * Loads configuration file from filename.
+     *
+     * @param filename The name of the file to load
+     */
     public void loadConfigFromFile(String filename) throws IOException{
         InputStream in = getClass().getClassLoader().getResourceAsStream(filename);
 
         prop.load(in);
     }
 
+    /**
+     * Builds and returns a <code>NetworkConfigurator</code> from loaded specification.
+     *
+     * @return The newly generated <code>NetworkConfigurator</code>
+     */
     public NetworkConfigurator getNetworkConfigurator() throws java.net.UnknownHostException{
         if(prop == null)
             throw new IllegalStateException("Configurator empty / not initialised.");
@@ -137,6 +158,11 @@ public class Configurator {
         return builder.build();
     }
 
+    /**
+     * Builds and returns a <code>DatabaseConfigurator</code> from loaded specification.
+     *
+     * @return The newly generated <code>DatabaseConfigurator</code>
+     */
     public DatabaseConfigurator getDatabaseConfigurator(){
         if(prop == null)
             throw new IllegalStateException("Configurator empty / not initialised.");
@@ -165,6 +191,11 @@ public class Configurator {
         return builder.build();
     }
 
+    /**
+     * Builds and returns a <code>QueueConfigurator</code> from loaded specification.
+     *
+     * @return The newly generated <code>QueueConfigurator</code>
+     */
     public QueueConfigurator getQueueConfigurator(){
         if(prop == null)
             throw new IllegalStateException("Configurator empty / not initialised.");
@@ -183,6 +214,11 @@ public class Configurator {
         return builder.build();
     }
 
+    /**
+     * Builds and returns a <code>ServiceConfigurator</code> from loaded specification.
+     *
+     * @return The newly generated <code>ServiceConfigurator</code>
+     */
     public ServiceConfigurator getServiceConfigurator(){
         if(prop == null)
             throw new IllegalStateException("Configurator empty / not initialised.");
