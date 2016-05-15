@@ -83,17 +83,22 @@ public class Configurator {
         if(prop == null)
             throw new IllegalStateException("Configurator empty / not initialised.");
         NetworkConfigurator.Builder builder = new NetworkConfigurator.Builder();
-        int defualtPort = new Random().nextInt(40000) + 5000; // so the port dont conflict
         String addressPort;
         InetSocketAddress address = null;
         if((addressPort = prop.getProperty("networkAddress")) == null || addressPort.equalsIgnoreCase("localhost"))
-            address = new InetSocketAddress(InetAddress.getByName(null), defualtPort);
+            address = new InetSocketAddress(InetAddress.getByName(null), 3333);
+        else if(addressPort != null && addressPort.equalsIgnoreCase("random"))
+            address = new InetSocketAddress(InetAddress.getByName(null), new Random().nextInt(40000)+5000);
 
         if(address == null){
             String[] splitAddress = addressPort.split(":");
 
-            if(splitAddress.length < 1){
-                int port = Integer.parseInt(splitAddress[1]);
+            if(splitAddress.length > 1){
+                int port;
+                if(!splitAddress[1].equalsIgnoreCase("rand"))
+                    port = Integer.parseInt(splitAddress[1]);
+                else
+                    port = new Random().nextInt(40000)+5000;
 
                 if(splitAddress[0].equalsIgnoreCase("localhost"))
                     address = new InetSocketAddress(InetAddress.getByName(null), port);
@@ -101,11 +106,11 @@ public class Configurator {
                     address = new InetSocketAddress(splitAddress[0], port);
             }else if(splitAddress.length > 0){
                 if(splitAddress[0].equalsIgnoreCase("localhost"))
-                    address = new InetSocketAddress(InetAddress.getByName(null), defualtPort);
+                    address = new InetSocketAddress(InetAddress.getByName(null), 3333);
                 else
-                    address = new InetSocketAddress(splitAddress[0], defualtPort);
+                    address = new InetSocketAddress(splitAddress[0], 3333);
             }else
-                address = new InetSocketAddress(InetAddress.getByName(null), defualtPort);
+                address = new InetSocketAddress(InetAddress.getByName(null), 3333);
         }
         builder.setAddress(address);
 
