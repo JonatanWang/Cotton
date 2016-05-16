@@ -258,12 +258,11 @@ public class RequestQueueManager implements StatisticsProvider {
 
     public StatisticsData[] processCommand(Command command) {
         if(command.isQuery()) {
+            return executeQuery(command);
 
         }else {
             executeCommand(command);
-            return null;
         }
-
         return null;
     }
 

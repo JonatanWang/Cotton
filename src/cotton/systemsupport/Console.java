@@ -32,6 +32,7 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.systemsupport;
 
 
+import com.sun.org.apache.bcel.internal.generic.BREAKPOINT;
 import cotton.internalrouting.InternalRoutingServiceDiscovery;
 import cotton.internalrouting.ServiceRequest;
 import cotton.network.DestinationMetaData;
@@ -57,6 +58,7 @@ import java.util.logging.Logger;
 /**
  *
  * @author Magnus ,Tony
+ * @author Mats
  */
 public class Console {
 
@@ -94,9 +96,11 @@ public class Console {
      */
     public void processCommand(NetworkPacket packet) {
         if (packet == null) {
+            System.out.println("processCommand: packet eq null");
             return;
         }
         Command command = commandUnpack(packet.getData());
+
         if (!command.isQuery()) {
             sendCommandToSubSystem(command);
         } else {
@@ -107,14 +111,17 @@ public class Console {
     private void sendCommandToSubSystem(Command command) {
         switch (command.getType()) {
             case SERVICEHANDLER:
+                System.out.println("sendCommandToSubSystem: case: SERVICEHANDLER");
                 ServiceHandler serviceHandler = (ServiceHandler) getProvider(StatType.SERVICEHANDLER);
                 serviceHandler.processCommand(command);
                 break;
             case DISCOVERY:
+                System.out.println("sendCommandToSubSystem: case: DISCOVERY");
                 ServiceDiscovery serviceDiscovery = (ServiceDiscovery) getProvider(StatType.DISCOVERY);
                 serviceDiscovery.processCommand(command);
                 break;
             case REQUESTQUEUE:
+                System.out.println("sendCommandToSubSystem: case: REQUESTQUEUE");
                 RequestQueueManager rqManager = (RequestQueueManager) getProvider(StatType.REQUESTQUEUE);
                 rqManager.processCommand(command);
                 break;
@@ -139,7 +146,7 @@ public class Console {
             if(result == null) {
                 data = new byte[0];
             }else if(result.length == 1){
-                data = serializeToBytes(result[0]);
+                data = serializeToBytes(result);
             }else{
                 data = serializeToBytes(result);
             }
@@ -179,6 +186,7 @@ public class Console {
         StatisticsData[] empty = new StatisticsData[0];
         InternalRoutingServiceDiscovery internalRouting = (InternalRoutingServiceDiscovery) getProvider(StatType.INTERNALROUTING);
         if (internalRouting == null) {
+            System.out.println("sendQueryCommand: internalRouting is null");
             return empty;
         }
         command.setQuery(true);
@@ -187,12 +195,21 @@ public class Console {
         dest.setPathType(PathType.COMMANDCONTROL);
         ServiceRequest req = internalRouting.sendWithResponse(dest, data, 500);
         if (req == null || req.getData() == null) {
+            System.out.println("sendQueryCommand, if req: null");
             return empty;
         }
         byte[] reqData = req.getData(); 
         StatisticsData[] res = null;
         switch (command.getCommandType()) {
             case STATISTICS_FORSUBSYSTEM:
+                if(reqData == null){
+                    System.out.println("sendQueryCommand, STATISTICS_FORSUBSYSTEM: null" +req.getErrorMessage());
+                    return empty;
+                }
+                if(reqData.length <= 0){
+                System.out.println("sendQueryCommand, STATISTICS_FORSUBSYSTEM: length <= 0");
+                return empty;
+                }
                 res = statArrayUnpack(reqData);
                 if(res == null){
                     return empty;
@@ -204,8 +221,14 @@ public class Console {
                     return empty;
                 }
                 break;
+            case USAGEHISTORY:
+                res = statArrayUnpack(reqData);
+                if(res == null){
+                    return empty;
+                }
+                break;
             default:
-                System.out.println("Unkown console QueryCommand");
+                System.out.println("Unknown console QueryCommand: " +command.getCommandType());
                 return empty;
         }
         return res;
