@@ -176,5 +176,19 @@ public class ServiceMetaData {
     public UUID getServiceId() {
         return serviceId;
     }
-    
+
+    @Override
+    public String toString() {
+        return "ServiceMetaData{" +
+                "serviceFactory=" + serviceFactory +
+                ", maxCapacity=" + maxCapacity +
+                ", currentThreadCount=" + currentThreadCount +
+                ", inputCounter=" + inputCounter +
+                ", outputCounter=" + outputCounter +
+                ", usageHistory=" + usageHistory +
+                ", sample=" + sample +
+                ", samplingRate=" + samplingRate +
+                ", serviceId=" + serviceId +
+                '}';
+    }
 }

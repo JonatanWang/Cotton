@@ -64,6 +64,7 @@ import cotton.systemsupport.StatType;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -87,6 +88,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     private RequestQueueManager queueManager;
     private final ScheduledThreadPoolExecutor deadAddressValidator;
     private ConcurrentLinkedQueue<ReapedAddress> deadAddresses;
+    private LinkedBlockingQueue<UpdateItem> updateQueue = new LinkedBlockingQueue<>();
 
     /**
      * Fills in a list of all pre set globalServiceDiscovery addresses
@@ -115,7 +117,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         deadAddressValidator = new ScheduledThreadPoolExecutor(1);
 
     }
-    
+
     /**
      * So we can get out to other machines
      *
@@ -165,7 +167,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     public DestinationMetaData destinationUnreachable(DestinationMetaData dest, String serviceName) {
         AtomicInteger failCount = null;
         AtomicInteger newFailCount = new AtomicInteger(1);
-        if(dest == null){
+        if (dest == null) {
             System.out.println("global, destinationUnreachable: dest is null");
             return null;
         }
@@ -476,6 +478,8 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    private AtomicInteger threadCount = new AtomicInteger(0);
+
     /**
      * updates the discovery lookup table
      *
@@ -484,9 +488,13 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
      */
     @Override
     public void discoveryUpdate(Origin origin, byte[] data) {
-        DiscoveryLookup lookup = new DiscoveryLookup(origin, data);
-        threadPool.execute(lookup);
-
+        if (this.threadCount.get() < 5 || (this.updateQueue.size() > 10 && this.threadCount.get() < 20 )) {
+            this.threadCount.incrementAndGet();
+            DiscoveryLookup lookup = new DiscoveryLookup(origin, data);
+            threadPool.execute(lookup);
+            return;
+        }
+        this.updateQueue.add(new UpdateItem(origin, data));
     }
 
     private DiscoveryPacket packetUnpack(byte[] data) {
@@ -608,7 +616,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                 byte[] tmp = new byte[0];
                 try {
                     tmp = serializeToBytes(new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE));
-                }catch(IOException e){
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
                 internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, tmp);
@@ -983,6 +991,26 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         }
     }
 
+    private class UpdateItem {
+
+        private Origin origin;
+        private byte[] data;
+
+        public UpdateItem(Origin origin, byte[] data) {
+            this.origin = origin;
+            this.data = data;
+        }
+
+        public Origin getOrigin() {
+            return origin;
+        }
+
+        public byte[] getData() {
+            return data;
+        }
+
+    }
+
     private class DiscoveryLookup implements Runnable {
 
         private Origin origin;
@@ -997,6 +1025,29 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         public void run() {
             DiscoveryPacket packet = packetUnpack(data);
             decodeDiscoveryPacket(origin, packet);
+            int loop = 5;
+            while (loop > 0) {
+                UpdateItem take = null;
+                try {
+                    take = updateQueue.take();
+                    packet = packetUnpack(take.getData());
+                    decodeDiscoveryPacket(take.getOrigin(), packet);
+
+//                    take = updateQueue.poll();
+//                    if (take == null) {
+//                        loop--;
+//                        continue;
+//                    }
+//                    packet = packetUnpack(take.getData());
+//                    decodeDiscoveryPacket(take.getOrigin(), packet);
+                    loop = 0;
+
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+            }
+            threadCount.decrementAndGet();
         }
     }
 

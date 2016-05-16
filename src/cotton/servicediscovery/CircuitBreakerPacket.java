@@ -89,4 +89,11 @@ public class CircuitBreakerPacket implements Serializable {
         this.instanceAddress = instanceAddress;
     }
 
+    @Override
+    public String toString() {
+        return "CircuitBreakerPacket{" +
+                "instanceAddress=" + instanceAddress +
+                ", circuitName='" + circuitName + '\'' +
+                '}';
+    }
 }

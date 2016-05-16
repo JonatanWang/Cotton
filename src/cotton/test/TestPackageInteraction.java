@@ -29,8 +29,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
 package cotton.test;
 
 import cotton.network.DummyServiceChain;
@@ -97,10 +95,12 @@ public class TestPackageInteraction {
     @Test
     public void TestTransmission() throws UnknownHostException {
         System.out.println("Now running: TestTransmission");
+
         int port = new Random().nextInt(20000)+5000;
         Cotton discovery = new Cotton(true, port);
         GlobalDnsStub gDns = new GlobalDnsStub();
         
+
         InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = gdAddr;
