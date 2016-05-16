@@ -133,7 +133,19 @@ public class Console {
             if (provider.getStatType() == StatType.UNKNOWN) {
                 data = serializeToBytes(new StatisticsData[0]);
                 internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
+                return;
             }
+            StatisticsData[] result = provider.processCommand(command);
+            if(result == null) {
+                data = new byte[0];
+            }else if(result.length == 1){
+                data = serializeToBytes(result[0]);
+            }else{
+                data = serializeToBytes(result);
+            }
+            internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
+
+            /**
             switch (command.getCommandType()) {
                 case STATISTICS_FORSUBSYSTEM:
                     StatisticsData[] statisticsForSubSystem = provider.getStatisticsForSubSystem(command.getName());
@@ -150,6 +162,7 @@ public class Console {
                 default:
                     break;
             }
+             */
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -299,5 +312,9 @@ public class Console {
             return StatType.UNKNOWN;
         }
 
+        @Override
+        public StatisticsData[] processCommand(Command command) {
+            return new StatisticsData[0];
+        }
     }
 }

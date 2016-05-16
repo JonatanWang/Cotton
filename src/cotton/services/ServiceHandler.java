@@ -187,14 +187,15 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         return true;
     }
 
-    public boolean processCommand(Command command) {
+    @Override
+    public StatisticsData[] processCommand(Command command) {
         if (command.getCommandType() == CommandType.RECORD_USAGEHISTORY) {
-            return usageRecording(command);
+            //return usageRecording(command);
         } else if (command.getCommandType() == CommandType.CHANGE_ACTIVEAMOUNT) {
             setServiceConfig(command.getName(), command.getAmount());
-            return true;
+            return new StatisticsData[0];
         }
-        return false;
+        return null;
     }
 
     /**

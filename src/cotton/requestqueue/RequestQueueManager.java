@@ -256,7 +256,7 @@ public class RequestQueueManager implements StatisticsProvider {
         this.internalRouting = internalRouting;
     }
 
-    public boolean processCommand(Command command) {
+    public StatisticsData[] processCommand(Command command) {
         CommandType commandType = command.getCommandType();
         if (commandType != CommandType.RECORD_USAGEHISTORY) {
             return false;

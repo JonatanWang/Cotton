@@ -749,7 +749,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     }
 
     @Override
-    public boolean processCommand(Command command) {
+    public StatisticsData[] processCommand(Command command) {
         if (command.getCommandType() == CommandType.CHECK_REACHABILLITY) {
             threadPool.execute(new Runnable() {
                 @Override
@@ -757,9 +757,9 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                     validateServiceActivity();
                 }
             });
-            return true;
+            return new StatisticsData[0];
         }
-        return false;
+        return null;
     }
 
     private boolean sendCommandPacket(DestinationMetaData destination, Command command) {
