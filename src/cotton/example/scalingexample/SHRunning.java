@@ -39,11 +39,14 @@ import cotton.services.ActiveServiceLookup;
 import cotton.services.ServiceFactory;
 import cotton.storagecomponents.DatabaseService;
 import cotton.test.services.GlobalDnsStub;
+import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -51,10 +54,17 @@ import java.util.Scanner;
  */
 public class SHRunning {
     public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        GlobalDnsStub gDns = getDnsStub(null, 5888);
-        Cotton shInstance = new Cotton(false, gDns);
+        GlobalDnsStub gDns = getDnsStub(null, 5889);
         
-        shInstance.databaseWrapperStart();
+        Configurator conf;
+        try {
+            conf = new Configurator("config.cfg");
+        } catch (Exception ex) {
+            conf = new Configurator();
+            conf.loadDefaults();
+        }
+        
+        Cotton shInstance = new Cotton(conf);
         
         ActiveServiceLookup asl = shInstance.getServiceRegistation();
         ServiceFactory sf = DatabaseService.getFactory(); 

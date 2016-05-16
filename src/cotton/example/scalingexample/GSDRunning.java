@@ -45,7 +45,7 @@ public class GSDRunning {
     public static void main(String[] args) {
         Cotton cotton = null;
         try {
-            cotton = new Cotton(true, 5888);
+            cotton = new Cotton(true, 5889);
         } catch (UnknownHostException ex) {
             System.out.println("Cotton creation fail!");
             //TODO Fix

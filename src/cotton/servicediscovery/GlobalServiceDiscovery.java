@@ -31,6 +31,7 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.servicediscovery;
 
+import cotton.configuration.Configurator;
 import cotton.internalrouting.InternalRoutingServiceDiscovery;
 import cotton.internalrouting.ServiceRequest;
 import cotton.network.DestinationMetaData;
@@ -115,7 +116,32 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         deadAddressValidator = new ScheduledThreadPoolExecutor(1);
 
     }
+    
+    public GlobalServiceDiscovery(boolean config, Configurator conf) {
+        for(SocketAddress s: conf.getDiscoverySocketAddresses())
+            System.out.println("global sockets: " + s);
+        this.discoveryCache = new AddressPool();
+        initGlobalDiscoveryPool(conf);
+        this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
+        //threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newFixedThreadPool(10);
+        this.activeQueue = new ConcurrentHashMap<>();
+        this.deadAddresses = new ConcurrentLinkedQueue<>();
+        deadAddressValidator = new ScheduledThreadPoolExecutor(1);
 
+    }
+
+    private void initGlobalDiscoveryPool(Configurator conf) {
+        if (conf != null) {
+            SocketAddress[] addrArr = conf.getDiscoverySocketAddresses();
+            for (int i = 0; i < addrArr.length; i++) {
+                DestinationMetaData gAddr = new DestinationMetaData(addrArr[i], PathType.DISCOVERY);
+                System.out.println("GlobalDiscovery adddress:" + gAddr.toString());
+                discoveryCache.addAddress(gAddr);
+            }
+        }
+    }
+    
     /**
      * So we can get out to other machines
      *

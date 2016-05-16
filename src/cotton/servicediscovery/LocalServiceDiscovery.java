@@ -31,6 +31,7 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.servicediscovery;
 
+import cotton.configuration.Configurator;
 import cotton.internalrouting.InternalRoutingServiceDiscovery;
 import cotton.network.DestinationMetaData;
 import cotton.network.Origin;
@@ -101,10 +102,31 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             }
         }
     }
+    
+    private void initGlobalDiscoveryPool(Configurator conf) {
+        for(SocketAddress s: conf.getDiscoverySocketAddresses())
+            System.out.println("local sockets: " + s);
+        
+        if (conf != null) {
+            SocketAddress[] addrArr = conf.getDiscoverySocketAddresses();
+            for (int i = 0; i < addrArr.length; i++) {
+                DestinationMetaData gAddr = new DestinationMetaData(addrArr[i], PathType.DISCOVERY);
+                discoveryCache.addAddress(gAddr);
+            }
+        }
+    }
 
     public LocalServiceDiscovery(GlobalDiscoveryDNS dnsConfig) {
         this.discoveryCache = new AddressPool();
         initGlobalDiscoveryPool(dnsConfig);
+        this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
+        this.activeQueue = new ConcurrentHashMap<>();
+        this.taskScheduler= Executors.newScheduledThreadPool(5);
+    }
+    
+    public LocalServiceDiscovery(Configurator conf) {
+        this.discoveryCache = new AddressPool();
+        initGlobalDiscoveryPool(conf);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         this.activeQueue = new ConcurrentHashMap<>();
         this.taskScheduler= Executors.newScheduledThreadPool(5);

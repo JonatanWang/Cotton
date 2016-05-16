@@ -78,9 +78,10 @@ public class Cotton {
                                               InstantiationException,
                                               IllegalAccessException{
 
-        dataBaseWrapperStart(config);
+        if(config.hasDatabase())
+            dataBaseWrapperStart(config);
         initNetwork(new DefaultNetworkHandler(config.getNetworkConfigurator()));
-        initDiscovery(config.isGlobal(), null);
+        initDiscovery(config);
         initLookup(config.getServiceConfigurator());
         initRouting();
         initServiceHandler();
@@ -258,6 +259,17 @@ public class Cotton {
             this.discovery = new GlobalServiceDiscovery(globalDiscoveryDNS);
         } else {
             this.discovery = new LocalServiceDiscovery(globalDiscoveryDNS);
+        }
+    }
+    
+    private void initDiscovery(Configurator conf) {
+        if(conf == null) {
+            throw new NullPointerException("Global discovery conf settings missing");
+        }
+        if (conf.isGlobal()) {
+            this.discovery = new GlobalServiceDiscovery(true, conf);
+        } else {
+            this.discovery = new LocalServiceDiscovery(conf);
         }
     }
 
