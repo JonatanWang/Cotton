@@ -52,10 +52,8 @@ import java.io.IOException;
 
 import cotton.requestqueue.RequestQueueManager;
 import cotton.servicediscovery.DiscoveryPacket;
-import cotton.systemsupport.Console;
-import cotton.systemsupport.StatType;
-import cotton.systemsupport.StatisticsData;
-import cotton.systemsupport.StatisticsProvider;
+import cotton.systemsupport.*;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -658,6 +656,11 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     @Override
     public StatType getStatType() {
         return StatType.INTERNALROUTING;
+    }
+
+    @Override
+    public StatisticsData[] processCommand(Command command) {
+        return new StatisticsData[0];
     }
 
     private class RouteDispatcher implements Runnable {

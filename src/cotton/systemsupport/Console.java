@@ -133,7 +133,19 @@ public class Console {
             if (provider.getStatType() == StatType.UNKNOWN) {
                 data = serializeToBytes(new StatisticsData[0]);
                 internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
+                return;
             }
+            StatisticsData[] result = provider.processCommand(command);
+            if(result == null) {
+                data = new byte[0];
+            }else if(result.length == 1){
+                data = serializeToBytes(result[0]);
+            }else{
+                data = serializeToBytes(result);
+            }
+            internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
+
+            /**
             switch (command.getCommandType()) {
                 case STATISTICS_FORSUBSYSTEM:
                     StatisticsData[] statisticsForSubSystem = provider.getStatisticsForSubSystem(command.getName());
@@ -145,11 +157,12 @@ public class Console {
                     data = serializeToBytes(statistics);
                     internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
                     break;
-                case RECORD_USAGEHISTORY:
+                case USAGEHISTORY:
                     break;
                 default:
                     break;
             }
+             */
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -186,12 +199,10 @@ public class Console {
                 }
                 break;
             case STATISTICS_FORSYSTEM:
-                StatisticsData statistics = statUnpack(reqData);
-                if(statistics == null){
+                res = statArrayUnpack(reqData);
+                if(res == null){
                     return empty;
                 }
-                res = new StatisticsData[1];
-                res[0] = statistics;
                 break;
             default:
                 System.out.println("Unkown console QueryCommand");
@@ -246,6 +257,9 @@ public class Console {
     }
 
     private StatisticsData[] statArrayUnpack(byte[] data) {
+        if(data == null || data.length <= 0) {
+            return  new StatisticsData[0];
+        }
         StatisticsData[] statistics = null;
         try {
             ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
@@ -299,5 +313,9 @@ public class Console {
             return StatType.UNKNOWN;
         }
 
+        @Override
+        public StatisticsData[] processCommand(Command command) {
+            return new StatisticsData[0];
+        }
     }
 }

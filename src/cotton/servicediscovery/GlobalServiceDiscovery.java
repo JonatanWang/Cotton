@@ -757,7 +757,8 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     }
 
     @Override
-    public boolean processCommand(Command command) {
+    public StatisticsData[] processCommand(Command command) {
+        StatisticsData[] retSystem;
         if (command.getCommandType() == CommandType.CHECK_REACHABILLITY) {
             threadPool.execute(new Runnable() {
                 @Override
@@ -765,9 +766,17 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                     validateServiceActivity();
                 }
             });
-            return true;
+            return new StatisticsData[0];
         }
-        return false;
+        else if(command.getCommandType() == CommandType.STATISTICS_FORSUBSYSTEM){
+            return retSystem = this.getStatisticsForSubSystem(command.getName());
+        }
+        else if(command.getCommandType() == CommandType.STATISTICS_FORSYSTEM){
+            StatisticsData[] retForSystem = new StatisticsData[1];
+            retForSystem[0] = this.getStatistics(command.getTokens());
+            return retForSystem;
+        }
+        return null;
     }
 
     private boolean sendCommandPacket(DestinationMetaData destination, Command command) {
