@@ -61,6 +61,7 @@ import cotton.systemsupport.StatisticsProvider;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -86,6 +87,8 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     private ConcurrentHashMap<DestinationMetaData, AtomicInteger> destFailStat = new ConcurrentHashMap();
     private RequestQueueManager queueManager;
     private final ScheduledExecutorService taskScheduler;
+    private final ScheduledThreadPoolExecutor deadAddressValidator;
+    private ConcurrentLinkedQueue<ReapedAddress> deadAddresses;
 
     /**
      * Fills in a list of all pre set globalServiceDiscovery addresses
@@ -107,7 +110,9 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         initGlobalDiscoveryPool(dnsConfig);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         this.activeQueue = new ConcurrentHashMap<>();
-        this.taskScheduler= Executors.newScheduledThreadPool(5);
+        this.taskScheduler = Executors.newScheduledThreadPool(5);
+        this.deadAddresses = new ConcurrentLinkedQueue<>();
+        deadAddressValidator = new ScheduledThreadPoolExecutor(1);
     }
 
     /**
@@ -157,17 +162,39 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
      */
     @Override
     public DestinationMetaData destinationUnreachable(DestinationMetaData dest, String serviceName) {
-        AtomicInteger failCount = new AtomicInteger(1);
+        AtomicInteger failCount = null;
+        AtomicInteger newFailCount = new AtomicInteger(1);
         failCount = this.destFailStat.putIfAbsent(dest, failCount);
         int value = 1;
         if (failCount != null) {
             value = failCount.incrementAndGet();
+        } else {
+            value = newFailCount.incrementAndGet();
         }
-
+        PathType type = dest.getPathType();
+        AddressPool currentPool = null;
+        switch (type) {
+            case REQUESTQUEUE:
+                currentPool = activeQueue.get(serviceName);
+                break;
+            case DISCOVERY:
+                currentPool = discoveryCache;
+                break;
+            case SERVICE:
+                currentPool = serviceCache.get(serviceName);
+                break;
+        }
         // TODO: change to threashold over time
-        if (value > 50) {
-            return destinationRemove(dest, serviceName);
+        if (value > 5) {
+            DestinationMetaData newAddress = destinationRemove(dest, serviceName);
+            this.deadAddresses.add(new ReapedAddress(serviceName, dest));
+            if (currentPool.size() < 2) {
+                checkDeadAddresses(currentPool);
+            }
+            return newAddress;
         }
+        // TODO: change to threashold over time
+
         if (serviceName != null) {
             AddressPool pool = serviceCache.get(serviceName);
             if (pool != null) {
@@ -199,11 +226,11 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         try {
             byte[] data = serializeToBytes(packet);
             ServiceRequest request = internalRouting.sendWithResponse(dest, data, 400);
-            if (request == null ) {
+            if (request == null) {
                 System.out.println("sendWithResponse (LocalServ: searchForService): " + serviceName + " Signal: " + signal);
                 return RouteSignal.NOTFOUND;
             }
-            if(request.getData() == null) {
+            if (request.getData() == null) {
                 System.out.println("sendWithResponse (LocalServ: searchForService):request.getData() == null " + serviceName + " Signal: " + signal);
                 System.out.println("\t" + this.discoveryCache.toString());
                 return RouteSignal.NOTFOUND;
@@ -455,7 +482,17 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         if (probe.getAddress() == null) {
             return;
         }
-
+        if (probe.getAddress() != null) {
+            if (origin.getAddress().equals(probe.getAddress().getSocketAddress()) && probe.getName() != null) {
+                byte[] tmp = new byte[0];
+                try {
+                    tmp = serializeToBytes(new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE));
+                }catch(IOException e){
+                    e.printStackTrace();
+                }
+                internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, tmp);
+            }
+        }
         AddressPool pool = null;
         if (localServiceTable.getService(probe.getName()) == null) {
             probe.setAddress(null);
@@ -474,24 +511,25 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
 
     private long announceDelay = 2;
     private ScheduledFuture<?> announceLaterTask = null;
+
     private void tryAnnounceLater() {
         announceDelay = (announceDelay < 10) ? announceDelay : 10;
         final Runnable run = new Runnable() {
             @Override
             public void run() {
-                if(announce()) {
+                if (announce()) {
                     System.out.println("Announce: done");
-                }else{
+                } else {
                     System.out.println("Announce: failed");
                 }
-                
+
             }
         };
-                
-        System.out.println("try Announce in: " + announceDelay + " seconds again" );
-   
+
+        System.out.println("try Announce in: " + announceDelay + " seconds again");
+
         final ScheduledFuture<?> schedule = this.taskScheduler.schedule(run, announceDelay, TimeUnit.SECONDS);
-;
+        ;
         this.taskScheduler.schedule(new Runnable() {
             @Override
             public void run() {
@@ -499,7 +537,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             }
         }, announceDelay + 10, TimeUnit.SECONDS);
     }
-    
+
     @Override
     public boolean announce() {
         if (localServiceTable == null) {
@@ -552,7 +590,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
                 dest = destinationUnreachable(dest, null);
                 success = internalRouting.sendToDestination(dest, bytes);
             }
-            if(!success){
+            if (!success) {
                 tryAnnounceLater();
                 //announceDelay++;
                 return false;
@@ -566,6 +604,71 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
 
         return true;
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private void checkPoolReachabillity(AddressPool pool, String key) {
+        if (pool == null || key == null) {
+            return;
+        }
+        DestinationMetaData[] destinations = pool.copyPoolData();
+        for (int i = 0; i < destinations.length; i++) {
+            DiscoveryProbe probe = new DiscoveryProbe(key, destinations[i]);
+            DiscoveryPacket response = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
+            response.setProbe(probe);
+            byte[] data = null;
+            try {
+                data = serializeToBytes(response);
+            } catch (IOException e) {
+            }
+            DestinationMetaData target = new DestinationMetaData(destinations[i].getSocketAddress(), PathType.DISCOVERY);
+            ServiceRequest request = internalRouting.sendWithResponse(target, data, 70);
+            if (request == null || request.getData() == null) {
+                boolean flag = pool.remove(destinations[i]);
+                System.out.println("FLAG VALUE" + flag);
+            }
+        }
+    }
+
+    private void checkDeadAddresses(AddressPool pool) {
+        ConcurrentLinkedQueue<ReapedAddress> reapedAddresses = this.deadAddresses;
+
+        InternalRoutingServiceDiscovery routing = this.internalRouting;
+        Runnable command = new Runnable() {
+            @Override
+            public void run() {
+                for (ReapedAddress addr : reapedAddresses) {
+                    DiscoveryProbe probe = new DiscoveryProbe(addr.getName(), addr.getReapedAddress());
+                    DiscoveryPacket response = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
+                    response.setProbe(probe);
+                    byte[] data = null;
+                    try {
+                        data = serializeToBytes(response);
+                    } catch (IOException e) {
+                    }
+                    DestinationMetaData target = new DestinationMetaData(addr.getReapedAddress().getSocketAddress(), PathType.DISCOVERY);
+                    ServiceRequest request = routing.sendWithResponse(target, data, 70);
+                    if (request != null || request.getData() != null) {
+                        pool.addAddress(addr.getReapedAddress());
+                    }
+                }
+            }
+        };
+        ScheduledFuture<?> addressValidator = this.deadAddressValidator.scheduleAtFixedRate(command, 10, 10, TimeUnit.SECONDS);
+        this.deadAddressValidator.schedule(new Runnable() {
+            public void run() {
+                addressValidator.cancel(true);
+            }
+        }, 2 * 10 * 10, TimeUnit.SECONDS);
+    }
+
+    private void validateServiceActivity() {
+        AddressPool pool;
+        DestinationMetaData[] destinations;
+        for (Map.Entry<String, AddressPool> entry : serviceCache.entrySet()) {
+            pool = entry.getValue();
+            String key = entry.getKey();
+            checkPoolReachabillity(pool, key);
+        }
     }
 
     private byte[] serializeToBytes(Serializable data) throws IOException {
@@ -788,4 +891,22 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         }
     }
 
+    private class ReapedAddress {
+
+        private String name;
+        private DestinationMetaData reapedAddress;
+
+        public ReapedAddress(String name, DestinationMetaData reapedAddress) {
+            this.name = name;
+            this.reapedAddress = reapedAddress;
+        }
+
+        public String getName() {
+            return this.name;
+        }
+
+        public DestinationMetaData getReapedAddress() {
+            return this.reapedAddress;
+        }
+    }
 }

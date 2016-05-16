@@ -599,6 +599,17 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         if ((pool = this.activeQueue.get(probe.getName())) == null) {
             pool = this.serviceCache.get(probe.getName());
         }
+        if (probe.getAddress() != null) {
+            if (origin.getAddress().equals(probe.getAddress().getSocketAddress()) && probe.getName() != null) {
+                byte[] tmp = new byte[0];
+                try {
+                    tmp = serializeToBytes(new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE));
+                }catch(IOException e){
+                    e.printStackTrace();
+                }
+                internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, tmp);
+            }
+        }
 
         if (pool == null) {
             byte[] data = new byte[0];
@@ -649,7 +660,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         } else {
             pool.addAddress(addr);
         }
-        QueuePacket q = new QueuePacket(addr.getSocketAddress(),queue);
+        QueuePacket q = new QueuePacket(addr.getSocketAddress(), queue);
         DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
         discoveryPacket.setQueue(q);
         byte[] data;
@@ -658,7 +669,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         } catch (IOException e) {
             return;
         }
-        sendToPool(data,this.serviceCache.get(queue),PathType.DISCOVERY);
+        sendToPool(data, this.serviceCache.get(queue), PathType.DISCOVERY);
     }
 
     private void processQueuePacket(QueuePacket packet) {
