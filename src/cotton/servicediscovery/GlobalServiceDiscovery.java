@@ -489,7 +489,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
      */
     @Override
     public void discoveryUpdate(Origin origin, byte[] data) {
-        if (this.threadCount.get() < 2 || (this.updateQueue.size() > 10 && this.threadCount.get() < 20 )) {
+        if (this.threadCount.get() < 5 || (this.updateQueue.size() > 10 && this.threadCount.get() < 20 )) {
             this.threadCount.incrementAndGet();
             DiscoveryLookup lookup = new DiscoveryLookup(origin, data);
             threadPool.execute(lookup);
@@ -1026,7 +1026,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         public void run() {
             DiscoveryPacket packet = packetUnpack(data);
             decodeDiscoveryPacket(origin, packet);
-            int loop = 15;
+            int loop = 5;
             while (loop > 0) {
                 UpdateItem take = null;
                 try {
@@ -1034,13 +1034,14 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                     packet = packetUnpack(take.getData());
                     decodeDiscoveryPacket(take.getOrigin(), packet);
 
-                    take = updateQueue.poll();
-                    if (take == null) {
-                        loop--;
-                        continue;
-                    }
-                    packet = packetUnpack(take.getData());
-                    decodeDiscoveryPacket(take.getOrigin(), packet);
+//                    take = updateQueue.poll();
+//                    if (take == null) {
+//                        loop--;
+//                        continue;
+//                    }
+//                    packet = packetUnpack(take.getData());
+//                    decodeDiscoveryPacket(take.getOrigin(), packet);
+                    loop = 0;
 
                 } catch (InterruptedException ex) {
                     Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);

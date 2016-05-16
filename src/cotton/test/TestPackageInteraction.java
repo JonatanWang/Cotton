@@ -95,9 +95,11 @@ public class TestPackageInteraction {
     @Test
     public void TestTransmission() throws UnknownHostException {
         System.out.println("Now running: TestTransmission");
-        int port = new Random().nextInt(25000) + 5000;
+
+        int port = new Random().nextInt(20000)+5000;
         Cotton discovery = new Cotton(true, port);
         GlobalDnsStub gDns = new GlobalDnsStub();
+        
 
         InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
         InetSocketAddress[] arr = new InetSocketAddress[1];
@@ -105,11 +107,13 @@ public class TestPackageInteraction {
         gDns.setGlobalDiscoveryAddress(arr);
 
         discovery.start();
+
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
+
         Cotton ser1 = new Cotton(false, gDns);
         Cotton ser2 = new Cotton(false, gDns);
 
