@@ -165,7 +165,11 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     public DestinationMetaData destinationUnreachable(DestinationMetaData dest, String serviceName) {
         AtomicInteger failCount = null;
         AtomicInteger newFailCount = new AtomicInteger(1);
-        failCount = this.destFailStat.putIfAbsent(dest, failCount);
+        if(dest == null){
+            System.out.println("global, destinationUnreachable: dest is null");
+            return null;
+        }
+        failCount = this.destFailStat.putIfAbsent(dest, newFailCount);
         int value = 1;
 
         if (failCount != null) {
