@@ -34,10 +34,12 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.example.scalingexample;
 
 import cotton.Cotton;
+import cotton.configuration.Configurator;
 import cotton.requestqueue.RequestQueueManager;
 import cotton.test.services.GlobalDnsStub;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
@@ -46,13 +48,19 @@ import java.util.Scanner;
  * @author Gunnlaugur Juliusson
  */
 public class RequestQueueRunning {
-    public static void main(String[] args) throws UnknownHostException {
-        GlobalDnsStub gDns = getDnsStub(null, 5888);
-        Cotton rqInstance = new Cotton(false, gDns);
+    public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+        Configurator conf;
+        try {
+            conf = new Configurator("RQconfig.cfg");
+        } catch (Exception ex) {
+            conf = new Configurator();
+            conf.loadDefaults();
+        }
         
-        RequestQueueManager rqm = new RequestQueueManager();
+        Cotton rqInstance = new Cotton(conf);
+        
+        RequestQueueManager rqm = rqInstance.getRequestQueueManager();
         rqm.startQueue("database");
-        rqInstance.setRequestQueueManager(rqm);
         
         rqInstance.start();
         
@@ -66,20 +74,5 @@ public class RequestQueueRunning {
         }
         
         rqInstance.shutdown();
-    }
-    
-    private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
-        GlobalDnsStub gDns = new GlobalDnsStub();
-        InetSocketAddress gdAddr = null;
-        if (dest == null) {
-            gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
-            System.out.println("discAddr:" + Inet4Address.getLocalHost().toString() +" port: " + port);
-        }else {
-            gdAddr = new InetSocketAddress(dest, port);
-        }
-        InetSocketAddress[] arr = new InetSocketAddress[1];
-        arr[0] = gdAddr;
-        gDns.setGlobalDiscoveryAddress(arr);
-        return gDns;
     }
 }

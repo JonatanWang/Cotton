@@ -54,11 +54,9 @@ import java.util.logging.Logger;
  */
 public class SHRunning {
     public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        GlobalDnsStub gDns = getDnsStub(null, 5889);
-        
         Configurator conf;
         try {
-            conf = new Configurator("config.cfg");
+            conf = new Configurator("SHconfig.cfg");
         } catch (Exception ex) {
             conf = new Configurator();
             conf.loadDefaults();
@@ -82,20 +80,5 @@ public class SHRunning {
         }
         
         shInstance.shutdown();
-    }
-    
-    private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
-        GlobalDnsStub gDns = new GlobalDnsStub();
-        InetSocketAddress gdAddr = null;
-        if (dest == null) {
-            gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
-            System.out.println("discAddr:" + Inet4Address.getLocalHost().toString() +" port: " + port);
-        }else {
-            gdAddr = new InetSocketAddress(dest, port);
-        }
-        InetSocketAddress[] arr = new InetSocketAddress[1];
-        arr[0] = gdAddr;
-        gDns.setGlobalDiscoveryAddress(arr);
-        return gDns;
     }
 }

@@ -104,6 +104,17 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             }
         }
     }
+    
+    private void initGlobalDiscoveryPool(Configurator conf) {
+        if (conf != null) {
+            SocketAddress[] addrArr = conf.getDiscoverySocketAddresses();
+            for (int i = 0; i < addrArr.length; i++) {
+                DestinationMetaData gAddr = new DestinationMetaData(addrArr[i], PathType.DISCOVERY);
+                System.out.println("GlobalDiscovery adddress:" + gAddr.toString());
+                discoveryCache.addAddress(gAddr);
+            }
+        }
+    }
 
     public GlobalServiceDiscovery(GlobalDiscoveryDNS dnsConfig) {
         this.discoveryCache = new AddressPool();
@@ -129,17 +140,6 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         this.deadAddresses = new ConcurrentLinkedQueue<>();
         deadAddressValidator = new ScheduledThreadPoolExecutor(1);
 
-    }
-
-    private void initGlobalDiscoveryPool(Configurator conf) {
-        if (conf != null) {
-            SocketAddress[] addrArr = conf.getDiscoverySocketAddresses();
-            for (int i = 0; i < addrArr.length; i++) {
-                DestinationMetaData gAddr = new DestinationMetaData(addrArr[i], PathType.DISCOVERY);
-                System.out.println("GlobalDiscovery adddress:" + gAddr.toString());
-                discoveryCache.addAddress(gAddr);
-            }
-        }
     }
     
     /**
@@ -191,7 +191,11 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     public DestinationMetaData destinationUnreachable(DestinationMetaData dest, String serviceName) {
         AtomicInteger failCount = null;
         AtomicInteger newFailCount = new AtomicInteger(1);
-        failCount = this.destFailStat.putIfAbsent(dest, failCount);
+        if(dest == null){
+            System.out.println("global, destinationUnreachable: dest is null");
+            return null;
+        }
+        failCount = this.destFailStat.putIfAbsent(dest, newFailCount);
         int value = 1;
 
         if (failCount != null) {
@@ -625,6 +629,17 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         if ((pool = this.activeQueue.get(probe.getName())) == null) {
             pool = this.serviceCache.get(probe.getName());
         }
+        if (probe.getAddress() != null) {
+            if (origin.getAddress().equals(probe.getAddress().getSocketAddress()) && probe.getName() != null) {
+                byte[] tmp = new byte[0];
+                try {
+                    tmp = serializeToBytes(new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE));
+                }catch(IOException e){
+                    e.printStackTrace();
+                }
+                internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, tmp);
+            }
+        }
 
         if (pool == null) {
             byte[] data = new byte[0];
@@ -675,7 +690,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         } else {
             pool.addAddress(addr);
         }
-        QueuePacket q = new QueuePacket(addr.getSocketAddress(),queue);
+        QueuePacket q = new QueuePacket(addr.getSocketAddress(), queue);
         DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
         discoveryPacket.setQueue(q);
         byte[] data;
@@ -684,7 +699,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         } catch (IOException e) {
             return;
         }
-        sendToPool(data,this.serviceCache.get(queue),PathType.DISCOVERY);
+        sendToPool(data, this.serviceCache.get(queue), PathType.DISCOVERY);
     }
 
     private void processQueuePacket(QueuePacket packet) {

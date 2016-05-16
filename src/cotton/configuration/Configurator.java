@@ -94,6 +94,16 @@ public class Configurator {
             return true;
     }
     
+    public boolean isQueue() {
+        if(prop == null)
+            throw new IllegalStateException("Configurator empty / not initialised");
+        String queue;
+        if((queue = prop.getProperty("queueEnabled")) == null || queue.equalsIgnoreCase("false"))
+            return false;
+        else
+            return true;
+    }
+    
     public boolean hasDatabase(){
         if(prop == null)
             throw new IllegalStateException("Configurator empty / not initialised");
@@ -139,9 +149,9 @@ public class Configurator {
         String addressPort;
         InetSocketAddress address = null;
         if((addressPort = prop.getProperty("networkAddress")) == null || addressPort.equalsIgnoreCase("localhost"))
-            address = new InetSocketAddress(InetAddress.getByName(null), 3333);
+            address = new InetSocketAddress(InetAddress.getLocalHost(), 3333);
         else if(addressPort != null && addressPort.equalsIgnoreCase("random"))
-            address = new InetSocketAddress(InetAddress.getByName(null), new Random().nextInt(40000)+5000);
+            address = new InetSocketAddress(InetAddress.getLocalHost(), new Random().nextInt(40000)+5000);
 
         if(address == null){
             String[] splitAddress = addressPort.split(":");
@@ -154,16 +164,16 @@ public class Configurator {
                     port = new Random().nextInt(40000)+5000;
 
                 if(splitAddress[0].equalsIgnoreCase("localhost"))
-                    address = new InetSocketAddress(InetAddress.getByName(null), port);
+                    address = new InetSocketAddress(InetAddress.getLocalHost(), port);
                 else
                     address = new InetSocketAddress(splitAddress[0], port);
             }else if(splitAddress.length > 0){
                 if(splitAddress[0].equalsIgnoreCase("localhost"))
-                    address = new InetSocketAddress(InetAddress.getByName(null), 3333);
+                    address = new InetSocketAddress(InetAddress.getLocalHost(), 3333);
                 else
                     address = new InetSocketAddress(splitAddress[0], 3333);
             }else
-                address = new InetSocketAddress(InetAddress.getByName(null), 3333);
+                address = new InetSocketAddress(InetAddress.getLocalHost(), 3333);
         }
         builder.setAddress(address);
 

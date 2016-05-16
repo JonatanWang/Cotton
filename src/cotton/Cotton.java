@@ -71,6 +71,7 @@ public class Cotton {
     private DefaultInternalRouting internalRouting;
     private Console console = new Console();
     private TokenManager tm;
+    private RequestQueueManager rqm = null;
 
     public Cotton(Configurator config) throws java.net.UnknownHostException,
                                               java.net.MalformedURLException,
@@ -85,6 +86,8 @@ public class Cotton {
         initLookup(config.getServiceConfigurator());
         initRouting();
         initServiceHandler();
+        if(config.isQueue())
+            queueStart(config);
     }
 
     /**
@@ -115,6 +118,21 @@ public class Cotton {
         initServiceHandler();
     }
 
+    /**
+     * This starts a new cotton node for your cloud application
+     * @param globalServiceDiscovery if this should be a globalDiscovery node that other ask for directions from
+     * @param localPort the port this should listen on
+     * @param globalDiscoveryDNS tells this node where to find globalServiceDiscoverys to reach the cloud
+     * @throws java.net.UnknownHostException
+     */
+    public Cotton(boolean globalServiceDiscovery,int localPort, GlobalDiscoveryDNS globalDiscoveryDNS) throws java.net.UnknownHostException {
+        initNetwork(new DefaultNetworkHandler(localPort));
+        initDiscovery(globalServiceDiscovery,globalDiscoveryDNS);
+        initLookup();
+        initRouting();
+        initServiceHandler();
+    }
+    
     /**
      * This starts a new cotton node for your cloud application
      * @param globalServiceDiscovery if this should be a globalDiscovery node that other ask for directions from
@@ -216,6 +234,13 @@ public class Cotton {
     public InternalRoutingClient getClient(){
         return internalRouting;
     }
+    
+    public RequestQueueManager getRequestQueueManager() {
+        if(rqm == null)
+            throw new NullPointerException("RQM: Null");
+        
+        return rqm;
+    }
 
     /**
      *
@@ -241,6 +266,13 @@ public class Cotton {
         MongoDBConnector db = new MongoDBConnector();
         tm  = new TokenManager();
         db.setTokenManager(tm);
+    }
+    
+    private void queueStart(Configurator conf) {
+        rqm = new RequestQueueManager(conf.getQueueConfigurator());
+        
+        this.internalRouting.setRequestQueueManager(rqm);
+        this.console.addSubSystem(rqm);
     }
 
     private void initNetwork(NetworkHandler net) throws UnknownHostException {
