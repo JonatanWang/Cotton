@@ -34,6 +34,9 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.services;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -43,14 +46,19 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class BridgeServiceBuffer implements ServiceBuffer{
 
-    private ConcurrentLinkedQueue<ServicePacket> buffer;
+    private LinkedBlockingQueue<ServicePacket> buffer;
 
     public BridgeServiceBuffer(){
-        buffer = new ConcurrentLinkedQueue<>();
+        buffer = new LinkedBlockingQueue<>();
     }
 
     public ServicePacket nextPacket(){
-        return buffer.poll();
+        try {
+            return buffer.take();//.poll();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(BridgeServiceBuffer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
 
     public boolean add(ServicePacket servicePacket){

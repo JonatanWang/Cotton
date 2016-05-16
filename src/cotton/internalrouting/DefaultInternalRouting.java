@@ -62,6 +62,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.Map;
 import java.util.ArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -75,7 +78,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     private ServiceDiscovery discovery;
     private ConcurrentHashMap<UUID, SocketLatch> keepAliveTable;
     private ConcurrentHashMap<UUID, ServiceRequest> connectionTable;
-    private ConcurrentLinkedQueue<NetworkPacket> routingQueue;
+    //private ConcurrentLinkedQueue<NetworkPacket> routingQueue;
+    private LinkedBlockingQueue<NetworkPacket> routingQueue;
     private ServiceBuffer serviceHandlerBridge;
     private RouteDispatcher dispatcher = null;
     private RequestQueueManager requestQueueManager = null;
@@ -90,7 +94,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         this.discovery.setNetwork(this, localAddress);
         this.keepAliveTable = new ConcurrentHashMap<>();
         this.connectionTable = new ConcurrentHashMap<>();
-        this.routingQueue = new ConcurrentLinkedQueue<>();
+        //this.routingQueue = new ConcurrentLinkedQueue<>();
+        this.routingQueue = new LinkedBlockingQueue<>();
         this.serviceHandlerBridge = new BridgeServiceBuffer();
         taskScheduler = new ScheduledThreadPoolExecutor(7);
 
@@ -666,13 +671,20 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         public void run() {
             running = true;
             while (running) {
-                NetworkPacket packet = routingQueue.poll();
+                //NetworkPacket packet = routingQueue.poll();
+                NetworkPacket packet = null;
+                try {
+                    packet = routingQueue.take();
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(DefaultInternalRouting.class.getName()).log(Level.SEVERE, null, ex);
+                    
+                }
                 if (packet == null) {
-                    try {
-                        Thread.sleep(5);
-                    } catch (InterruptedException ex) {
-
-                    }
+//                    try {
+//                        Thread.sleep(5);
+//                    } catch (InterruptedException ex) {
+//
+//                    }
                 } else {
                     processPacket(packet);
                 }
