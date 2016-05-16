@@ -111,7 +111,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         initGlobalDiscoveryPool(dnsConfig);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         //threadPool = Executors.newCachedThreadPool();
-        threadPool = Executors.newFixedThreadPool(10);
+        threadPool = Executors.newCachedThreadPool();//newFixedThreadPool(10);
         this.activeQueue = new ConcurrentHashMap<>();
         this.deadAddresses = new ConcurrentLinkedQueue<>();
         deadAddressValidator = new ScheduledThreadPoolExecutor(1);
@@ -474,7 +474,8 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     @Override
     public void stop() {
-        threadPool.shutdown();
+        this.deadAddressValidator.shutdownNow();
+        threadPool.shutdownNow();
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

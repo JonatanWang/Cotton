@@ -103,6 +103,39 @@ public class TestScalingCommand {
         assertTrue(maxCapacity == newAmount);
     }
     
+    @Test
+    public void TestServiceResizeComand() throws UnknownHostException, IOException {
+        System.out.println("Now running: TestQueueResizeComand");
+        int discPort = new Random().nextInt(25000) + 4000;
+        int queuePort =  new Random().nextInt(25000) + 4000;
+        Cotton disc = new Cotton(true,discPort);
+        disc.start();
+        GlobalDnsStub dnsStub = getDnsStub(null,discPort); 
+        String queueName = "mathpow21";
+        Cotton serv = new Cotton(false,queuePort,dnsStub);
+        
+        InetSocketAddress addr = new InetSocketAddress(Inet4Address.getLocalHost(),queuePort);
+        DestinationMetaData destination = new DestinationMetaData(addr,PathType.COMMANDCONTROL);
+        
+        int newAmount = 66;
+        Cotton client = new Cotton(false,dnsStub);
+        client.start();
+        Console console = client.getConsole();
+        Command cmd = new Command(StatType.REQUESTQUEUE,"mathPow21",new String[]{queueName,"setMaxCapacity"},newAmount,CommandType.CHANGE_ACTIVEAMOUNT);
+        console.sendCommand(cmd, destination);
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        int maxCapacity = 5;//requestQueueManager.getMaxCapacity(queueName);
+        
+        assertTrue(maxCapacity == newAmount);
+    }
+    
+    
+    
+    
     private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
         GlobalDnsStub gDns = new GlobalDnsStub();
         InetSocketAddress gdAddr = null;
