@@ -311,6 +311,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         TransportPacket.Packet tp = null;
 
         if((conn = openSockets.get(dest)) == null){
+            System.out.println("New socket");
             Socket socket = createSocket(idest);
             conn = new Connection(socket);
             openSockets.putIfAbsent(dest, conn);

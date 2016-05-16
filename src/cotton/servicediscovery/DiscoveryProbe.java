@@ -95,5 +95,13 @@ public class DiscoveryProbe implements Serializable {
      */
     public void setAddress(DestinationMetaData address) {
         this.address = address;
-    }        
+    }
+
+    @Override
+    public String toString() {
+        return "DiscoveryProbe{" +
+                "name='" + name + '\'' +
+                ", address=" + address +
+                '}';
+    }
 }

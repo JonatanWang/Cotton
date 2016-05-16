@@ -121,4 +121,15 @@ public class TopologyPacket {
   	public void setLastJump(SocketAddress lastJump){
         this.lastJump = lastJump;
   	}
+
+    @Override
+    public String toString() {
+        return "TopologyPacket{" +
+                "instanceAddress=" + instanceAddress +
+                ", originalSource=" + originalSource +
+                ", lastJump=" + lastJump +
+                ", isGlobalDiscovery=" + isGlobalDiscovery +
+                ", count=" + count +
+                '}';
+    }
 }

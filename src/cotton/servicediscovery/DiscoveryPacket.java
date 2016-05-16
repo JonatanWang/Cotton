@@ -180,4 +180,17 @@ public class DiscoveryPacket implements Serializable {
     public void setCircuitBreakerPacket(CircuitBreakerPacket circuitBreakerPacket) {
         this.circuitBreakerPacket = circuitBreakerPacket;
     }
+
+    @Override
+    public String toString() {
+        return "DiscoveryPacket{" +
+                "probe=" + probe +
+                ", announce=" + announce +
+                ", type=" + type +
+                ", queue=" + queue +
+                ", topology=" + topology +
+                ", configPacket=" + configPacket +
+                ", circuitBreakerPacket=" + circuitBreakerPacket +
+                '}';
+    }
 }
