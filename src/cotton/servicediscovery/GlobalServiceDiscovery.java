@@ -750,6 +750,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     @Override
     public StatisticsData[] processCommand(Command command) {
+        StatisticsData[] retSystem;
         if (command.getCommandType() == CommandType.CHECK_REACHABILLITY) {
             threadPool.execute(new Runnable() {
                 @Override
@@ -758,6 +759,14 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                 }
             });
             return new StatisticsData[0];
+        }
+        else if(command.getCommandType() == CommandType.STATISTICS_FORSUBSYSTEM){
+            return retSystem = this.getStatisticsForSubSystem(command.getName());
+        }
+        else if(command.getCommandType() == CommandType.STATISTICS_FORSYSTEM){
+            StatisticsData[] retForSystem = new StatisticsData[1];
+            retForSystem[0] = this.getStatistics(command.getTokens());
+            return retForSystem;
         }
         return null;
     }

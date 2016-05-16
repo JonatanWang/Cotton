@@ -406,6 +406,9 @@ public class TestCommandControl {
 
     private StatisticsData[] packetUnpack(byte[] data) {
         StatisticsData[] statistics = null;
+        if(data == null || data.length <= 0){
+            return new StatisticsData[0];
+        }
         try {
             ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
             statistics = (StatisticsData[]) input.readObject();

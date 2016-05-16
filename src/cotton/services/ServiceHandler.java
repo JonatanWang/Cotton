@@ -162,7 +162,7 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
 
     private boolean usageRecording(Command command) {
         CommandType commandType = command.getCommandType();
-        if (commandType != CommandType.RECORD_USAGEHISTORY) {
+        if (commandType != CommandType.USAGEHISTORY) {
             return false;
         }
         String[] tokens = command.getTokens();
@@ -189,7 +189,7 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
 
     @Override
     public StatisticsData[] processCommand(Command command) {
-        if (command.getCommandType() == CommandType.RECORD_USAGEHISTORY) {
+        if (command.getCommandType() == CommandType.USAGEHISTORY) {
             //return usageRecording(command);
         } else if (command.getCommandType() == CommandType.CHANGE_ACTIVEAMOUNT) {
             setServiceConfig(command.getName(), command.getAmount());

@@ -146,11 +146,11 @@ public class CloudAnalyzer implements Serializable {
         DestinationMetaData[] destinations = pool.copyPoolData();
         ServiceRequest[] isSampling = new DefaultServiceRequest[destinations.length];
         String[] queryRequest = new String[]{name, "isSampling"};
-        Command command = new Command(subSystemType, name, queryRequest, 0, CommandType.RECORD_USAGEHISTORY);
+        Command command = new Command(subSystemType, name, queryRequest, 0, CommandType.USAGEHISTORY);
         command.setQuery(true);
         String[] samplingRequest = new String[]{name, "setUsageRecordingInterval"};
 
-        Command newCommand = new Command(subSystemType, name, samplingRequest, samplingRate, CommandType.RECORD_USAGEHISTORY);
+        Command newCommand = new Command(subSystemType, name, samplingRequest, samplingRate, CommandType.USAGEHISTORY);
 
         byte[] data = serializeToBytes(command);
         byte[] startSampling = serializeToBytes(newCommand);
@@ -192,7 +192,7 @@ public class CloudAnalyzer implements Serializable {
             String end = "" + (startIndex[i] + (samplingPeriod / samplingRate));
             String[] collectRequests = new String[]{name, "getUsageRecordingInterval", start, end};
 
-            Command collectSamples = new Command(subSystemType, name, collectRequests, samplingRate, CommandType.RECORD_USAGEHISTORY);
+            Command collectSamples = new Command(subSystemType, name, collectRequests, samplingRate, CommandType.USAGEHISTORY);
             byte[] serializedCommand = serializeToBytes(collectSamples);
 
             timeIntervals[i] = internalRouting.sendWithResponse(destinations[i], serializedCommand, 80);

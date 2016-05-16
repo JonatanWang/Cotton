@@ -157,7 +157,7 @@ public class Console {
                     data = serializeToBytes(statistics);
                     internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
                     break;
-                case RECORD_USAGEHISTORY:
+                case USAGEHISTORY:
                     break;
                 default:
                     break;
@@ -199,12 +199,10 @@ public class Console {
                 }
                 break;
             case STATISTICS_FORSYSTEM:
-                StatisticsData statistics = statUnpack(reqData);
-                if(statistics == null){
+                res = statArrayUnpack(reqData);
+                if(res == null){
                     return empty;
                 }
-                res = new StatisticsData[1];
-                res[0] = statistics;
                 break;
             default:
                 System.out.println("Unkown console QueryCommand");
@@ -259,6 +257,9 @@ public class Console {
     }
 
     private StatisticsData[] statArrayUnpack(byte[] data) {
+        if(data == null || data.length <= 0) {
+            return  new StatisticsData[0];
+        }
         StatisticsData[] statistics = null;
         try {
             ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
