@@ -35,6 +35,7 @@ package cotton.servicediscovery;
 
 import java.io.Serializable;
 import java.net.SocketAddress;
+import java.util.Arrays;
 
 /**
  * The <code>AnnouncePacket</code> wraps the service list and <code>SocketAddress</code> 
@@ -85,4 +86,13 @@ public class AnnouncePacket implements Serializable {
     public void setGlobalDiscovery(boolean globalDiscovery){
         this.isGlobalDiscovery = globalDiscovery;
   }
+
+    @Override
+    public String toString() {
+        return "AnnouncePacket{" +
+                "instanceAddress=" + instanceAddress +
+                ", serviceList=" + Arrays.toString(serviceList) +
+                ", isGlobalDiscovery=" + isGlobalDiscovery +
+                '}';
+    }
 }

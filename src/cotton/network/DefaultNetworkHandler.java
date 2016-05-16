@@ -53,6 +53,8 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import cotton.configuration.NetworkConfigurator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Handles all of the packet buffering and relaying.
@@ -233,10 +235,11 @@ public class DefaultNetworkHandler implements NetworkHandler {
         }
 
         try {
-            for(SocketAddress a: openSockets.keySet()){
-                Connection c = null;
-                if((c = openSockets.get(a)) != null)
-                    c.close();
+            for (Map.Entry<SocketAddress, Connection> entry : openSockets.entrySet()) {
+                try {
+                    entry.getValue().close();
+                } catch (IOException ex) {
+                }
             }
             threadPool.shutdown();
             serverSocket.close();
@@ -308,6 +311,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         TransportPacket.Packet tp = null;
 
         if((conn = openSockets.get(dest)) == null){
+            System.out.println("New socket");
             Socket socket = createSocket(idest);
             conn = new Connection(socket);
             openSockets.putIfAbsent(dest, conn);

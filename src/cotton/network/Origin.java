@@ -120,4 +120,13 @@ public class Origin {
     public void setSocketLatchID(UUID socketLatchID) {
         this.socketLatchID = socketLatchID;
     }
+
+    @Override
+    public String toString() {
+        return "Origin{" +
+                "address=" + address +
+                ", serviceRequestID=" + serviceRequestID +
+                ", socketLatchID=" + socketLatchID +
+                '}';
+    }
 }

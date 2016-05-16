@@ -61,10 +61,7 @@ import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatisticsProvider;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -894,8 +891,8 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     }
 
     @Override
-    public boolean processCommand(Command command) {
-        return false;
+    public StatisticsData[] processCommand(Command command) {
+        return null;
     }
 
     private void processConfigPacket(ConfigurationPacket packet) {

@@ -35,6 +35,7 @@ import cotton.network.PathType;
 import java.io.Serializable;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  *
@@ -95,5 +96,16 @@ public class ConfigurationPacket implements Serializable {
     
     public void setConfigEntry(ConfigEntry[] entries){
         this.entries = entries;
+    }
+
+    @Override
+    public String toString() {
+        return "ConfigurationPacket{" +
+                "instanceAddress=" + instanceAddress +
+                ", maxTotalRequestQueues=" + maxTotalRequestQueues +
+                ", maxTotalServices=" + maxTotalServices +
+                ", globalServiceDiscovery=" + globalServiceDiscovery +
+                ", entries=" + Arrays.toString(entries) +
+                '}';
     }
 }

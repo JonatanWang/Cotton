@@ -29,8 +29,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
 package cotton.test;
 
 import cotton.network.DummyServiceChain;
@@ -45,6 +43,7 @@ import cotton.test.services.MathPowV2;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Random;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -96,15 +95,24 @@ public class TestPackageInteraction {
     @Test
     public void TestTransmission() throws UnknownHostException {
         System.out.println("Now running: TestTransmission");
-        Cotton discovery = new Cotton(true, 6542);
+
+        int port = new Random().nextInt(20000)+5000;
+        Cotton discovery = new Cotton(true, port);
         GlobalDnsStub gDns = new GlobalDnsStub();
         
-        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 6542);
+
+        InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = gdAddr;
         gDns.setGlobalDiscoveryAddress(arr);
 
         discovery.start();
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
         Cotton ser1 = new Cotton(false, gDns);
         Cotton ser2 = new Cotton(false, gDns);

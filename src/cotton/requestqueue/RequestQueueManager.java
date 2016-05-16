@@ -53,9 +53,7 @@ import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.TimeInterval;
 import cotton.systemsupport.UsageHistory;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -256,21 +254,57 @@ public class RequestQueueManager implements StatisticsProvider {
         this.internalRouting = internalRouting;
     }
 
-    public boolean processCommand(Command command) {
+    public StatisticsData[] processCommand(Command command) {
+        if(command.isQuery()) {
+            return executeQuery(command);
+
+        }else {
+            executeCommand(command);
+        }
+        return null;
+    }
+
+    private StatisticsData[] executeQuery(Command command) {
+        switch (command.getCommandType()) {
+            case STATISTICS_FORSUBSYSTEM:
+                StatisticsData[] statisticsForSubSystem = this.getStatisticsForSubSystem(command.getName());
+                break;
+            case STATISTICS_FORSYSTEM:
+                StatisticsData statistics = this.getStatistics(command.getTokens());
+                break;
+            case USAGEHISTORY:
+                String[] token = command.getTokens();
+                if(token == null || token.length < 1) {
+                    return null;
+                }
+                RequestQueue queue = internalQueueMap.get(token[0]);
+                if (queue == null) {
+                    return null;
+                }
+                StatisticsData ret = queue.getStatistics(command.getTokens());
+                return new StatisticsData[]{ret};
+            default:
+                System.out.println("RequestQueueManager:executeQuery: commandType unknown: " + command.getCommandType().toString());
+                break;
+        }
+        return new StatisticsData[0];
+    }
+
+    private void executeCommand(Command command) {
         CommandType commandType = command.getCommandType();
-        if (commandType != CommandType.RECORD_USAGEHISTORY && commandType != CommandType.CHANGE_ACTIVEAMOUNT) {
-            return false;
+        if (commandType != CommandType.USAGEHISTORY && commandType != CommandType.CHANGE_ACTIVEAMOUNT) {
+            return ;
         }
         String[] tokens = command.getTokens();
         if (tokens.length < 2) {
-            return false;
+            return ;
         }
         String name = tokens[0];
         String task = tokens[1];
         int samplingRate = command.getAmount();
         RequestQueue queue = internalQueueMap.get(name);
         if (queue == null) {
-            return false;
+            return ;
         }
         if (task.equals("setUsageRecordingInterval")) {
             queue.setUsageRecording(samplingRate);
@@ -279,9 +313,8 @@ public class RequestQueueManager implements StatisticsProvider {
         } else if (task.equals("stopUsageRecording")) {
             queue.stopUsageRecording();
         } else {
-            return false;
+            System.out.println("RequestQueueManager:executeCommand: task unknown: " + task);
         }
-        return true;
     }
 
     private class RequestQueue implements Runnable {

@@ -31,7 +31,6 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.systemsupport;
 
-
 import cotton.internalrouting.InternalRoutingServiceDiscovery;
 import cotton.internalrouting.ServiceRequest;
 import cotton.network.DestinationMetaData;
@@ -57,6 +56,7 @@ import java.util.logging.Logger;
 /**
  *
  * @author Magnus ,Tony
+ * @author Mats
  */
 public class Console {
 
@@ -94,9 +94,11 @@ public class Console {
      */
     public void processCommand(NetworkPacket packet) {
         if (packet == null) {
+            System.out.println("processCommand: packet eq null");
             return;
         }
         Command command = commandUnpack(packet.getData());
+
         if (!command.isQuery()) {
             sendCommandToSubSystem(command);
         } else {
@@ -107,14 +109,17 @@ public class Console {
     private void sendCommandToSubSystem(Command command) {
         switch (command.getType()) {
             case SERVICEHANDLER:
+                System.out.println("sendCommandToSubSystem: case: SERVICEHANDLER");
                 ServiceHandler serviceHandler = (ServiceHandler) getProvider(StatType.SERVICEHANDLER);
                 serviceHandler.processCommand(command);
                 break;
             case DISCOVERY:
+                System.out.println("sendCommandToSubSystem: case: DISCOVERY");
                 ServiceDiscovery serviceDiscovery = (ServiceDiscovery) getProvider(StatType.DISCOVERY);
                 serviceDiscovery.processCommand(command);
                 break;
             case REQUESTQUEUE:
+                System.out.println("sendCommandToSubSystem: case: REQUESTQUEUE");
                 RequestQueueManager rqManager = (RequestQueueManager) getProvider(StatType.REQUESTQUEUE);
                 rqManager.processCommand(command);
                 break;
@@ -133,7 +138,19 @@ public class Console {
             if (provider.getStatType() == StatType.UNKNOWN) {
                 data = serializeToBytes(new StatisticsData[0]);
                 internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
+                return;
             }
+            StatisticsData[] result = provider.processCommand(command);
+            if(result == null) {
+                data = new byte[0];
+            }else if(result.length == 1){
+                data = serializeToBytes(result);
+            }else{
+                data = serializeToBytes(result);
+            }
+            internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
+
+            /**
             switch (command.getCommandType()) {
                 case STATISTICS_FORSUBSYSTEM:
                     StatisticsData[] statisticsForSubSystem = provider.getStatisticsForSubSystem(command.getName());
@@ -145,11 +162,12 @@ public class Console {
                     data = serializeToBytes(statistics);
                     internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
                     break;
-                case RECORD_USAGEHISTORY:
+                case USAGEHISTORY:
                     break;
                 default:
                     break;
             }
+             */
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -166,6 +184,7 @@ public class Console {
         StatisticsData[] empty = new StatisticsData[0];
         InternalRoutingServiceDiscovery internalRouting = (InternalRoutingServiceDiscovery) getProvider(StatType.INTERNALROUTING);
         if (internalRouting == null) {
+            System.out.println("sendQueryCommand: internalRouting is null");
             return empty;
         }
         command.setQuery(true);
@@ -174,27 +193,40 @@ public class Console {
         dest.setPathType(PathType.COMMANDCONTROL);
         ServiceRequest req = internalRouting.sendWithResponse(dest, data, 500);
         if (req == null || req.getData() == null) {
+            System.out.println("sendQueryCommand, if req: null");
             return empty;
         }
         byte[] reqData = req.getData(); 
         StatisticsData[] res = null;
         switch (command.getCommandType()) {
             case STATISTICS_FORSUBSYSTEM:
+                if(reqData == null){
+                    System.out.println("sendQueryCommand, STATISTICS_FORSUBSYSTEM: null" +req.getErrorMessage());
+                    return empty;
+                }
+                if(reqData.length <= 0){
+                System.out.println("sendQueryCommand, STATISTICS_FORSUBSYSTEM: length <= 0");
+                return empty;
+                }
                 res = statArrayUnpack(reqData);
                 if(res == null){
                     return empty;
                 }
                 break;
             case STATISTICS_FORSYSTEM:
-                StatisticsData statistics = statUnpack(reqData);
-                if(statistics == null){
+                res = statArrayUnpack(reqData);
+                if(res == null){
                     return empty;
                 }
-                res = new StatisticsData[1];
-                res[0] = statistics;
+                break;
+            case USAGEHISTORY:
+                res = statArrayUnpack(reqData);
+                if(res == null){
+                    return empty;
+                }
                 break;
             default:
-                System.out.println("Unkown console QueryCommand");
+                System.out.println("Unknown console QueryCommand: " +command.getCommandType());
                 return empty;
         }
         return res;
@@ -246,6 +278,9 @@ public class Console {
     }
 
     private StatisticsData[] statArrayUnpack(byte[] data) {
+        if(data == null || data.length <= 0) {
+            return  new StatisticsData[0];
+        }
         StatisticsData[] statistics = null;
         try {
             ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
@@ -299,5 +334,9 @@ public class Console {
             return StatType.UNKNOWN;
         }
 
+        @Override
+        public StatisticsData[] processCommand(Command command) {
+            return new StatisticsData[0];
+        }
     }
 }

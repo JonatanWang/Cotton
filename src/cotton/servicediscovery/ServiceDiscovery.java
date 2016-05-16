@@ -59,5 +59,4 @@ public interface ServiceDiscovery extends StatisticsProvider {
     public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName);
     public boolean announceQueues(RequestQueueManager queueManager);
     public DestinationMetaData destinationUnreachable(DestinationMetaData dest,String serviceName);
-    public boolean processCommand(Command command);
 }

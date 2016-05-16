@@ -71,10 +71,10 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
 
             //TODO: if the threadcap met put packet back into buffer.
             if(packet == null){
-                try{
-                    Thread.sleep(5); //change to exponential fallback strategy.
-                } catch (InterruptedException ex) {
-                }
+//                try{
+//                    Thread.sleep(5); //change to exponential fallback strategy.
+//                } catch (InterruptedException ex) {
+//                }
             } else {
                 ServiceDispatcher th = new ServiceDispatcher(packet);
                 threadPool.execute(th);
@@ -162,7 +162,7 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
 
     private boolean usageRecording(Command command) {
         CommandType commandType = command.getCommandType();
-        if (commandType != CommandType.RECORD_USAGEHISTORY) {
+        if (commandType != CommandType.USAGEHISTORY) {
             return false;
         }
         String[] tokens = command.getTokens();
@@ -187,14 +187,15 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         return true;
     }
 
-    public boolean processCommand(Command command) {
-        if (command.getCommandType() == CommandType.RECORD_USAGEHISTORY) {
-            return usageRecording(command);
+    @Override
+    public StatisticsData[] processCommand(Command command) {
+        if (command.getCommandType() == CommandType.USAGEHISTORY) {
+            //return usageRecording(command);
         } else if (command.getCommandType() == CommandType.CHANGE_ACTIVEAMOUNT) {
             setServiceConfig(command.getName(), command.getAmount());
-            return true;
+            return new StatisticsData[0];
         }
-        return false;
+        return null;
     }
 
     /**

@@ -86,4 +86,14 @@ public class ConfigEntry implements Serializable{
         public void setServiceStatus(ServiceStatus serviceStatus) {
             this.serviceStatus = serviceStatus;
         }
+
+    @Override
+    public String toString() {
+        return "ConfigEntry{" +
+                "name='" + name + '\'' +
+                ", maxCapacity=" + maxCapacity +
+                ", pathType=" + pathType +
+                ", serviceStatus=" + serviceStatus +
+                '}';
     }
+}
