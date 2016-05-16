@@ -38,15 +38,10 @@ import cotton.configuration.Configurator;
 import cotton.services.ActiveServiceLookup;
 import cotton.services.ServiceFactory;
 import cotton.storagecomponents.DatabaseService;
-import cotton.test.services.GlobalDnsStub;
-import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.InetSocketAddress;
+import cotton.test.services.MathPowV2;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -66,7 +61,9 @@ public class SHRunning {
         
         ActiveServiceLookup asl = shInstance.getServiceRegistation();
         ServiceFactory sf = DatabaseService.getFactory(); 
-        asl.registerService("database", sf, 1);
+        asl.registerService("database", sf, 10);
+        sf = MathPowV2.getFactory();
+        asl.registerService("mathpow", sf, 10); 
         
         shInstance.start();
         

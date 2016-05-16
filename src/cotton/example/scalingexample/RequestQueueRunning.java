@@ -36,9 +36,6 @@ package cotton.example.scalingexample;
 import cotton.Cotton;
 import cotton.configuration.Configurator;
 import cotton.requestqueue.RequestQueueManager;
-import cotton.test.services.GlobalDnsStub;
-import java.net.Inet4Address;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
@@ -61,6 +58,7 @@ public class RequestQueueRunning {
         
         RequestQueueManager rqm = rqInstance.getRequestQueueManager();
         rqm.startQueue("database");
+        rqm.startQueue("mathpow");
         
         rqInstance.start();
         

@@ -208,7 +208,6 @@ public class Cotton {
         discovery.stop();
         network.stop();
         internalRouting.stop();
-
     }
 
     /**

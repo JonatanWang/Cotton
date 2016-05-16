@@ -708,6 +708,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     @Override
     public void stop() {
         this.taskScheduler.shutdownNow();
+        deadAddressValidator.shutdownNow();
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

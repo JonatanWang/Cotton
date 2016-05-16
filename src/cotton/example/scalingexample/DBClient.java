@@ -38,13 +38,9 @@ import cotton.internalrouting.InternalRoutingClient;
 import cotton.internalrouting.ServiceRequest;
 import cotton.network.DummyServiceChain;
 import cotton.network.ServiceChain;
-import cotton.test.services.GlobalDnsStub;
-import java.net.Inet4Address;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.Scanner;
 import org.json.JSONObject;
 
 /**
@@ -52,7 +48,7 @@ import org.json.JSONObject;
  * @author Gunnlaugur
  */
 public class DBClient {
-    public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException, InterruptedException {
         Configurator conf;
         try {
             conf = new Configurator("DBClientconfig.cfg");
@@ -73,12 +69,14 @@ public class DBClient {
         byte[] data = jsonToByteArray("authoriseRequest");
         clientNetwork.sendToService(data, chain);
         
+        chain.into("database");
         data = jsonToByteArray("getDataFromDatabase");
         serviceRequest = clientNetwork.sendWithResponse(data, chain);
         
+        chain.into("database");
         data = jsonToByteArray("removeDataFromDatabase");
         clientNetwork.sendToService(data, chain);
-        System.out.println("Waiting for response");
+        
         if(serviceRequest != null) {
             data = serviceRequest.getData();
             JSONObject j = byteArrayToJson(data);

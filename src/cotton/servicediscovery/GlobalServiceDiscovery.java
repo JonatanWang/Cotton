@@ -498,7 +498,8 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     @Override
     public void stop() {
-        threadPool.shutdown();
+        threadPool.shutdownNow();
+        deadAddressValidator.shutdownNow();
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
