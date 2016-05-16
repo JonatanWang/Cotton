@@ -115,7 +115,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         deadAddressValidator = new ScheduledThreadPoolExecutor(1);
 
     }
-
+    
     /**
      * So we can get out to other machines
      *

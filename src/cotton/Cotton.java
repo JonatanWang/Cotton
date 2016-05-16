@@ -117,6 +117,21 @@ public class Cotton {
     /**
      * This starts a new cotton node for your cloud application
      * @param globalServiceDiscovery if this should be a globalDiscovery node that other ask for directions from
+     * @param localPort the port this should listen on
+     * @param globalDiscoveryDNS tells this node where to find globalServiceDiscoverys to reach the cloud
+     * @throws java.net.UnknownHostException
+     */
+    public Cotton(boolean globalServiceDiscovery,int localPort, GlobalDiscoveryDNS globalDiscoveryDNS) throws java.net.UnknownHostException {
+        initNetwork(new DefaultNetworkHandler(localPort));
+        initDiscovery(globalServiceDiscovery,globalDiscoveryDNS);
+        initLookup();
+        initRouting();
+        initServiceHandler();
+    }
+    
+    /**
+     * This starts a new cotton node for your cloud application
+     * @param globalServiceDiscovery if this should be a globalDiscovery node that other ask for directions from
      * @param portNumber what port this node should listen on
      * @throws java.net.UnknownHostException
      */

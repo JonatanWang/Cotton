@@ -258,7 +258,7 @@ public class RequestQueueManager implements StatisticsProvider {
 
     public boolean processCommand(Command command) {
         CommandType commandType = command.getCommandType();
-        if (commandType != CommandType.RECORD_USAGEHISTORY) {
+        if (commandType != CommandType.RECORD_USAGEHISTORY && commandType != CommandType.CHANGE_ACTIVEAMOUNT) {
             return false;
         }
         String[] tokens = command.getTokens();
@@ -274,6 +274,8 @@ public class RequestQueueManager implements StatisticsProvider {
         }
         if (task.equals("setUsageRecordingInterval")) {
             queue.setUsageRecording(samplingRate);
+        } else if (task.equals("setMaxCapacity")) {
+            queue.setMaxCapacity(command.getAmount());
         } else if (task.equals("stopUsageRecording")) {
             queue.stopUsageRecording();
         } else {
@@ -416,6 +418,10 @@ public class RequestQueueManager implements StatisticsProvider {
 
         public int getMaxCapacity() {
             return this.maxCapacity;
+        }
+        
+        public void setMaxCapacity(int newCap) {
+            this.maxCapacity = newCap;
         }
 
         /**
