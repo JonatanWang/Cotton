@@ -58,7 +58,7 @@ import static org.junit.Assert.*;
  */
 public class TestEncryption {
     
-    @Test
+    //@Test
     public void TestEncryption() throws NoSuchAlgorithmException, 
             IOException, 
             ClassNotFoundException, 
@@ -94,7 +94,7 @@ public class TestEncryption {
         assertTrue(Arrays.equals(data, dec));
     }
     
-    @Test
+    //@Test
     public void TestTokenManager() throws IOException, 
             ClassNotFoundException, 
             NoSuchAlgorithmException, 
