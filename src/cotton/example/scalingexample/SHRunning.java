@@ -38,9 +38,7 @@ import cotton.configuration.Configurator;
 import cotton.services.ActiveServiceLookup;
 import cotton.services.ServiceFactory;
 import cotton.storagecomponents.DatabaseService;
-import cotton.test.services.GlobalDnsStub;
-import java.net.Inet4Address;
-import java.net.InetSocketAddress;
+import cotton.test.services.MathPowV2;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
@@ -49,16 +47,34 @@ import java.util.Scanner;
  *
  * @author Gunnlaugur
  */
-public class SHRunning {
+public class SHRunning implements Runnable{
     public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        GlobalDnsStub gDns = getDnsStub(null, 5888);
-        Cotton shInstance = new Cotton(false, gDns);
+        int clientAmount = 5;
         
-        shInstance.databaseWrapperStart();
+        for(int i = 0; i < clientAmount; i++) 
+            new Thread(new SHRunning()).start();
+    }
+
+    @Override
+    public void run() {
+        Configurator conf;
+        try {
+            conf = new Configurator("SHconfig.cfg");
+        } catch (Exception ex) {
+            conf = new Configurator();
+            conf.loadDefaults();
+        }
+        
+        Cotton shInstance = null;
+        try {
+            shInstance = new Cotton(conf);
+        } catch (Exception ex) {}
         
         ActiveServiceLookup asl = shInstance.getServiceRegistation();
         ServiceFactory sf = DatabaseService.getFactory(); 
-        asl.registerService("database", sf, 1);
+        asl.registerService("database", sf, 10);
+        sf = MathPowV2.getFactory();
+        asl.registerService("mathpow", sf, 10); 
         
         shInstance.start();
         
@@ -72,20 +88,5 @@ public class SHRunning {
         }
         
         shInstance.shutdown();
-    }
-    
-    private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
-        GlobalDnsStub gDns = new GlobalDnsStub();
-        InetSocketAddress gdAddr = null;
-        if (dest == null) {
-            gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
-            System.out.println("discAddr:" + Inet4Address.getLocalHost().toString() +" port: " + port);
-        }else {
-            gdAddr = new InetSocketAddress(dest, port);
-        }
-        InetSocketAddress[] arr = new InetSocketAddress[1];
-        arr[0] = gdAddr;
-        gDns.setGlobalDiscoveryAddress(arr);
-        return gDns;
     }
 }

@@ -31,8 +31,6 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.systemsupport;
 
-
-import com.sun.org.apache.bcel.internal.generic.BREAKPOINT;
 import cotton.internalrouting.InternalRoutingServiceDiscovery;
 import cotton.internalrouting.ServiceRequest;
 import cotton.network.DestinationMetaData;

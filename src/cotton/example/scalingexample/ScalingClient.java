@@ -30,11 +30,11 @@ POSSIBILITY OF SUCH DAMAGE.
 
  */
 
+
 package cotton.example.scalingexample;
 
 import cotton.Cotton;
 import cotton.configuration.Configurator;
-import cotton.internalrouting.InternalRoutingClient;
 import cotton.internalrouting.ServiceRequest;
 import cotton.network.DummyServiceChain;
 import cotton.network.ServiceChain;
@@ -45,48 +45,15 @@ import org.json.JSONObject;
 
 /**
  *
- * @author Gunnlaugur
+ * @author Gunnlaugur Juliusson
+ * @author Jonathan
  */
-public class DBClient {
+public class ScalingClient implements Runnable{
     public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException, InterruptedException {
-        Configurator conf;
-        try {
-            conf = new Configurator("DBClientconfig.cfg");
-        } catch (Exception ex) {
-            conf = new Configurator();
-            conf.loadDefaults();
-        }
+        int clientAmount = 8;
         
-        
-        Cotton clientInstance = new Cotton(conf);
-        
-        clientInstance.start();
-        
-        InternalRoutingClient clientNetwork = clientInstance.getClient();
-        ServiceChain chain = new DummyServiceChain().into("database");
-        ServiceRequest serviceRequest = null;
-        
-        byte[] data = jsonToByteArray("authoriseRequest");
-        clientNetwork.sendToService(data, chain);
-        
-        chain.into("database");
-        data = jsonToByteArray("getDataFromDatabase");
-        serviceRequest = clientNetwork.sendWithResponse(data, chain);
-        
-        chain.into("database");
-        data = jsonToByteArray("removeDataFromDatabase");
-        clientNetwork.sendToService(data, chain);
-        
-        if(serviceRequest != null) {
-            data = serviceRequest.getData();
-            JSONObject j = byteArrayToJson(data);
-            
-            System.out.println("this is the result: " + j.toString());
-        }else {
-            System.out.println("Failed to send");
-        }
-        
-        clientInstance.shutdown();
+        for(int i = 0; i < clientAmount; i++) 
+            new Thread(new ScalingClient()).start();
     }
     
     private static JSONObject byteArrayToJson(byte[] data) {
@@ -104,5 +71,54 @@ public class DBClient {
         String data = j.toString();
         
         return data.getBytes(StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public void run() {
+        int intos = 1;
+        int sendAmount = 200;
+        byte[] data;
+        Configurator conf;
+        Cotton clientInstance = null;
+        ServiceRequest serviceRequest = null;
+        ServiceChain chain = new DummyServiceChain();;
+        
+        try {
+            conf = new Configurator("Scalingconfig.cfg");
+        } catch (Exception ex) {
+            conf = new Configurator();
+            conf.loadDefaults();
+        }
+        
+        try {
+            clientInstance = new Cotton(conf);
+        } catch (Exception ex) {}
+        
+        clientInstance.start();
+        
+        data = jsonToByteArray("authoriseRequest");
+        for(int i = 0; i < intos; i++)
+            chain.into("database");
+        clientInstance.getClient().sendToService(data, chain);
+        
+        data = jsonToByteArray("getDataFromDatabase");
+        for(int i = 1; i < sendAmount+1; i++) {
+            for(int j = 0; j < intos; j++)
+                chain.into("database");
+            serviceRequest = clientInstance.getClient().sendWithResponse(data, chain);
+            
+//            try {
+//                System.out.println("Number: " + i + " " + byteArrayToJson(serviceRequest.getData()));
+//            } catch(Exception e) {}
+        }
+        
+        for(int i = 0; i < intos; i++)
+                chain.into("database");
+        data = jsonToByteArray("removeDataFromDatabase");
+        clientInstance.getClient().sendToService(data, chain);
+
+        System.out.println("Done");
+        
+        clientInstance.shutdown();
     }
 }

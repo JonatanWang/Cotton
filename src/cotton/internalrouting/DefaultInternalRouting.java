@@ -87,6 +87,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     public DefaultInternalRouting(NetworkHandler networkHandler, ServiceDiscovery discovery) {
         this.networkHandler = networkHandler;
         this.localAddress = networkHandler.getLocalAddress();
+        System.out.println(localAddress);
         this.discovery = discovery;
         this.networkHandler.setInternalRouting(this);
         this.discovery.setNetwork(this, localAddress);

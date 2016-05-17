@@ -49,28 +49,30 @@ import java.nio.ByteBuffer;
 public class ClientExample {
 
     public static void main(String[] args) throws UnknownHostException {
-        GlobalDnsStub gDns = getDnsStub(null, 9546);
+        GlobalDnsStub gDns = getDnsStub(null, 5888);
         Cotton cotton = new Cotton(false, gDns);
         cotton.start();
 
         InternalRoutingClient client = cotton.getClient();
-        ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
+        ServiceChain chain = new DummyServiceChain().into("database").into("database").into("database").into("database").into("database");
 
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
 
         //ServiceRequest req = client.sendWithResponse(data, chain);
-        for (int i = 0; i < 1000; i++) {
-            chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
-            client.sendToService(data, chain);
+        while(true) {
+            for (int i = 0; i < 1000; i++) {
+                chain = new DummyServiceChain().into("database").into("database").into("database").into("database").into("database");
+                client.sendToService(data, chain);
+            }
         }
 
-        chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21");
-        ServiceRequest req = client.sendWithResponse(data, chain);
-        data = req.getData();
-        num = ByteBuffer.wrap(data).getInt();
-        System.out.println("result:  : " + num);
-        cotton.shutdown();
+//        chain = new DummyServiceChain().into("database").into("database").into("database").into("database").into("database");
+//        client.sendToService(data, chain);
+//        data = req.getData();
+//        num = ByteBuffer.wrap(data).getInt();
+//        System.out.println("result:  : " + num);
+//        cotton.shutdown();
     }
 
     private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {

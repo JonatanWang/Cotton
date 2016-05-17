@@ -80,7 +80,7 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
                 threadPool.execute(th);
             }
         }
-        threadPool.shutdown();
+        threadPool.shutdownNow();
     }
 
     public void stop() {

@@ -84,7 +84,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
         this.localPort = config.getAddress().getPort();
         this.localIP = config.getAddress().getAddress();
         if((this.encryption = config.isEncryptionEnabled()) == true){
-            String keystorePath = System.getProperty("user.dir")+config.getKeystore();
+            String keystorePath = config.getKeystore();
             System.setProperty("javax.net.ssl.trustStore", keystorePath);
             System.setProperty("javax.net.ssl.trustStorePassword", config.getPassword());
             System.setProperty("javax.net.ssl.keyStore", keystorePath);

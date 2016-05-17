@@ -71,6 +71,7 @@ public class Cotton {
     private DefaultInternalRouting internalRouting;
     private Console console = new Console();
     private TokenManager tm;
+    private RequestQueueManager rqm = null;
 
     public Cotton(Configurator config) throws java.net.UnknownHostException,
                                               java.net.MalformedURLException,
@@ -78,12 +79,15 @@ public class Cotton {
                                               InstantiationException,
                                               IllegalAccessException{
 
-        dataBaseWrapperStart(config);
+        if(config.hasDatabase())
+            dataBaseWrapperStart(config);
         initNetwork(new DefaultNetworkHandler(config.getNetworkConfigurator()));
-        initDiscovery(config.isGlobal(), null);
+        initDiscovery(config);
         initLookup(config.getServiceConfigurator());
         initRouting();
         initServiceHandler();
+        if(config.isQueue())
+            queueStart(config);
     }
 
     /**
@@ -204,7 +208,6 @@ public class Cotton {
         discovery.stop();
         network.stop();
         internalRouting.stop();
-
     }
 
     /**
@@ -229,6 +232,13 @@ public class Cotton {
      */
     public InternalRoutingClient getClient(){
         return internalRouting;
+    }
+    
+    public RequestQueueManager getRequestQueueManager() {
+        if(rqm == null)
+            throw new NullPointerException("RQM: Null");
+        
+        return rqm;
     }
 
     /**
@@ -256,6 +266,13 @@ public class Cotton {
         tm  = new TokenManager();
         db.setTokenManager(tm);
     }
+    
+    private void queueStart(Configurator conf) {
+        rqm = new RequestQueueManager(conf.getQueueConfigurator());
+        
+        this.internalRouting.setRequestQueueManager(rqm);
+        this.console.addSubSystem(rqm);
+    }
 
     private void initNetwork(NetworkHandler net) throws UnknownHostException {
         if(net == null) {
@@ -273,6 +290,17 @@ public class Cotton {
             this.discovery = new GlobalServiceDiscovery(globalDiscoveryDNS);
         } else {
             this.discovery = new LocalServiceDiscovery(globalDiscoveryDNS);
+        }
+    }
+    
+    private void initDiscovery(Configurator conf) {
+        if(conf == null) {
+            throw new NullPointerException("Global discovery conf settings missing");
+        }
+        if (conf.isGlobal()) {
+            this.discovery = new GlobalServiceDiscovery(true, conf);
+        } else {
+            this.discovery = new LocalServiceDiscovery(conf);
         }
     }
 

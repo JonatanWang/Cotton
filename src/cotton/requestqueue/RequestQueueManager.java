@@ -438,6 +438,7 @@ public class RequestQueueManager implements StatisticsProvider {
                     } catch (IOException e) {
                         processQueue.add(packet);
                         System.out.println("ERROR IN REQUEST QUEUE SEND WORK");
+                        e.printStackTrace();
                         // TODO: LOGGING
                     }
                 }

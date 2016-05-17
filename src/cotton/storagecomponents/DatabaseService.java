@@ -130,6 +130,7 @@ public class DatabaseService implements Service{
                     return message;
                 }
             default:
+                System.out.println("DB: Packet thrown");
                 break;
         }
 

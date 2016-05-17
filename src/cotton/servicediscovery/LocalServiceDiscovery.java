@@ -31,6 +31,7 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.servicediscovery;
 
+import cotton.configuration.Configurator;
 import cotton.internalrouting.InternalRoutingServiceDiscovery;
 import cotton.network.DestinationMetaData;
 import cotton.network.Origin;
@@ -101,6 +102,19 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             }
         }
     }
+    
+    private void initGlobalDiscoveryPool(Configurator conf) {
+        for(SocketAddress s: conf.getDiscoverySocketAddresses())
+            System.out.println("local sockets: " + s);
+        
+        if (conf != null) {
+            SocketAddress[] addrArr = conf.getDiscoverySocketAddresses();
+            for (int i = 0; i < addrArr.length; i++) {
+                DestinationMetaData gAddr = new DestinationMetaData(addrArr[i], PathType.DISCOVERY);
+                discoveryCache.addAddress(gAddr);
+            }
+        }
+    }
 
     public LocalServiceDiscovery(GlobalDiscoveryDNS dnsConfig) {
         this.discoveryCache = new AddressPool();
@@ -109,6 +123,15 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         this.activeQueue = new ConcurrentHashMap<>();
         this.taskScheduler = Executors.newScheduledThreadPool(5);
         this.deadAddresses = new ConcurrentLinkedQueue<>();
+        deadAddressValidator = new ScheduledThreadPoolExecutor(1);
+    }
+    
+    public LocalServiceDiscovery(Configurator conf) {
+        this.discoveryCache = new AddressPool();
+        initGlobalDiscoveryPool(conf);
+        this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
+        this.activeQueue = new ConcurrentHashMap<>();
+        this.taskScheduler= Executors.newScheduledThreadPool(5);
         deadAddressValidator = new ScheduledThreadPoolExecutor(1);
     }
 
@@ -682,6 +705,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     @Override
     public void stop() {
         this.taskScheduler.shutdownNow();
+        deadAddressValidator.shutdownNow();
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

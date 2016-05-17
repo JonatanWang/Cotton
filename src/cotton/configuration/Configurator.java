@@ -37,6 +37,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.InetAddress;
+import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Random;
 
@@ -68,6 +70,14 @@ public class Configurator {
             e.printStackTrace();
         }
     }
+    
+    public Configurator(){
+        
+    }
+    
+    public Configurator(String filename) throws IOException{
+        loadConfigFromFile(filename);
+    }
 
     /**
      * Returns whether this node is configured to be a global service discovery or not.
@@ -78,7 +88,27 @@ public class Configurator {
         if(prop == null)
             throw new IllegalStateException("Configurator empty / not initialised");
         String serviceDiscovery;
-        if((serviceDiscovery = prop.getProperty("serviceDiscovery")) == null || serviceDiscovery.equals("local"))
+        if((serviceDiscovery = prop.getProperty("serviceDiscovery")) == null || serviceDiscovery.equalsIgnoreCase("local"))
+            return false;
+        else
+            return true;
+    }
+    
+    public boolean isQueue() {
+        if(prop == null)
+            throw new IllegalStateException("Configurator empty / not initialised");
+        String queue;
+        if((queue = prop.getProperty("queueEnabled")) == null || queue.equalsIgnoreCase("false"))
+            return false;
+        else
+            return true;
+    }
+    
+    public boolean hasDatabase(){
+        if(prop == null)
+            throw new IllegalStateException("Configurator empty / not initialised");
+        String database;
+        if((database = prop.getProperty("dbEnabled")) == null || database.equalsIgnoreCase("false"))
             return false;
         else
             return true;
@@ -90,9 +120,21 @@ public class Configurator {
      * @param filename The name of the file to load
      */
     public void loadConfigFromFile(String filename) throws IOException{
+        if(prop == null)
+            prop = new Properties();
         InputStream in = getClass().getClassLoader().getResourceAsStream(filename);
-
+        if(in == null)
+            System.out.println("File not found in configurator");
+        
         prop.load(in);
+    }
+    
+    public void loadDefaults(){
+        if(prop == null)
+            prop = new Properties();
+        prop.setProperty("backend", "mongodb");
+        prop.setProperty("dbname", "cotton");
+        prop.setProperty("dbAddress", "localhost");
     }
 
     /**
@@ -107,9 +149,9 @@ public class Configurator {
         String addressPort;
         InetSocketAddress address = null;
         if((addressPort = prop.getProperty("networkAddress")) == null || addressPort.equalsIgnoreCase("localhost"))
-            address = new InetSocketAddress(InetAddress.getByName(null), 3333);
+            address = new InetSocketAddress(InetAddress.getLocalHost(), 3333);
         else if(addressPort != null && addressPort.equalsIgnoreCase("random"))
-            address = new InetSocketAddress(InetAddress.getByName(null), new Random().nextInt(40000)+5000);
+            address = new InetSocketAddress(InetAddress.getLocalHost(), new Random().nextInt(40000)+5000);
 
         if(address == null){
             String[] splitAddress = addressPort.split(":");
@@ -122,16 +164,16 @@ public class Configurator {
                     port = new Random().nextInt(40000)+5000;
 
                 if(splitAddress[0].equalsIgnoreCase("localhost"))
-                    address = new InetSocketAddress(InetAddress.getByName(null), port);
+                    address = new InetSocketAddress(InetAddress.getLocalHost(), port);
                 else
                     address = new InetSocketAddress(splitAddress[0], port);
             }else if(splitAddress.length > 0){
                 if(splitAddress[0].equalsIgnoreCase("localhost"))
-                    address = new InetSocketAddress(InetAddress.getByName(null), 3333);
+                    address = new InetSocketAddress(InetAddress.getLocalHost(), 3333);
                 else
                     address = new InetSocketAddress(splitAddress[0], 3333);
             }else
-                address = new InetSocketAddress(InetAddress.getByName(null), 3333);
+                address = new InetSocketAddress(InetAddress.getLocalHost(), 3333);
         }
         builder.setAddress(address);
 
@@ -245,4 +287,23 @@ public class Configurator {
         return builder.build();
     }
 
+    public SocketAddress[] getDiscoverySocketAddresses() {
+        ArrayList<SocketAddress> addresses = new ArrayList<>();
+        String addressString = null;
+        if((addressString = prop.getProperty("discoveryAddresses")) != null)
+            for (String address : addressString.split(",")) {
+                String[] addressData = address.split(":");
+                int port = 0;
+                if(addressData.length > 1){
+                    port = Integer.parseInt(addressData[1]);
+                }else if(addressData.length > 0){
+                    port = 5;
+                }
+                SocketAddress sa = new InetSocketAddress(addressData[0], port);
+                addresses.add(sa);
+            }
+        SocketAddress[] result = new SocketAddress[addresses.size()];
+        
+        return addresses.toArray(result);
+    }
 }
