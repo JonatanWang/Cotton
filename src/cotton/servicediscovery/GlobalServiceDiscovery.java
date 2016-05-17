@@ -495,7 +495,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             threadPool.execute(lookup);
             return;
         }
-        this.updateQueue.add(new UpdateItem(origin, data));
+        this.updateQueue.offer(new UpdateItem(origin, data));
     }
 
     private DiscoveryPacket packetUnpack(byte[] data) {
@@ -768,11 +768,9 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                 }
             });
             return new StatisticsData[0];
-        }
-        else if(command.getCommandType() == CommandType.STATISTICS_FORSUBSYSTEM){
+        } else if (command.getCommandType() == CommandType.STATISTICS_FORSUBSYSTEM){
             return retSystem = this.getStatisticsForSubSystem(command.getName());
-        }
-        else if(command.getCommandType() == CommandType.STATISTICS_FORSYSTEM){
+        } else if (command.getCommandType() == CommandType.STATISTICS_FORSYSTEM) {
             StatisticsData[] retForSystem = new StatisticsData[1];
             retForSystem[0] = this.getStatistics(command.getTokens());
             return retForSystem;
@@ -1041,11 +1039,9 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 //                    }
 //                    packet = packetUnpack(take.getData());
 //                    decodeDiscoveryPacket(take.getOrigin(), packet);
-                    loop = 0;
+                } catch (InterruptedException ex) {}
 
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                loop = 0;
 
             }
             threadCount.decrementAndGet();

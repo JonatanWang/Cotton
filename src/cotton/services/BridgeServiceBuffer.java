@@ -56,7 +56,6 @@ public class BridgeServiceBuffer implements ServiceBuffer{
         try {
             return buffer.take();//.poll();
         } catch (InterruptedException ex) {
-            Logger.getLogger(BridgeServiceBuffer.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
     }

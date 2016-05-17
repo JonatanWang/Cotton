@@ -70,7 +70,7 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
             ServicePacket packet = workBuffer.nextPacket();
 
             //TODO: if the threadcap met put packet back into buffer.
-            if(packet == null){
+            if (packet == null) {
 //                try{
 //                    Thread.sleep(5); //change to exponential fallback strategy.
 //                } catch (InterruptedException ex) {
@@ -100,6 +100,14 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         for (int i = 0; i < diff; i++) {
             internalRouting.notifyRequestQueue(name);
         }
+    }
+
+    public int getServiceCapacity(String name) {
+        ServiceMetaData service = serviceLookup.getService(name);
+        if (service == null) {
+            return 0;
+        }
+        return service.getMaxCapacity();
     }
 
     /*
@@ -187,11 +195,27 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         return true;
     }
 
+    private StatisticsData[] parseQuery(Command command) {
+        String[] tokens = command.getTokens();
+        if (tokens != null && tokens.length > 1) {
+            if(tokens[1].equals("getMaxCapacity")) {
+                int maxcap = this.getServiceCapacity(tokens[0]);
+                StatisticsData ret = new StatisticsData(StatType.SERVICEHANDLER,tokens[0],new int[]{maxcap});
+                return new StatisticsData[]{ret};
+            }
+        }
+        return new StatisticsData[0];
+    }
+
     @Override
     public StatisticsData[] processCommand(Command command) {
         if (command.getCommandType() == CommandType.USAGEHISTORY) {
             //return usageRecording(command);
         } else if (command.getCommandType() == CommandType.CHANGE_ACTIVEAMOUNT) {
+            if (command.isQuery()) {
+                return parseQuery(command);
+            }
+
             setServiceConfig(command.getName(), command.getAmount());
             return new StatisticsData[0];
         }

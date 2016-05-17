@@ -53,11 +53,15 @@ import java.util.UUID;
 import static org.junit.Assert.*;
 import cotton.network.NetworkHandler;
 import cotton.requestqueue.RequestQueueManager;
+import cotton.services.ServiceHandler;
 import cotton.systemsupport.Command;
 import cotton.systemsupport.CommandType;
 import cotton.systemsupport.Console;
 import cotton.systemsupport.StatType;
+import cotton.systemsupport.StatisticsData;
+import cotton.systemsupport.StatisticsProvider;
 import cotton.test.services.GlobalDnsStub;
+import cotton.test.services.MathPowV2;
 import java.util.Random;
 
 /**
@@ -77,6 +81,11 @@ public class TestScalingCommand {
         int queuePort =  new Random().nextInt(25000) + 4000;
         Cotton disc = new Cotton(true,discPort);
         disc.start();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
         GlobalDnsStub dnsStub = getDnsStub(null,discPort); 
         String queueName = "mathpow21";
         Cotton reqQueue = new Cotton(false,queuePort,dnsStub);
@@ -86,7 +95,11 @@ public class TestScalingCommand {
         reqQueue.start();
         InetSocketAddress addr = new InetSocketAddress(Inet4Address.getLocalHost(),queuePort);
         DestinationMetaData destination = new DestinationMetaData(addr,PathType.COMMANDCONTROL);
-        
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
         int newAmount = 66;
         Cotton client = new Cotton(false,dnsStub);
         client.start();
@@ -107,29 +120,47 @@ public class TestScalingCommand {
     public void TestServiceResizeComand() throws UnknownHostException, IOException {
         System.out.println("Now running: TestQueueResizeComand");
         int discPort = new Random().nextInt(25000) + 4000;
-        int queuePort =  new Random().nextInt(25000) + 4000;
+        int servicePort =  new Random().nextInt(25000) + 4000;
         Cotton disc = new Cotton(true,discPort);
         disc.start();
-        GlobalDnsStub dnsStub = getDnsStub(null,discPort); 
-        String queueName = "mathpow21";
-        Cotton serv = new Cotton(false,queuePort,dnsStub);
         
-        InetSocketAddress addr = new InetSocketAddress(Inet4Address.getLocalHost(),queuePort);
+        GlobalDnsStub dnsStub = getDnsStub(null,discPort); 
+        String serviceName = "mathpow21";
+        Cotton serv = new Cotton(false,servicePort,dnsStub);
+        serv.getServiceRegistation().registerService(serviceName, MathPowV2.getFactory(), 10);
+        serv.start();
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        InetSocketAddress addr = new InetSocketAddress(Inet4Address.getLocalHost(),servicePort);
         DestinationMetaData destination = new DestinationMetaData(addr,PathType.COMMANDCONTROL);
         
         int newAmount = 66;
         Cotton client = new Cotton(false,dnsStub);
         client.start();
         Console console = client.getConsole();
-        Command cmd = new Command(StatType.REQUESTQUEUE,"mathPow21",new String[]{queueName,"setMaxCapacity"},newAmount,CommandType.CHANGE_ACTIVEAMOUNT);
+        Command cmd = new Command(StatType.SERVICEHANDLER,serviceName,new String[]{serviceName,"setMaxCapacity"},newAmount,CommandType.CHANGE_ACTIVEAMOUNT);
         console.sendCommand(cmd, destination);
         try {
             Thread.sleep(500);
         } catch (InterruptedException ex) {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        int maxCapacity = 5;//requestQueueManager.getMaxCapacity(queueName);
-        
+        ServiceHandler sh = (ServiceHandler) console.getProvider(StatType.SERVICEHANDLER);
+        Command cmdline = new Command(StatType.SERVICEHANDLER,serviceName,new String[]{serviceName,"getMaxCapacity"},newAmount,CommandType.CHANGE_ACTIVEAMOUNT);
+        StatisticsData[] query = console.sendQueryCommand(cmdline, destination);
+        if(query == null ) {
+            System.out.println("TestQueueResizeComand: query returnd null");
+            assertTrue(false);
+        }else if(query.length <= 0 ) {
+            System.out.println("TestQueueResizeComand: query returnd empty result");
+            assertTrue(false);
+        }
+        int[] num = query[0].getNumberArray();
+        int maxCapacity = num[0];//requestQueueManager.getMaxCapacity(queueName);
+        System.out.println("TestQueueResizeComand:MaxAmount" +maxCapacity +"?=" +  newAmount);
         assertTrue(maxCapacity == newAmount);
     }
     

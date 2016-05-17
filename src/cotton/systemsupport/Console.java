@@ -227,6 +227,12 @@ public class Console {
                     return empty;
                 }
                 break;
+            case CHANGE_ACTIVEAMOUNT:
+                res = statArrayUnpack(reqData);
+                if(res == null){
+                    return empty;
+                }
+                break;
             default:
                 System.out.println("Unknown console QueryCommand: " +command.getCommandType());
                 return empty;
