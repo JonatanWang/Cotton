@@ -47,8 +47,16 @@ import java.util.Scanner;
  *
  * @author Gunnlaugur
  */
-public class SHRunning {
+public class SHRunning implements Runnable{
     public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+        int clientAmount = 5;
+        
+        for(int i = 0; i < clientAmount; i++) 
+            new Thread(new SHRunning()).start();
+    }
+
+    @Override
+    public void run() {
         Configurator conf;
         try {
             conf = new Configurator("SHconfig.cfg");
@@ -57,7 +65,10 @@ public class SHRunning {
             conf.loadDefaults();
         }
         
-        Cotton shInstance = new Cotton(conf);
+        Cotton shInstance = null;
+        try {
+            shInstance = new Cotton(conf);
+        } catch (Exception ex) {}
         
         ActiveServiceLookup asl = shInstance.getServiceRegistation();
         ServiceFactory sf = DatabaseService.getFactory(); 

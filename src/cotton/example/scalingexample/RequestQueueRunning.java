@@ -44,8 +44,16 @@ import java.util.Scanner;
  *
  * @author Gunnlaugur Juliusson
  */
-public class RequestQueueRunning {
+public class RequestQueueRunning implements Runnable{
     public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+        int clientAmount = 3;
+        
+        for(int i = 0; i < clientAmount; i++) 
+            new Thread(new RequestQueueRunning()).start();
+    }
+
+    @Override
+    public void run() {
         Configurator conf;
         try {
             conf = new Configurator("RQconfig.cfg");
@@ -54,7 +62,10 @@ public class RequestQueueRunning {
             conf.loadDefaults();
         }
         
-        Cotton rqInstance = new Cotton(conf);
+        Cotton rqInstance = null;
+        try {
+            rqInstance = new Cotton(conf);
+        } catch (Exception ex) {}
         
         RequestQueueManager rqm = rqInstance.getRequestQueueManager();
         rqm.startQueue("database");
