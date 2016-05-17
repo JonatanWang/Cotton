@@ -210,7 +210,13 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
     @Override
     public StatisticsData[] processCommand(Command command) {
         if (command.getCommandType() == CommandType.USAGEHISTORY) {
-            //return usageRecording(command);
+            if(command.isQuery()){
+                StatisticsData res = getStatistics(command.getTokens());
+                return new StatisticsData[]{res};
+            
+            }
+            usageRecording(command);
+            return new StatisticsData[0];
         } else if (command.getCommandType() == CommandType.CHANGE_ACTIVEAMOUNT) {
             if (command.isQuery()) {
                 return parseQuery(command);

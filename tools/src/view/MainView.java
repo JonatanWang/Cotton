@@ -283,7 +283,8 @@ public class MainView {
                     }
                 });
                 graphRequestQueue.updateDestinationList(gdest);
-            }else if(name.equals(graphService.getDataName())){
+            }
+            if(name.equals(graphService.getDataName())){
                 ArrayList<DestinationMetaData> gdest = reduceFunc(dest, new Check<DestinationMetaData>() {
                     @Override
                     public boolean check(DestinationMetaData t) {

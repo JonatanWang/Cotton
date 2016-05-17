@@ -112,7 +112,9 @@ public class TestScalingCommand {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
         int maxCapacity = requestQueueManager.getMaxCapacity(queueName);
-        
+        client.shutdown();
+        reqQueue.shutdown();
+        disc.shutdown();
         assertTrue(maxCapacity == newAmount);
     }
     
@@ -148,7 +150,6 @@ public class TestScalingCommand {
         } catch (InterruptedException ex) {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        ServiceHandler sh = (ServiceHandler) console.getProvider(StatType.SERVICEHANDLER);
         Command cmdline = new Command(StatType.SERVICEHANDLER,serviceName,new String[]{serviceName,"getMaxCapacity"},newAmount,CommandType.CHANGE_ACTIVEAMOUNT);
         StatisticsData[] query = console.sendQueryCommand(cmdline, destination);
         if(query == null ) {
@@ -161,11 +162,11 @@ public class TestScalingCommand {
         int[] num = query[0].getNumberArray();
         int maxCapacity = num[0];//requestQueueManager.getMaxCapacity(queueName);
         System.out.println("TestQueueResizeComand:MaxAmount" +maxCapacity +"?=" +  newAmount);
+        client.shutdown();
+        serv.shutdown();
+        disc.shutdown();
         assertTrue(maxCapacity == newAmount);
     }
-    
-    
-    
     
     private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
         GlobalDnsStub gDns = new GlobalDnsStub();

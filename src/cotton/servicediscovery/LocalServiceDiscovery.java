@@ -196,15 +196,21 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             value = newFailCount.incrementAndGet();
         }
         PathType type = dest.getPathType();
-        AddressPool currentPool = null;
+        AddressPool currentPool = null;       
         switch (type) {
             case REQUESTQUEUE:
+                if (serviceName == null) {
+                    return null;
+                }
                 currentPool = activeQueue.get(serviceName);
                 break;
             case DISCOVERY:
                 currentPool = discoveryCache;
                 break;
             case SERVICE:
+                if (serviceName == null) {
+                    return null;
+                }
                 currentPool = serviceCache.get(serviceName);
                 break;
         }

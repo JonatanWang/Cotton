@@ -169,7 +169,7 @@ public class TestUsageHistory {
         StatisticsData statistics = requestQueueManager.getStatistics(new String[]{"mathpow21", "getUsageRecordingInterval", "0", "20"});
 
         TimeInterval[] interval = (TimeInterval[]) statistics.getData();
-        System.out.println("Statistics name: " + statistics.getName() + " TIMEINTERVAL:" + intervalToString("\t",interval,"\n"));
+        System.out.println("Statistics name: " + statistics.getName() + " TIMEINTERVAL:" + intervalToString("\t", interval, "\n"));
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
@@ -180,9 +180,9 @@ public class TestUsageHistory {
         cCotton.shutdown();
         discovery.shutdown();
         assertTrue(true);
-      
+
     }
-    
+
     private String intervalToString(String prefix, TimeInterval[] interval, String sufix) {
         StringBuilder b = new StringBuilder();
         for (int i = 0; i < interval.length; i++) {
@@ -232,7 +232,7 @@ public class TestUsageHistory {
 
         ser1.start();
         ser2.start();
-        
+
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -295,7 +295,6 @@ public class TestUsageHistory {
             System.out.println("Result: \n" + res[0].toString());
         }
 
-
         ser1.shutdown();
         ser2.shutdown();
         discovery.shutdown();
@@ -303,4 +302,107 @@ public class TestUsageHistory {
         assertTrue(true);
     }
 
+    @Test
+    public void TestServiceStat() throws UnknownHostException, IOException {
+        System.out.println("Now running: TestServiceStat");
+        int discPort = new Random().nextInt(25000) + 4000;
+        int servicePort = new Random().nextInt(25000) + 4000;
+        Cotton disc = new Cotton(true, discPort);
+        disc.start();
+
+        GlobalDnsStub dnsStub = getDnsStub(null, discPort);
+        String serviceName = "mathpow21";
+        Cotton serv = new Cotton(false, servicePort, dnsStub);
+        serv.getServiceRegistation().registerService(serviceName, MathPowV2.getFactory(), 10);
+        serv.start();
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        InetSocketAddress addr = new InetSocketAddress(Inet4Address.getLocalHost(), servicePort);
+        DestinationMetaData destination = new DestinationMetaData(addr, PathType.COMMANDCONTROL);
+
+        int newAmount = 66;
+        Cotton client = new Cotton(false, dnsStub);
+        client.start();
+        Console console = client.getConsole();
+        String[] queryRequest = new String[]{serviceName, "isSampling"};
+        Command isSample = new Command(StatType.SERVICEHANDLER, serviceName, queryRequest, 0, CommandType.USAGEHISTORY);
+        StatisticsData[] sampleRes = console.sendQueryCommand(isSample, destination);
+        String startNumb = null;
+        String endNumb = null;
+        if (sampleRes != null && sampleRes.length > 0) {
+            Integer startPoint = sampleRes[0].getNumberArray()[2];
+            startNumb = startPoint.toString();
+            Integer endPoint = startPoint + 500;
+            endNumb = endPoint.toString();
+        } else {
+            System.out.println("TestServiceStat: isSampling failed");
+            assertTrue(false);
+        }
+
+        Command startRecording = new Command(StatType.SERVICEHANDLER, null, new String[]{serviceName, "setUsageRecordingInterval"}, 100, CommandType.USAGEHISTORY);
+        console.sendCommand(startRecording, destination);
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        int num = 5;
+        byte[] data = ByteBuffer.allocate(4).putInt(num).array();
+
+        int sendCount = 200;
+        InternalRoutingClient c = client.getClient();
+        for (int i = 0; i < sendCount; i++) {
+            c.sendToService(data, new DummyServiceChain().into(serviceName));
+        }
+
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ex) {
+        }
+        String[] getRec = new String[]{serviceName, "getUsageRecordingInterval", startNumb, endNumb};
+        //Command query = new Command(type, null, cmdline, 200, CommandType.STATISTICS_FORSYSTEM);
+        Command getRecording = new Command(StatType.SERVICEHANDLER, null, getRec, 200, CommandType.USAGEHISTORY);
+
+        StatisticsData<TimeInterval>[] recording = console.sendQueryCommand(getRecording, destination);
+        if (recording == null) {
+            System.out.println("TestServiceStat: query returnd null");
+            assertTrue(false);
+        } else if (recording.length <= 0) {
+            System.out.println("TestServiceStat: query returnd empty result");
+            assertTrue(false);
+        }
+        
+        
+        Command stopRecording = new Command(StatType.SERVICEHANDLER, null, new String[]{serviceName, "stopUsageRecording"}, 0, CommandType.USAGEHISTORY);
+        console.sendCommand(stopRecording, destination);
+        
+        TimeInterval[] interval = recording[0].getData();
+        long taskDone = 0;
+        for (int i = 0; i < interval.length; i++) {
+            taskDone += interval[i].getOutputCount();
+        }
+        System.out.println("TestServiceStat:task done:" + taskDone + "?=" + sendCount);
+        client.shutdown();
+        serv.shutdown();
+        disc.shutdown();
+        assertTrue(taskDone == sendCount);
+    }
+
+    private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
+        GlobalDnsStub gDns = new GlobalDnsStub();
+        InetSocketAddress gdAddr = null;
+        if (dest == null) {
+            gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
+            System.out.println("discAddr:" + Inet4Address.getLocalHost().toString() + " port: " + port);
+        } else {
+            gdAddr = new InetSocketAddress(dest, port);
+        }
+        InetSocketAddress[] arr = new InetSocketAddress[1];
+        arr[0] = gdAddr;
+        gDns.setGlobalDiscoveryAddress(arr);
+        return gDns;
+    }
 }

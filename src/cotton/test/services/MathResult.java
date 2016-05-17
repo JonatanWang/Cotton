@@ -66,7 +66,9 @@ public class MathResult implements Service{
         int num = 0;
         num = ByteBuffer.wrap(data).getInt();
         System.out.print(".");
-        resCount.incrementAndGet();
+        int count = resCount.incrementAndGet();        
+        if(count %80 == 0)
+            System.out.println(",");
         return data;
     }
 
