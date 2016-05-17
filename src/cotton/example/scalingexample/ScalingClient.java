@@ -52,7 +52,7 @@ public class ScalingClient implements Runnable{
     public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException, InterruptedException {
         int clientAmount = 8;
         
-        for(int i = 0; i < clientAmount; i++)
+        for(int i = 0; i < clientAmount; i++) 
             new Thread(new ScalingClient()).start();
     }
     
@@ -101,15 +101,15 @@ public class ScalingClient implements Runnable{
             chain.into("database");
         clientInstance.getClient().sendToService(data, chain);
         
-        System.out.println("hej");
-        
         data = jsonToByteArray("getDataFromDatabase");
-        for(int i = 0; i < sendAmount; i++) {
+        for(int i = 1; i < sendAmount+1; i++) {
             for(int j = 0; j < intos; j++)
                 chain.into("database");
             serviceRequest = clientInstance.getClient().sendWithResponse(data, chain);
             
-            System.out.println("Number: " + i + " " + byteArrayToJson(serviceRequest.getData()));
+//            try {
+//                System.out.println("Number: " + i + " " + byteArrayToJson(serviceRequest.getData()));
+//            } catch(Exception e) {}
         }
         
         for(int i = 0; i < intos; i++)
@@ -117,6 +117,8 @@ public class ScalingClient implements Runnable{
         data = jsonToByteArray("removeDataFromDatabase");
         clientInstance.getClient().sendToService(data, chain);
 
+        System.out.println("Done");
+        
         clientInstance.shutdown();
     }
 }
