@@ -60,12 +60,12 @@ public class ClientExample {
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
         //DummyServiceChain.ServiceChainBuilder builder = new DummyServiceChain.ServiceChainBuilder().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
-        //DummyServiceChain.ServiceChainBuilder builder = new DummyServiceChain.ServiceChainBuilder().into("mathpow");
+        DummyServiceChain.ServiceChainBuilder builder = new DummyServiceChain.ServiceChainBuilder().into("mathpow");
 //ServiceRequest req = client.sendWithResponse(data, chain);
         while(true) {
             for (int i = 0; i < 1000; i++) {
-                chain = new DummyServiceChain().into("database").into("database").into("database").into("database").into("database");
-                //chain = builder.build();
+                //chain = new DummyServiceChain().into("database").into("database").into("database").into("database").into("database");
+                chain = builder.build();
                 client.sendToService(data, chain);
             }
         }

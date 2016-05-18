@@ -46,7 +46,7 @@ import java.util.Scanner;
  */
 public class RequestQueueRunning implements Runnable{
     public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        int clientAmount = 3;
+        int clientAmount = 9;
         
         for(int i = 0; i < clientAmount; i++) 
             new Thread(new RequestQueueRunning()).start();

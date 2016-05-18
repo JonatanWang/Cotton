@@ -91,7 +91,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             System.setProperty("javax.net.ssl.keyStorePassword", config.getPassword());
         }
 
-        threadPool = Executors.newFixedThreadPool(10);
+        threadPool = Executors.newFixedThreadPool(20);
         running = new AtomicBoolean(true);
         openSockets = new ConcurrentHashMap<>();
     }

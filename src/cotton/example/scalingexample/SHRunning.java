@@ -72,7 +72,7 @@ public class SHRunning implements Runnable{
         
         ActiveServiceLookup asl = shInstance.getServiceRegistation();
         ServiceFactory sf = DatabaseService.getFactory(); 
-        asl.registerService("database", sf, 10);
+        //asl.registerService("database", sf, 10);
         sf = MathPowV2.getFactory();
         asl.registerService("mathpow", sf, 10); 
         

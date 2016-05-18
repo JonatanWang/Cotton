@@ -62,6 +62,7 @@ import java.util.concurrent.Executors;
 import cotton.systemsupport.StatisticsProvider;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatType;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -94,7 +95,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     private LinkedBlockingQueue<UpdateItem> updateQueue = new LinkedBlockingQueue<>();
 
     private final boolean upScalingActive = true; // if we add queues to sleeping instead of active when they are announced
-    
+    private AtomicInteger runDownScaling = new AtomicInteger(1);
     /**
      * Fills in a list of all pre set globalServiceDiscovery addresses
      *
@@ -131,6 +132,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         this.activeQueue = new ConcurrentHashMap<>();
         this.deadAddresses = new ConcurrentLinkedQueue<>();
         deadAddressValidator = new ScheduledThreadPoolExecutor(1);
+        this.startDownScaling();
 
     }
     
@@ -145,6 +147,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         this.activeQueue = new ConcurrentHashMap<>();
         this.deadAddresses = new ConcurrentLinkedQueue<>();
         deadAddressValidator = new ScheduledThreadPoolExecutor(1);
+        this.startDownScaling();
 
     }
 
@@ -714,10 +717,27 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         }
         sendToPool(data, this.serviceCache.get(queue), PathType.DISCOVERY);
     }
+    
+    private void notifyRemoveQueue(String queue,DestinationMetaData addr) {
+        QueuePacket q = new QueuePacket(addr.getSocketAddress(), queue);
+        q.setShouldRemove(true);;
+        DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
+        discoveryPacket.setQueue(q);
+        byte[] data;
+        try {
+            data = serializeToBytes(discoveryPacket);
+        } catch (IOException e) {
+            return;
+        }
+        sendToPool(data, this.serviceCache.get(queue), PathType.DISCOVERY);
+    }
 
     private void removeQueueFromPool(QueuePacket packet) {
         String[] qname = packet.getRequestQueueList();
-        AddressPool pool = this.activeQueue.get(qname);
+        if(qname == null || qname.length < 1) {
+            return;
+        }
+        AddressPool pool = this.activeQueue.get(qname[0]);
         if(pool == null || pool.size() < 1) {
             return;
         }
@@ -726,7 +746,9 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         if(!succsess) {
             System.out.println("LocalServiceDiscovery:removeQueueFromPool: failed to remove queue");
             return;
-        }    
+        }else {
+            this.addToSleepingQueue(dest, qname[0]);
+        }
     }
     
     private void processQueuePacket(QueuePacket packet) {
@@ -858,6 +880,9 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     private final AtomicInteger queuePoolScaling = new AtomicInteger(0);
     private void addToSleepingQueue(DestinationMetaData qAddr,String name) {
+        if(qAddr == null) {
+            return;
+        }
         AddressPool pool = this.sleepingQueue.get(name);
         if(pool == null) {
             pool = new AddressPool();
@@ -865,6 +890,64 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             pool = (tmp == null) ? pool : tmp;
         }
         pool.addAddress(qAddr);
+        
+    }
+    
+    private class DownScalingItem {
+        public String name;
+        public DestinationMetaData dest;
+
+        public DownScalingItem(String name, DestinationMetaData dest) {
+            this.name = name;
+            this.dest = dest;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public DestinationMetaData getDest() {
+            return dest;
+        }
+        
+    }
+    private void startDownScaling() {
+        final Runnable squeue = new Runnable(){
+            @Override
+            public void run() {
+                while(runDownScaling.get() == 2) {
+                    Set<Map.Entry<String, AddressPool>> entrySet = activeQueue.entrySet();
+                    ArrayList<DownScalingItem> removed = new ArrayList<>();
+                    for (Map.Entry<String, AddressPool> entry : entrySet) {
+                        AddressPool p = entry.getValue();
+                        if(p == null || p.size() < 3) {
+                            continue;
+                        }
+                        DestinationMetaData address = p.getAddress();
+                        if(address == null) {
+                            continue;
+                        }
+                        removed.add(new DownScalingItem(entry.getKey() , address));
+                        addToSleepingQueue(address,entry.getKey());
+                        
+                        notifyRemoveQueue(entry.getKey(),address);
+                        
+                    }
+                    for (DownScalingItem item : removed) {
+                        AddressPool get = activeQueue.get(item.getName());
+                        get.remove(item.getDest());
+                    }
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException ex) {
+                    }
+                    
+                }
+            }
+        };
+        if(this.runDownScaling.getAndSet(2) == 1) {
+            this.threadPool.execute(squeue);
+        }
     }
     
     private void processConfigPacket(ConfigurationPacket packet) {
@@ -882,7 +965,8 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             if (configEntry.getPathType() == PathType.REQUESTQUEUE) {
                 int qcount = queuePoolScaling.incrementAndGet();
                 DestinationMetaData qAddr = new DestinationMetaData(addr, PathType.REQUESTQUEUE);
-                if (upScalingActive && qcount > 6) {
+                AddressPool p = this.activeQueue.get(configEntry.getName());
+                if (upScalingActive && (p != null && p.size() < 1)) {
                     addToSleepingQueue(qAddr, configEntry.getName());
                 } else {
                     addQueue(qAddr, configEntry.getName());
