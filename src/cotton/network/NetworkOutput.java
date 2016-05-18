@@ -1,8 +1,39 @@
+/*
+
+Copyright (c) 2016, Gunnlaugur Juliusson, Jonathan Kåhre, Magnus Lundmark,
+Mats Levin, Tony Tran
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+ * Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+ * Neither the name of Cotton Production Team nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+ */
+
 package cotton.network;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -13,7 +44,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Created by jonathan on 18/05/16.
+ * Handles all of the network output
+ *
+ * @author Jonathan Kåhre
  */
 public class NetworkOutput implements Runnable {
     private BlockingQueue<OutputPacket> queue;
@@ -21,6 +54,13 @@ public class NetworkOutput implements Runnable {
     private AtomicBoolean run;
     private SocketSelectionNetworkHandler handler;
 
+    /**
+     * Returns a <code>NetworkOutput</code> using the specified parameters.
+     *
+     * @param handler The <code>NetworkHandler</code> in charge of input
+     * @param openChannels The collection of open <code>SocketChannels</code>.
+     * @param queue The network output queue.
+     */
     public NetworkOutput(SocketSelectionNetworkHandler handler, ConcurrentHashMap<InetSocketAddress, SocketChannel> openChannels, BlockingQueue<OutputPacket> queue) {
         this.handler = handler;
         this.openChannels = openChannels;
@@ -72,72 +112,6 @@ public class NetworkOutput implements Runnable {
             }catch(InterruptedException e){
                 e.printStackTrace();
             }
-            /* SEND:
-                    TransportPacket.Packet tp = buildTransportPacket(packet);
-
-                    ByteBuffer output = writeOutput(tp);
-
-                    SocketChannel sendChannel = null;
-
-                    //System.out.println(packet.getType()+" packet of "+output.capacity()+" bytes outgoing from: "+getLocalAddress()+" normal send.");
-
-                    if ((sendChannel = openChannels.get((InetSocketAddress) dest)) != null) {
-                        ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity());
-                        synchronized (sendChannel) {
-                            sendChannel.write(size);
-
-                            sendChannel.write(output);
-                        }
-                    } else {
-                        sendChannel = SocketChannel.open();
-                        sendChannel.connect(dest);
-                        sendChannel.configureBlocking(false);
-                        while (!sendChannel.finishConnect())
-                            System.out.println("Not finished connecting");
-
-                        ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity());
-                        synchronized (sendChannel) {
-                            sendChannel.write(size);
-
-                            sendChannel.write(output);
-                        }
-                        registerChannel(sendChannel);
-                        selector.wakeup();
-                        openChannels.putIfAbsent((InetSocketAddress) dest, sendChannel);
-                    }*/
-
-            /*System.out.println("Keepalive send!");
-
-        TransportPacket.Packet tp = buildTransportPacket(packet, true);
-
-        ByteBuffer output = writeOutput(tp);
-
-        SocketChannel sendChannel = null;
-
-        //System.out.println(packet.getType()+" packet of "+output.capacity()+" bytes outgoing from: "+getLocalAddress()+" keepalive send.");
-
-        if((sendChannel = openChannels.get((InetSocketAddress) dest)) != null) {
-            ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity());
-            synchronized (sendChannel) {
-                sendChannel.write(size);
-
-                sendChannel.write(output);
-            }
-        } else {
-            sendChannel = SocketChannel.open();
-            sendChannel.connect(dest);
-            sendChannel.configureBlocking(false);
-
-            ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity());
-            synchronized (sendChannel) {
-                sendChannel.write(size);
-
-                sendChannel.write(output);
-            }
-            registerChannel(sendChannel);
-            selector.wakeup();
-            openChannels.putIfAbsent((InetSocketAddress)dest, sendChannel);
-        }*/
         }
     }
 
@@ -148,54 +122,6 @@ public class NetworkOutput implements Runnable {
         ByteBuffer b = ByteBuffer.wrap(baos.toByteArray());
 
         return b;
-    }
-
-
-
-    private Origin parseOrigin(TransportPacket.Packet input) throws java.net.UnknownHostException{
-        TransportPacket.Origin origin = input.getOrigin();
-        String ip = origin.getIp();
-        int port = origin.getPort();
-        String requestId = origin.getRequestId();
-        String latchId = origin.getLatchId();
-
-        Origin parsedOrigin = new Origin();
-        if(ip != "") {
-            InetSocketAddress socketAddress = new InetSocketAddress(Inet4Address.getByName(ip),port);
-            parsedOrigin.setAddress(socketAddress);
-        }
-        if(requestId != "") {
-            parsedOrigin.setServiceRequestID(UUID.fromString(requestId));
-        }
-        if(latchId != "") {
-            parsedOrigin.setSocketLatchID(UUID.fromString(latchId));
-        }
-
-        return parsedOrigin;
-    }
-
-    private ServiceChain parsePath(TransportPacket.Packet input){
-        DummyServiceChain path = new DummyServiceChain();
-
-        for (int i = 0; i < input.getPathCount(); i++)
-            path.addService(input.getPath(i));
-
-        return path;
-    }
-
-    private NetworkPacket parseTransportPacket(TransportPacket.Packet input) throws java.net.UnknownHostException{
-        ServiceChain path = parsePath(input);
-        Origin origin = parseOrigin(input);
-
-        NetworkPacket packet = NetworkPacket.newBuilder()
-                .setData(input.getData().toByteArray())
-                .setPath(path)
-                .setOrigin(origin)
-                .setPathType(PathType.valueOf(input.getPathtype().toString()))
-                .setKeepAlive(input.getKeepalive())
-                .build();
-
-        return packet;
     }
 
     private TransportPacket.Packet.Builder parseNetworkPacket(NetworkPacket input) {
@@ -231,32 +157,15 @@ public class NetworkOutput implements Runnable {
         return builder;
     }
 
-    public TransportPacket.Packet buildTransportPacket(NetworkPacket input) throws IOException{
-        TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
-        builder.setKeepalive(false);
-        return builder.build();
-    }
-
     public TransportPacket.Packet buildTransportPacket(NetworkPacket input, boolean keepAlive) throws IOException{
         TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
         builder.setKeepalive(keepAlive);
         return builder.build();
     }
 
-    public TransportPacket.Packet buildTransportPacket(NetworkPacket input, int port) throws IOException{
-        TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
-        builder.setKeepalive(false);
-        builder.setLastHopPort(port);
-        return builder.build();
-    }
-
-    public TransportPacket.Packet buildTransportPacket(NetworkPacket input, boolean keepAlive, int port) throws IOException{
-        TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
-        builder.setKeepalive(keepAlive);
-        builder.setLastHopPort(port);
-        return builder.build();
-    }
-
+    /**
+     * Stops this output handler
+     */
     public void stop(){
         this.run.set(false);
     }

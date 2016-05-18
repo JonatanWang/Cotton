@@ -57,6 +57,7 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import com.mongodb.connection.Server;
+import cotton.configuration.NetworkConfigurator;
 import cotton.internalrouting.InternalRoutingNetwork;
 
 import java.nio.channels.ClosedChannelException;
@@ -85,8 +86,48 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
     private Selector selector;
     private BlockingQueue<OutputPacket> sendQueue;
     private NetworkOutput sender;
+    private boolean encryption;
 
-    // This constructor should be replaced by a config file
+    /**
+     * Returns a <code>SocketSelectionNetworkHandler</code> configured with the options in the <code>NetworkConfigurator</code>.
+     *
+     * @param config The configuration to follow.
+     */
+    public SocketSelectionNetworkHandler(NetworkConfigurator config){
+        this.localSocketAddress = config.getAddress();
+        this.localPort = config.getAddress().getPort();
+        this.localIP = config.getAddress().getAddress();
+        if(this.encryption = config.isEncryptionEnabled()){
+            String keystorePath = config.getKeystore();
+            System.setProperty("javax.net.ssl.trustStore", keystorePath);
+            System.setProperty("javax.net.ssl.trustStorePassword", config.getPassword());
+            System.setProperty("javax.net.ssl.keyStore", keystorePath);
+            System.setProperty("javax.net.ssl.keyStorePassword", config.getPassword());
+        }
+
+        threadPool = Executors.newFixedThreadPool(20);
+        running = new AtomicBoolean(true);
+        openChannels = new ConcurrentHashMap<>();
+
+        try {
+            selector = Selector.open();
+        }catch (IOException e) {
+            System.out.println("Error " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        threadPool = Executors.newCachedThreadPool();
+        running = new AtomicBoolean(true);
+        registrationQueue = new ConcurrentLinkedQueue();
+        sendQueue = new LinkedBlockingQueue<>();
+        sender = new NetworkOutput(this, openChannels, sendQueue);
+    }
+
+    /**
+     * Returns a <code>SocketSelectionNetworkHandler</code> configured with default options and specified port.
+     *
+     * @param port The port to use.
+     */
     public SocketSelectionNetworkHandler(int port) throws UnknownHostException {
         this.localPort = port;
         try{
@@ -191,7 +232,12 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         }
 
     }
-    
+
+    /**
+     * Adds a channel for registration by the network thread.
+     *
+     * @param s The channel to register.
+     */
     protected void registerChannel(SocketChannel s){
         registrationQueue.add(s);
         selector.wakeup();
@@ -255,15 +301,6 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         }
     }
 
-    private ByteBuffer writeOutput(TransportPacket.Packet tp) throws IOException{
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        tp.writeDelimitedTo(baos);
-        ByteBuffer b = ByteBuffer.wrap(baos.toByteArray());
-
-        return b;
-    }
-
     private void handleRequest(SocketChannel channel) throws IOException{
         InputStream inStream = readInput(channel);
 
@@ -287,22 +324,7 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
 
         //System.out.println(np.getType()+" packet of "+input.getSerializedSize()+" bytes received on "+getLocalAddress()+".");
 
-        if(np.keepAlive()) {
-            SocketLatch latch = new SocketLatch();
-            internalRouting.pushKeepAlivePacket(np, latch);
-            NetworkPacket keepAliveResult = latch.getData();
-
-            TransportPacket.Packet outputPacket = buildTransportPacket(keepAliveResult);
-            ByteBuffer output = writeOutput(outputPacket);
-
-            System.out.println("Keepalive received, sending result "+output.capacity()+" bytes.");
-
-            ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity());
-            channel.write(size);
-            channel.write(output);
-        } else {
-            internalRouting.pushNetworkPacket(np);
-        }
+        internalRouting.pushNetworkPacket(np);
     }
 
     private Origin parseOrigin(TransportPacket.Packet input) throws java.net.UnknownHostException{
@@ -349,50 +371,6 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
             .build();
 
         return packet;
-    }
-
-    private TransportPacket.Packet.Builder parseNetworkPacket(NetworkPacket input) {
-        TransportPacket.Packet.Builder builder = TransportPacket.Packet.newBuilder();
-
-        while (input.getPath().peekNextServiceName() != null) {
-            builder.addPath(input.getPath().getNextServiceName());
-        }
-
-        InetSocketAddress address = (InetSocketAddress)input.getOrigin().getAddress();
-        UUID serviceRequestID = input.getOrigin().getServiceRequestID();
-        UUID socketLatchID = input.getOrigin().getSocketLatchID();
-
-        TransportPacket.Origin.Builder originBuilder = TransportPacket.Origin.newBuilder();
-        if(address != null) {
-            originBuilder = originBuilder
-                    .setIp(address.getAddress().getHostAddress())
-                    .setPort(address.getPort());
-        }
-        if(serviceRequestID != null) {
-             originBuilder = originBuilder.setRequestId(serviceRequestID.toString());
-        }
-        if(socketLatchID != null) {
-             originBuilder = originBuilder.setLatchId(socketLatchID.toString());
-        }
-        TransportPacket.Origin origin = originBuilder.build();
-        builder.setOrigin(origin);
-
-        builder.setData(com.google.protobuf.ByteString.copyFrom(input.getData()));
-
-        builder.setPathtype(TransportPacket.Packet.PathType.valueOf(input.getType().toString()));
-        return builder;
-    }
-
-    public TransportPacket.Packet buildTransportPacket(NetworkPacket input) throws IOException{
-        TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
-        builder.setKeepalive(false);
-        return builder.build();
-    }
-
-    public TransportPacket.Packet buildTransportPacket(NetworkPacket input, boolean keepAlive) throws IOException{
-        TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
-        builder.setKeepalive(keepAlive);
-        return builder.build();
     }
 
 }
