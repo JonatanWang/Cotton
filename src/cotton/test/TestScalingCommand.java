@@ -111,7 +111,18 @@ public class TestScalingCommand {
         } catch (InterruptedException ex) {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        int maxCapacity = requestQueueManager.getMaxCapacity(queueName);
+        Command cmdline = new Command(StatType.REQUESTQUEUE,queueName,new String[]{queueName,"getMaxCapacity"},newAmount,CommandType.CHANGE_ACTIVEAMOUNT);
+        StatisticsData[] query = console.sendQueryCommand(cmdline, destination);
+        if(query == null ) {
+            System.out.println("TestQueueResizeComand: query returnd null");
+            assertTrue(false);
+        }else if(query.length <= 0 ) {
+            System.out.println("TestQueueResizeComand: query returnd empty result");
+            assertTrue(false);
+        }
+        int[] num = query[0].getNumberArray();
+        int maxCapacity = num[0];//requestQueueManager.getMaxCapacity(queueName);
+        System.out.println("TestQueueResizeComand:MaxAmount" +maxCapacity +"?=" +  newAmount);
         client.shutdown();
         reqQueue.shutdown();
         disc.shutdown();

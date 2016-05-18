@@ -196,7 +196,7 @@ public class CloudStat {
 
         StatisticsData stat = d.getStatistics(new String[]{"discoveryNodes"});
         DestinationMetaData[] dests = (DestinationMetaData[]) stat.getData();
-        if (dests.length <= 0) {
+        if (dest == null||dests.length <= 0) {
             return empty;
         }
         // dirty hack

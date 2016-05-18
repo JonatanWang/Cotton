@@ -32,6 +32,8 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.internalrouting;
 
 import cotton.network.NetworkPacket;
+import cotton.network.Origin;
+import cotton.network.ServiceChain;
 import cotton.servicediscovery.DiscoveryPacket;
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -53,4 +55,5 @@ public interface InternalRoutingRequestQueue {
      */
     public void sendWork(NetworkPacket netPacket, SocketAddress dest) throws IOException;
     public void notifyDiscovery(DiscoveryPacket packet);
+    public boolean forwardResult(Origin origin, ServiceChain serviceChain, byte[] result);
 }

@@ -34,6 +34,7 @@ package cotton.requestqueue;
 import cotton.configuration.QueueConfigurator;
 import cotton.internalrouting.InternalRoutingRequestQueue;
 import cotton.network.NetworkPacket;
+import cotton.network.NetworkPacket.NetworkPacketBuilder;
 import cotton.network.Origin;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -44,6 +45,7 @@ import cotton.network.PathType;
 import cotton.servicediscovery.CircuitBreakerPacket;
 import cotton.servicediscovery.DiscoveryPacket;
 import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
+import cotton.servicediscovery.QueuePacket;
 import cotton.systemsupport.Command;
 import cotton.systemsupport.CommandType;
 import java.util.Set;
@@ -53,11 +55,17 @@ import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.TimeInterval;
 import cotton.systemsupport.UsageHistory;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.net.SocketAddress;
 
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Tony
@@ -74,7 +82,7 @@ public class RequestQueueManager implements StatisticsProvider {
     private int maxAmountOfQueues = 10;
     private AtomicInteger activeQueueCount = new AtomicInteger(0);
     private ConcurrentHashMap<String, String> banList;
-
+    private SocketAddress localAddress = null;
     public RequestQueueManager() {
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();
@@ -135,6 +143,10 @@ public class RequestQueueManager implements StatisticsProvider {
         }
     }
 
+    public void setLocalAddress(SocketAddress localAddress) {
+        this.localAddress = localAddress;
+    }
+    
     /**
      * A array of names on different queues.
      *
@@ -158,8 +170,15 @@ public class RequestQueueManager implements StatisticsProvider {
             return;
         }
         RequestQueue queuePool = new RequestQueue(serviceName, 100);
-        internalQueueMap.putIfAbsent(serviceName, queuePool);
-        threadPool.execute(queuePool);
+        RequestQueue old = internalQueueMap.putIfAbsent(serviceName, queuePool);
+        if(old != null) {
+            if(old.getMaxCapacity() < 100){
+                old.setMaxCapacity(100);
+            }
+            threadPool.execute(old);
+        }else {
+            threadPool.execute(queuePool);
+        }
         this.activeQueueCount.incrementAndGet();
     }
 
@@ -173,6 +192,8 @@ public class RequestQueueManager implements StatisticsProvider {
     public void queueService(NetworkPacket packet, String serviceName) {
         RequestQueue queue = internalQueueMap.get(serviceName);
         if (queue == null) {
+            // semd ot back again
+            this.internalRouting.forwardResult(packet.getOrigin(), packet.getPath(), packet.getData());
             return;
         }
         queue.queueService(packet);
@@ -266,6 +287,8 @@ public class RequestQueueManager implements StatisticsProvider {
     }
 
     private StatisticsData[] executeQuery(Command command) {
+        String[] tokens = command.getTokens();
+        RequestQueue queue = null;
         switch (command.getCommandType()) {
             case STATISTICS_FORSUBSYSTEM:
                 StatisticsData[] statisticsForSubSystem = this.getStatisticsForSubSystem(command.getName());
@@ -273,17 +296,40 @@ public class RequestQueueManager implements StatisticsProvider {
             case STATISTICS_FORSYSTEM:
                 StatisticsData statistics = this.getStatistics(command.getTokens());
                 break;
-            case USAGEHISTORY:
-                String[] token = command.getTokens();
-                if(token == null || token.length < 1) {
+            case USAGEHISTORY:                
+                if(tokens == null || tokens.length < 1) {
                     return null;
                 }
-                RequestQueue queue = internalQueueMap.get(token[0]);
+                queue = internalQueueMap.get(tokens[0]);
                 if (queue == null) {
                     return null;
                 }
                 StatisticsData ret = queue.getStatistics(command.getTokens());
                 return new StatisticsData[]{ret};
+            case CHANGE_ACTIVEAMOUNT:
+                if(tokens == null || tokens.length < 1) {
+                    return null;
+                }
+                int maxcap = 0;
+                if(tokens[1].equals("getMaxQueueCount")){
+                    maxcap = this.getMaxAmountOfQueues();
+                    StatisticsData tmp = new StatisticsData(StatType.REQUESTQUEUE, tokens[0], new int[]{maxcap});
+                    return new StatisticsData[]{tmp};
+                }else if(tokens[1].equals("getQueueCount")) {
+                    int qcount = this.activeQueueCount.get();
+                    StatisticsData tmp = new StatisticsData(StatType.REQUESTQUEUE, tokens[0], new int[]{qcount});
+                    return new StatisticsData[]{tmp};
+                }
+                queue = internalQueueMap.get(tokens[0]);
+                if (queue == null) {
+                    return null;
+                }
+                if (tokens[1].equals("getMaxCapacity")) {
+                    maxcap = queue.getMaxCapacity();
+                    StatisticsData tmp = new StatisticsData(StatType.REQUESTQUEUE, tokens[0], new int[]{maxcap});
+                    return new StatisticsData[]{tmp};
+                } 
+                break;
             default:
                 System.out.println("RequestQueueManager:executeQuery: commandType unknown: " + command.getCommandType().toString());
                 break;
@@ -303,6 +349,10 @@ public class RequestQueueManager implements StatisticsProvider {
         String name = tokens[0];
         String task = tokens[1];
         int samplingRate = command.getAmount();
+        if (task.equals("startQueue")) {
+            this.startQueue(name);
+            return;
+        }
         RequestQueue queue = internalQueueMap.get(name);
         if (queue == null) {
             return ;
@@ -313,11 +363,56 @@ public class RequestQueueManager implements StatisticsProvider {
             queue.setMaxCapacity(command.getAmount());
         } else if (task.equals("stopUsageRecording")) {
             queue.stopUsageRecording();
+        } else if (task.equals("removeQueue")) {
+            removeQueue(queue);
         } else {
             System.out.println("RequestQueueManager:executeCommand: task unknown: " + task);
         }
     }
 
+    private void removeQueue(RequestQueue queue) {
+        //steep 1, notify local discovery
+        DiscoveryPacket discPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
+        QueuePacket queuePacket = new QueuePacket(this.localAddress,new String[]{queue.getName()});
+        queuePacket.setShouldRemove(true);
+        discPacket.setQueue(queuePacket);
+        this.internalRouting.notifyDiscovery(discPacket);
+        //step 2 , remove queue so all incoming packet gets redirected back to the cloud
+        this.internalQueueMap.remove(queue.getName(), queue);
+        // step 3 start empty all left over packets and pendings
+        ArrayList<NetworkPacket> emptyAllPackets = queue.emptyAllPackets();
+        ArrayList<Origin> emptyAllPendingRequests = queue.emptyAllPendingRequests();
+        try {
+            // step 4 send all left over packets to all the pending requests
+            // also notify them that this is not in use any more
+            byte[] data = serializeToBytes(discPacket);
+            for (Origin pending : emptyAllPendingRequests) {
+                NetworkPacket pkt = new NetworkPacketBuilder().setData(data).setPathType(PathType.DISCOVERY).setOrigin(new Origin()).build();
+                internalRouting.sendWork(pkt, pending.getAddress());
+                if (emptyAllPackets.isEmpty() == false) {
+                    NetworkPacket item = emptyAllPackets.remove(0);
+                    internalRouting.sendWork(item, pending.getAddress());
+                }
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(RequestQueueManager.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        // step 5, all remaining packets arr sent back to the cloud
+        for (NetworkPacket packet : emptyAllPackets) {
+            this.internalRouting.forwardResult(packet.getOrigin(), packet.getPath(), packet.getData());
+        }
+        queue.stopUsageRecording();
+        queue.stop();
+    }
+    
+    private byte[] serializeToBytes(Serializable data) throws IOException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ObjectOutputStream objectStream = new ObjectOutputStream(stream);
+        objectStream.writeObject(data);
+        return stream.toByteArray();
+    }
+    
     private class RequestQueue implements Runnable {
 
         private ConcurrentLinkedQueue<NetworkPacket> processQueue;
@@ -343,6 +438,10 @@ public class RequestQueueManager implements StatisticsProvider {
             this.outputCounter = new AtomicInteger(0);
         }
 
+        public String getName() {
+            return this.queueName;
+        }
+        
         /**
          * getStatistics for this queue
          *
@@ -406,6 +505,32 @@ public class RequestQueueManager implements StatisticsProvider {
             processingNodes.add(origin);
         }
 
+        /**
+         * empty all pending requests
+         * @return who was waiting on data
+         */
+        public ArrayList<Origin> emptyAllPendingRequests() {
+            ArrayList<Origin> pendingRequests = new ArrayList<>();
+            Origin origin = null;
+            while((origin = processingNodes.poll()) != null) {
+                pendingRequests.add(origin);
+            }
+            return pendingRequests;
+        }
+        
+        /**
+         * empty all queue packets
+         * @return all data in the queue
+         */
+        public ArrayList<NetworkPacket> emptyAllPackets() {
+            ArrayList<NetworkPacket> queuePackets = new ArrayList<>();
+            NetworkPacket packet = null;
+            while((packet = processQueue.poll()) != null) {
+                queuePackets.add(packet);
+            }
+            return queuePackets;
+        }
+        
         /**
          * polls data and sents it to available instances.
          *

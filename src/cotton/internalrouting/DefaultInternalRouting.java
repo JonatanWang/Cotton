@@ -108,6 +108,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     public void setRequestQueueManager(RequestQueueManager requestQueueManager) {
         this.requestQueueManager = requestQueueManager;
         this.requestQueueManager.setInternalRouting(this);
+        this.requestQueueManager.setLocalAddress(this.localAddress);
     }
 
     public void setCommandControl(Console commandConsole) {

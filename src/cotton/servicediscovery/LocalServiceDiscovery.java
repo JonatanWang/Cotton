@@ -836,9 +836,27 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
 
     }
 
+    private void removeQueueFromPool(QueuePacket packet) {
+        String[] qname = packet.getRequestQueueList();
+        AddressPool pool = this.activeQueue.get(qname);
+        if(pool == null || pool.size() < 1) {
+            return;
+        }
+        DestinationMetaData dest = new DestinationMetaData(packet.getInstanceAddress(),PathType.REQUESTQUEUE);
+        boolean succsess = pool.remove(dest);
+        if(!succsess) {
+            System.out.println("LocalServiceDiscovery:removeQueueFromPool: failed to remove queue");
+            return;
+        }    
+    }
+    
     private void processQueuePacket(QueuePacket packet) {
         if (packet == null) {
             System.out.println("ERROR in processQueuePacket");
+            return;
+        }
+        if(packet.isShouldRemove()) {
+            removeQueueFromPool(packet);
             return;
         }
         String[] queueList = packet.getRequestQueueList();

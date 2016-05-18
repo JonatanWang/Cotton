@@ -82,15 +82,19 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     private InternalRoutingServiceDiscovery internalRouting;
     private AddressPool discoveryCache;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
+    private ConcurrentHashMap<String, AddressPool> sleepingServiceCache = new ConcurrentHashMap<String, AddressPool>();
     private ActiveServiceLookup localServiceTable = null;
     private ExecutorService threadPool;
     private ConcurrentHashMap<String, AddressPool> activeQueue;
+    private ConcurrentHashMap<String, AddressPool> sleepingQueue = new ConcurrentHashMap<String, AddressPool>();
     private ConcurrentHashMap<DestinationMetaData, AtomicInteger> destFailStat = new ConcurrentHashMap();
     private RequestQueueManager queueManager;
     private final ScheduledThreadPoolExecutor deadAddressValidator;
     private ConcurrentLinkedQueue<ReapedAddress> deadAddresses;
     private LinkedBlockingQueue<UpdateItem> updateQueue = new LinkedBlockingQueue<>();
 
+    private final boolean upScalingActive = true; // if we add queues to sleeping instead of active when they are announced
+    
     /**
      * Fills in a list of all pre set globalServiceDiscovery addresses
      *
@@ -635,7 +639,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     private void processProbeRequest(Origin origin, DiscoveryProbe probe) {
 
         AddressPool pool = null;
-        if ((pool = this.activeQueue.get(probe.getName())) == null) {
+        if (probe.getName() != null && (pool = this.activeQueue.get(probe.getName())) == null) {
             pool = this.serviceCache.get(probe.getName());
         }
         if (probe.getAddress() != null) {
@@ -711,9 +715,26 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         sendToPool(data, this.serviceCache.get(queue), PathType.DISCOVERY);
     }
 
+    private void removeQueueFromPool(QueuePacket packet) {
+        String[] qname = packet.getRequestQueueList();
+        AddressPool pool = this.activeQueue.get(qname);
+        if(pool == null || pool.size() < 1) {
+            return;
+        }
+        DestinationMetaData dest = new DestinationMetaData(packet.getInstanceAddress(),PathType.REQUESTQUEUE);
+        boolean succsess = pool.remove(dest);
+        if(!succsess) {
+            System.out.println("LocalServiceDiscovery:removeQueueFromPool: failed to remove queue");
+            return;
+        }    
+    }
+    
     private void processQueuePacket(QueuePacket packet) {
         if (packet == null) {
             return;
+        }
+        if(packet.isShouldRemove()) {
+            removeQueueFromPool(packet);
         }
         String[] queueList = packet.getRequestQueueList();
         SocketAddress addr = packet.getInstanceAddress();
@@ -780,7 +801,14 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         dest.setPathType(PathType.COMMANDCONTROL);
         Command com = new Command(StatType.SERVICEHANDLER, circuit.getCircuitName(), null, 100, CommandType.CHANGE_ACTIVEAMOUNT);
         sendCommandPacket(dest, com);
-
+        AddressPool sqPool = this.sleepingQueue.get(circuit.getCircuitName());
+        if(sqPool != null) {
+            DestinationMetaData qaddress = sqPool.getAddress();
+            if(qaddress != null) {
+                sqPool.remove(qaddress);
+                this.addQueue(qaddress, circuit.getCircuitName());
+            }
+        }
     }
 
     @Override
@@ -828,6 +856,17 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         return true;
     }
 
+    private final AtomicInteger queuePoolScaling = new AtomicInteger(0);
+    private void addToSleepingQueue(DestinationMetaData qAddr,String name) {
+        AddressPool pool = this.sleepingQueue.get(name);
+        if(pool == null) {
+            pool = new AddressPool();
+            AddressPool tmp = this.sleepingQueue.putIfAbsent(name, pool);
+            pool = (tmp == null) ? pool : tmp;
+        }
+        pool.addAddress(qAddr);
+    }
+    
     private void processConfigPacket(ConfigurationPacket packet) {
         System.out.println("processConfigPacket: ");
         if (packet == null) {
@@ -841,8 +880,13 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             ConfigEntry configEntry = entry[i];
             System.out.println("configEntry: " + i + " " + configEntry.getName() + " pathtype" + configEntry.getPathType());
             if (configEntry.getPathType() == PathType.REQUESTQUEUE) {
+                int qcount = queuePoolScaling.incrementAndGet();
                 DestinationMetaData qAddr = new DestinationMetaData(addr, PathType.REQUESTQUEUE);
-                addQueue(qAddr, configEntry.getName());
+                if (upScalingActive && qcount > 6) {
+                    addToSleepingQueue(qAddr, configEntry.getName());
+                } else {
+                    addQueue(qAddr, configEntry.getName());
+                }
             } else if (configEntry.getPathType() == PathType.SERVICE) {
                 DestinationMetaData qAddr = new DestinationMetaData(addr, PathType.SERVICE);
                 addService(qAddr, configEntry.getName());
