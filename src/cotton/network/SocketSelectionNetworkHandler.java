@@ -48,9 +48,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLServerSocket;
@@ -58,11 +56,11 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+import com.mongodb.connection.Server;
 import cotton.internalrouting.InternalRoutingNetwork;
 
 import java.nio.channels.ClosedChannelException;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -76,6 +74,7 @@ import java.util.logging.Logger;
  */
 public class SocketSelectionNetworkHandler implements NetworkHandler {
     private int localPort;
+    private ByteBuffer packetSize;
     private InetAddress localIP;
     private InternalRoutingNetwork internalRouting;
     private ExecutorService threadPool;
@@ -84,56 +83,8 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
     private ConcurrentHashMap<InetSocketAddress, SocketChannel> openChannels;
     private Queue<SocketChannel> registrationQueue;
     private Selector selector;
-
-    // TODO: All constructors should initiate a SSLEngine for use with non-blocking net IO
-    public SocketSelectionNetworkHandler() throws UnknownHostException {
-        this.localPort = 3333; // TODO: Remove hardcoded port
-        try{
-            //this.localIP = InetAddress.getByName(null);
-            this.localIP = Inet4Address.getLocalHost();
-        }catch(java.net.UnknownHostException e){// TODO: Get address from outside
-            logError("initialization process local address "+e.getMessage());
-            throw e;
-        }
-        try {
-            selector = Selector.open();
-        }
-        catch (Throwable e) {
-            System.out.println("Error " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        threadPool = Executors.newCachedThreadPool();
-        running = new AtomicBoolean(true);
-        localSocketAddress = getLocalAddress();
-        openChannels = new ConcurrentHashMap<InetSocketAddress, SocketChannel>();
-        registrationQueue = new ConcurrentLinkedQueue();
-    }
-
-    public SocketSelectionNetworkHandler(SocketAddress socketAddress) throws UnknownHostException {
-        this.localPort = 3333; // TODO: Remove hardcoded port
-        try{
-            //this.localIP = InetAddress.getByName(null);
-            this.localIP = Inet4Address.getLocalHost();
-        }catch(java.net.UnknownHostException e){// TODO: Get address from outside
-            logError("initialization process local address "+e.getMessage());
-            throw e;
-        }
-        try {
-            selector = Selector.open();
-        }
-        catch (Throwable e) {
-            System.out.println("Error " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        localSocketAddress = socketAddress;
-
-        threadPool = Executors.newCachedThreadPool();
-        openChannels = new ConcurrentHashMap<InetSocketAddress, SocketChannel>();
-        running = new AtomicBoolean(true);
-        registrationQueue = new ConcurrentLinkedQueue();
-    }
+    private BlockingQueue<OutputPacket> sendQueue;
+    private NetworkOutput sender;
 
     // This constructor should be replaced by a config file
     public SocketSelectionNetworkHandler(int port) throws UnknownHostException {
@@ -158,6 +109,8 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         localSocketAddress = getLocalAddress();
         openChannels = new ConcurrentHashMap<InetSocketAddress, SocketChannel>();
         registrationQueue = new ConcurrentLinkedQueue();
+        sendQueue = new LinkedBlockingQueue<>();
+        sender = new NetworkOutput(this, openChannels, sendQueue);
     }
 
     @Override
@@ -166,16 +119,6 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
             this.internalRouting = internalRouting;
         else
             throw new NullPointerException("InternalRoutingNetwork points to null");
-    }
-
-    private SSLServerSocket createSSLServerSocket() throws IOException {
-        SSLServerSocketFactory sf = (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
-        return (SSLServerSocket)sf.createServerSocket();
-    }
-
-    private SSLSocket createSSLClientSocket(InetSocketAddress address) throws IOException{
-        SSLSocketFactory sf = (SSLSocketFactory)SSLSocketFactory.getDefault();
-        return (SSLSocket)sf.createSocket(address.getAddress(), address.getPort());
     }
 
     @Override
@@ -188,14 +131,16 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
             serverSocketChannel.bind(getLocalAddress());
             serverSocketChannel.configureBlocking(false);
 
-            serverSocketChannel.register(selector, serverSocketChannel.validOps());
+            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
         }catch(IOException e){// TODO: Logging
             e.printStackTrace();
         }
 
+        threadPool.execute(sender);
+
         SocketChannel clientChannel = null;
 
-        while(running.get() == true){
+        while(running.get()){
             if(!registrationQueue.isEmpty()){
                 try {
                     registrationQueue.poll().register(selector, SelectionKey.OP_READ);
@@ -205,7 +150,8 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
             }
 
             try{
-                selector.select();
+                if(selector.select() == 0)
+                    continue;
                 Set<SelectionKey> keys = selector.selectedKeys();
 
                 for(SelectionKey key: keys) {
@@ -222,6 +168,7 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
                     }
                     clientChannel = null;
                 }
+                keys.clear();
 
                 // TODO: SocketChannel timeout
                 //channelTimeout();
@@ -235,6 +182,7 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         }
 
         try {
+            sender.stop();
             threadPool.shutdown();
             serverSocketChannel.close();
         }catch (Throwable e) { //TODO EXCEPTION HANDLING
@@ -244,8 +192,9 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
 
     }
     
-    private void registerChannel(SocketChannel s){
+    protected void registerChannel(SocketChannel s){
         registrationQueue.add(s);
+        selector.wakeup();
     }
 
     /**
@@ -256,21 +205,9 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         running.set(false);
     }
 
-    /**
-     * Warning: improper use of this method can lead to huge network routing bugs,
-     *      related to losing the uuid between jumps, use the above method instead
-     * @return ServiceConnection with the local socket
-     */
-    private Origin createOrigin(UUID uuid){
-        SocketAddress address = getLocalAddress();
-        Origin local = new Origin(address, uuid);
-        return local;
-    }
-
     @Override
     public SocketAddress getLocalAddress(){
-        SocketAddress address = new InetSocketAddress(localIP, localPort);
-        return address;
+        return new InetSocketAddress(localIP, localPort);
     }
 
     private void logError(String error){
@@ -282,34 +219,7 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         if(packet == null) throw new NullPointerException("Null data");
         if(dest == null) throw new NullPointerException("Null destination");
 
-        TransportPacket.Packet tp = buildTransportPacket(packet);
-
-        ByteBuffer output = writeOutput(tp);
-
-        SocketChannel sendChannel = null;
-
-        System.out.println(packet.getType()+" packet of "+output.capacity()+" bytes outgoing from: "+getLocalAddress()+" normal send.");
-
-        if((sendChannel = openChannels.get((InetSocketAddress) dest)) != null){
-            ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity()); 
-            sendChannel.write(size);
-            //printBytes(size.array());
-
-            sendChannel.write(output);
-        } else {
-            sendChannel = SocketChannel.open();
-            sendChannel.connect(dest);
-            sendChannel.configureBlocking(false);
-
-            ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity()); 
-            sendChannel.write(size);
-            //printBytes(size.array());
-
-            sendChannel.write(output);
-            registerChannel(sendChannel);
-            selector.wakeup();
-            openChannels.putIfAbsent((InetSocketAddress)dest, sendChannel);
-        }
+        this.sendQueue.add(new OutputPacket(packet, dest, false));
     }
 
     @Override
@@ -317,61 +227,27 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         if(packet == null) throw new NullPointerException("Null data");
         if(dest == null) throw new NullPointerException("Null destination");
 
-        System.out.println("Keepalive send!");
-
-        TransportPacket.Packet tp = buildTransportPacket(packet, true);
-
-        ByteBuffer output = writeOutput(tp);
-
-        SocketChannel sendChannel = null;
-
-        System.out.println(packet.getType()+" packet of "+output.capacity()+" bytes outgoing from: "+getLocalAddress()+" keepalive send.");
-
-        if((sendChannel = openChannels.get((InetSocketAddress) dest)) != null){
-            ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity());
-            sendChannel.write(size);
-            //printBytes(size.array());
-
-            sendChannel.write(output);
-        } else {
-            sendChannel = SocketChannel.open();
-            sendChannel.connect(dest);
-            sendChannel.configureBlocking(false);
-
-            ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity());
-            sendChannel.write(size);
-            //printBytes(size.array());
-
-            sendChannel.write(output);
-            registerChannel(sendChannel);
-            selector.wakeup();
-            openChannels.putIfAbsent((InetSocketAddress)dest, sendChannel);
-        }
+        this.sendQueue.add(new OutputPacket(packet, dest, true));
     }
 
     private InputStream readInput(SocketChannel sc){
-        ByteBuffer bb = ByteBuffer.allocate(4);
-
+        if(packetSize==null)
+            packetSize = ByteBuffer.allocate(4);
         try {
-            sc.read(bb);
-            //printBytes(bb.array());
+            while(packetSize.hasRemaining())
+                sc.read(packetSize);
 
-            int size = bb.getInt(0);
-            if(size <= 0){
-                // TODO: handle invalid packets properly
-                //openChannels.remove(sc);
-                //sc.close();
-                return null;
-            }
-            System.out.println("Incoming bytebuffer, "+size+" bytes on "+getLocalAddress()+".");
+            int size = packetSize.getInt(0);
+            packetSize.clear();
 
-            bb = ByteBuffer.allocate(size);
+            ByteBuffer packet = ByteBuffer.allocate(size);
 
-            size = sc.read(bb);
+            while(packet.hasRemaining())
+                sc.read(packet);
 
-            bb.flip();
+            packet.flip();
 
-            return new ByteArrayInputStream(bb.array());
+            return new ByteArrayInputStream(packet.array());
         } catch(IOException e) {
             System.out.println("Read input error: " + e.toString());
             e.printStackTrace();
@@ -404,10 +280,12 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
 
         NetworkPacket np = parseTransportPacket(input);
 
-        if(input.getSerializedSize() == 0)
+        if(input.getSerializedSize() == 0) {
+            System.out.println("Empty transportpacket");
             return;
+        }
 
-        System.out.println(np.getType()+" packet of "+input.getSerializedSize()+" bytes received on "+getLocalAddress()+".");
+        //System.out.println(np.getType()+" packet of "+input.getSerializedSize()+" bytes received on "+getLocalAddress()+".");
 
         if(np.keepAlive()) {
             SocketLatch latch = new SocketLatch();
@@ -515,13 +393,6 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         TransportPacket.Packet.Builder builder = parseNetworkPacket(input);
         builder.setKeepalive(keepAlive);
         return builder.build();
-    }
-
-    private void printBytes(byte[] bytes){
-        String s = "";
-        for(byte b: bytes)
-            s = s+" "+b;
-        System.out.println(s);
     }
 
 }

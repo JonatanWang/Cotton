@@ -34,26 +34,15 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.test;
 
 import cotton.Cotton;
-import cotton.internalrouting.InternalRoutingNetwork;
-import cotton.network.DefaultNetworkHandler;
 import cotton.network.DestinationMetaData;
-import cotton.network.DummyServiceChain;
-import cotton.network.NetworkPacket;
-import cotton.network.NetworkPacket.NetworkPacketBuilder;
-import cotton.network.Origin;
 import cotton.network.PathType;
-import cotton.network.SocketLatch;
-import java.nio.ByteBuffer;
 import org.junit.Test;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.UUID;
 import static org.junit.Assert.*;
-import cotton.network.NetworkHandler;
 import cotton.requestqueue.RequestQueueManager;
-import cotton.services.ServiceHandler;
 import cotton.systemsupport.Command;
 import cotton.systemsupport.CommandType;
 import cotton.systemsupport.Console;

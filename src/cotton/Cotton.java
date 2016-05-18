@@ -33,7 +33,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package cotton;
 
-import cotton.configuration.DatabaseConfigurator;
+import cotton.network.DefaultNetworkHandler;
+import cotton.network.SocketSelectionNetworkHandler;
 import cotton.network.TokenManager;
 import cotton.servicediscovery.GlobalDiscoveryDNS;
 import cotton.network.NetworkHandler;
@@ -45,10 +46,8 @@ import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.services.ServiceLookup;
 import cotton.internalrouting.DefaultInternalRouting;
 import cotton.internalrouting.InternalRoutingClient;
-import cotton.network.DefaultNetworkHandler;
 import java.util.Random;
 import cotton.requestqueue.RequestQueueManager;
-import cotton.storagecomponents.DatabaseConnector;
 import cotton.storagecomponents.MongoDBConnector;
 import cotton.systemsupport.Console;
 import cotton.configuration.Configurator;
@@ -81,6 +80,7 @@ public class Cotton {
 
         if(config.hasDatabase())
             dataBaseWrapperStart(config);
+        //initNetwork(new SocketSelectionNetworkHandler(3333));
         initNetwork(new DefaultNetworkHandler(config.getNetworkConfigurator()));
         initDiscovery(config);
         initLookup(config.getServiceConfigurator());
@@ -127,6 +127,7 @@ public class Cotton {
      */
     public Cotton(boolean globalServiceDiscovery,int localPort, GlobalDiscoveryDNS globalDiscoveryDNS) throws java.net.UnknownHostException {
         initNetwork(new DefaultNetworkHandler(localPort));
+        //initNetwork(new SocketSelectionNetworkHandler(localPort));
         initDiscovery(globalServiceDiscovery,globalDiscoveryDNS);
         initLookup();
         initRouting();
@@ -140,6 +141,7 @@ public class Cotton {
      * @throws java.net.UnknownHostException
      */
     public Cotton (boolean globalServiceDiscovery, int portNumber) throws java.net.UnknownHostException {
+        //initNetwork(new SocketSelectionNetworkHandler(portNumber));
         initNetwork(new DefaultNetworkHandler(portNumber));
         initDiscovery(globalServiceDiscovery,null);
         initLookup();
@@ -278,6 +280,7 @@ public class Cotton {
         if(net == null) {
             Random rnd = new Random();
             net = new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
+            //net = new SocketSelectionNetworkHandler(rnd.nextInt(20000)+3000);
         }
         this.network = net;
     }
