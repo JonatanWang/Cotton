@@ -35,6 +35,15 @@ import cotton.network.SocketLatch;
 import cotton.network.NetworkPacket;
 
 public interface InternalRoutingNetwork {
+    /**
+     * pushes a network packet to the routing queue for processing.
+     * @param networkPacket 
+     */
     public void pushNetworkPacket(NetworkPacket networkPacket);
+    /**
+     * pushes a network packet to the routing queue for processing with the addition of a socket latch to hold the keep alive connection.
+     * @param networkPacket
+     * @param latch 
+     */
     public void pushKeepAlivePacket(NetworkPacket networkPacket,SocketLatch latch);
 }

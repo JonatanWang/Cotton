@@ -33,6 +33,13 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.network;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.net.InetSocketAddress;
+import java.net.Inet4Address;
+import java.net.UnknownHostException;
+import java.util.UUID;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 
 /**
  * The <code>NetworkPacket</code> wraps the data together with needed information 
@@ -49,6 +56,12 @@ public class NetworkPacket implements Serializable{
     private ServiceChain path;
     private PathType pt;
     private boolean keepAlive;
+    private ByteBuffer serializedData;
+
+    public NetworkPacket(PathType pt, ByteBuffer serializedData){
+        this.pt = pt;
+        this.serializedData = serializedData;
+    }
 
     /**
      * Constructs a <code>NetworkPacket</code> <strong>without</strong> the 
@@ -108,6 +121,8 @@ public class NetworkPacket implements Serializable{
      * @return the <code>NetworkPacket</code> path.
      */
     public ServiceChain getPath(){
+        if(path == null)
+            parsePacket();
         return path;
     }
 
@@ -117,6 +132,8 @@ public class NetworkPacket implements Serializable{
      * @return the <code>NetworkPacket</code> origin.
      */
     public Origin getOrigin(){
+        if(origin == null)
+            parsePacket();
         return origin;
     }
 
@@ -139,6 +156,8 @@ public class NetworkPacket implements Serializable{
      * @return the <code>NetworkPacket</code> data.
      */
     public byte[] getData() {
+        if(data == null)
+            parsePacket();
         return data;
     }
 
@@ -149,15 +168,72 @@ public class NetworkPacket implements Serializable{
      * @return <code>true</code> if its <code>keepAlive</code>.
      */
     public boolean keepAlive(){
+        if(data == null)
+            parsePacket();
         return keepAlive;
     }
 
     /**
-     * Removes the data in the <code>NetworkPacket</code> by setting it to 
+     * Removes the data in the <code>NetworkPacket</code> by setting it to
      * <code>null</code>.
      */
     public void removeData(){
         data = null;
+    }
+
+    public ByteBuffer getSerializedData(){
+        if(serializedData == null){
+            
+        }
+        return serializedData;
+    }
+
+    private Origin parseOrigin(TransportPacket.Packet input){
+        TransportPacket.Origin origin = input.getOrigin();
+        String ip = origin.getIp();
+        int port = origin.getPort();
+        String requestId = origin.getRequestId();
+        String latchId = origin.getLatchId();
+
+        Origin parsedOrigin = new Origin();
+        if(ip != "") {
+            InetSocketAddress socketAddress = null;
+            try{
+                socketAddress = new InetSocketAddress(Inet4Address.getByName(ip),port);
+            }catch(UnknownHostException e){e.printStackTrace();}
+            parsedOrigin.setAddress(socketAddress);
+        }
+        if(requestId != "") {
+            parsedOrigin.setServiceRequestID(UUID.fromString(requestId));
+        }
+        if(latchId != "") {
+            parsedOrigin.setSocketLatchID(UUID.fromString(latchId));
+        }
+
+        return parsedOrigin;
+    }
+
+    private ServiceChain parsePath(TransportPacket.Packet input){
+        DummyServiceChain path = new DummyServiceChain();
+
+        for (int i = 0; i < input.getPathCount(); i++)
+            path.addService(input.getPath(i));
+
+        return path;
+    }
+
+    private void parsePacket(){
+        if(serializedData == null)
+            System.out.println("SERDATA IS NULL");
+        TransportPacket.Packet tp = null;
+        try{
+            tp = TransportPacket.Packet.parseDelimitedFrom(new ByteArrayInputStream(serializedData.array()));
+        }catch(IOException e){e.printStackTrace();}
+        //        serializedData = null;
+        path = parsePath(tp);
+        origin = parseOrigin(tp);
+        data = tp.getData().toByteArray();
+        keepAlive = tp.getKeepalive();
     }
 
     /**

@@ -52,7 +52,12 @@ public class BridgeServiceBuffer implements ServiceBuffer{
     public BridgeServiceBuffer(){
         buffer = new LinkedBlockingQueue<>();
     }
-
+    
+/**
+     * Distributes the next packet in the <code>ServiceBuffer</code>.
+     *
+     * @return the next <code>ServicePacket</code> in the buffer.
+     */
     public NetworkPacket nextPacket(){
         try {
             return buffer.take();//.poll();
@@ -60,7 +65,14 @@ public class BridgeServiceBuffer implements ServiceBuffer{
         }
         return null;
     }
-
+    
+/**
+     * Stores a <code>ServicePacket</code> in the buffer.
+     *
+     * @param NetworkPacket the <code>ServicePacket</code> to store.
+     * @return <code>true</code> if the buffer changed as a result of the
+     * <code>add</code>.
+     */
     public boolean add(cotton.network.NetworkPacket servicePacket){
         return buffer.add(servicePacket);
     }

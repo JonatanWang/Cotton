@@ -47,22 +47,38 @@ public class UsageHistory implements Serializable{
     public UsageHistory(){
         this.usageHistoryList = new Vector<>();
     }
-    
+    /**
+     * Adds a time interval to the historyList
+     * @param element 
+     */
     public void add(TimeInterval element){
         usageHistoryList.add(element);
     }
-    
+    /**
+     * returns the usage history for the request queue.
+     * @return 
+     */
     public TimeInterval[] getUsageHistory(){
         TimeInterval[] tmp = new TimeInterval[usageHistoryList.size()];
         usageHistoryList.copyInto(tmp);
         return tmp;
     }
-    
+    /**
+     * Returns a specific time interval if the lower bound is less than 0 
+     * or upper bound is greater than max then the entire usage history list will be returned.
+     * @param first
+     * @param last
+     * @return 
+     */
     public synchronized ArrayList<TimeInterval> getInterval(int first, int last){  
         int lastIndex = (last >= usageHistoryList.size()) ? usageHistoryList.size() : last;
         int firstIndex = (first <= 0) ? 0 : first;
         return new ArrayList<>(usageHistoryList.subList(firstIndex, lastIndex));
     }
+    /**
+     * returns the total amount of time intervals in the usage history. 
+     * @return 
+     */
     
     public int getLastIndex(){
         return usageHistoryList.size();

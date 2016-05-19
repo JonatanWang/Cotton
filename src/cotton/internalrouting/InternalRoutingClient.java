@@ -39,8 +39,26 @@ import cotton.network.ServiceChain;
  * @author Tony
  */
 public interface InternalRoutingClient {
+    /**
+     * sends data and a service chain to a service.
+     * @param data
+     * @param serviceChain
+     * @return 
+     */
     public boolean sendToService(byte[] data,ServiceChain serviceChain);
+    /**
+     * sends a keep alive message to a service and a service chain.
+     * @param data
+     * @param serviceChain
+     * @return 
+     */
     public ServiceRequest sendKeepAlive(byte[] data,ServiceChain serviceChain);
+    /**
+     * sends data and a service chain and awaits response.
+     * @param data
+     * @param serviceChain
+     * @return 
+     */
     public ServiceRequest sendWithResponse(byte[] data,ServiceChain serviceChain);
     
 }
