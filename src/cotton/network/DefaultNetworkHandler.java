@@ -48,13 +48,10 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import cotton.configuration.NetworkConfigurator;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Handles all of the packet buffering and relaying.

@@ -80,8 +80,6 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
     private InternalRoutingNetwork internalRouting;
     private ExecutorService threadPool;
     private AtomicBoolean running;
-    private SocketAddress localSocketAddress;
-    private ConcurrentHashMap<InetSocketAddress, SocketChannel> openChannels;
     private Queue<SocketChannel> registrationQueue;
     private Selector selector;
     private BlockingQueue<OutputPacket> sendQueue;
@@ -94,7 +92,6 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
      * @param config The configuration to follow.
      */
     public SocketSelectionNetworkHandler(NetworkConfigurator config){
-        this.localSocketAddress = config.getAddress();
         this.localPort = config.getAddress().getPort();
         this.localIP = config.getAddress().getAddress();
         if(this.encryption = config.isEncryptionEnabled()){
@@ -107,7 +104,6 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
 
         threadPool = Executors.newFixedThreadPool(20);
         running = new AtomicBoolean(true);
-        openChannels = new ConcurrentHashMap<>();
 
         try {
             selector = Selector.open();
@@ -118,9 +114,9 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
 
         threadPool = Executors.newCachedThreadPool();
         running = new AtomicBoolean(true);
-        registrationQueue = new ConcurrentLinkedQueue();
+        registrationQueue = new ConcurrentLinkedQueue<>();
         sendQueue = new LinkedBlockingQueue<>();
-        sender = new NetworkOutput(this, openChannels, sendQueue);
+        sender = new NetworkOutput(this, new ConcurrentHashMap<>(), sendQueue);
     }
 
     /**
@@ -147,11 +143,9 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
 
         threadPool = Executors.newCachedThreadPool();
         running = new AtomicBoolean(true);
-        localSocketAddress = getLocalAddress();
-        openChannels = new ConcurrentHashMap<InetSocketAddress, SocketChannel>();
-        registrationQueue = new ConcurrentLinkedQueue();
+        registrationQueue = new ConcurrentLinkedQueue<>();
         sendQueue = new LinkedBlockingQueue<>();
-        sender = new NetworkOutput(this, openChannels, sendQueue);
+        sender = new NetworkOutput(this, new ConcurrentHashMap<>(), sendQueue);
     }
 
     @Override
@@ -200,7 +194,6 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
                         clientChannel = serverSocketChannel.accept();
                         if(clientChannel != null){
                             clientChannel.configureBlocking(false);
-                            openChannels.putIfAbsent((InetSocketAddress)clientChannel.getRemoteAddress(), clientChannel);
                             clientChannel.register(selector, SelectionKey.OP_READ);
                         }
                     } else if(key.isReadable()) {

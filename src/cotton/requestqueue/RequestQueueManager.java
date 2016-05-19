@@ -36,10 +36,8 @@ import cotton.internalrouting.InternalRoutingRequestQueue;
 import cotton.network.NetworkPacket;
 import cotton.network.NetworkPacket.NetworkPacketBuilder;
 import cotton.network.Origin;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ConcurrentLinkedQueue;
+
+import java.util.concurrent.*;
 import java.io.IOException;
 import cotton.network.PathType;
 import cotton.servicediscovery.CircuitBreakerPacket;
@@ -55,6 +53,8 @@ import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.TimeInterval;
 import cotton.systemsupport.UsageHistory;
+import sun.security.provider.NativePRNG;
+
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -454,8 +454,8 @@ public class RequestQueueManager implements StatisticsProvider {
     
     private class RequestQueue implements Runnable {
 
-        private ConcurrentLinkedQueue<NetworkPacket> processQueue;
-        private ConcurrentLinkedQueue<Origin> processingNodes;
+        private BlockingQueue<NetworkPacket> processQueue;
+        private BlockingQueue<Origin> processingNodes;
         private final String queueName;
         private int maxCapacity;
         private AtomicInteger threadCount = new AtomicInteger(0);
@@ -468,8 +468,8 @@ public class RequestQueueManager implements StatisticsProvider {
         private int samplingRate = 0;
 
         public RequestQueue(String queueName, int maxCapacity) {
-            this.processQueue = new ConcurrentLinkedQueue<>();
-            this.processingNodes = new ConcurrentLinkedQueue<>();
+            this.processQueue = new LinkedBlockingQueue<>();
+            this.processingNodes = new LinkedBlockingQueue<>();
             this.queueName = queueName;
             this.maxCapacity = maxCapacity;
             this.usageHistory = new UsageHistory();
@@ -583,33 +583,32 @@ public class RequestQueueManager implements StatisticsProvider {
 
             Origin origin = null;
             do {
-                while ((origin = processingNodes.poll()) != null) {
-                    NetworkPacket packet = processQueue.poll();
-                    if (packet == null) {
-                        processingNodes.add(origin);
-                        if (threadCount.get() > 1) {
-                            break;
-                        }
-                        continue;
-                    }
-                    packet.setPathType(PathType.SERVICE);
-                    try {
-                        //networkHandler.send(packet,origin.getAddress());
-
-                        outputCounter.incrementAndGet();
-                        internalRouting.sendWork(packet, origin.getAddress());
-                        //System.out.println("Queue sent work to " + origin.getAddress().toString());
-                    } catch (IOException e) {
-                        processQueue.add(packet);
-                        System.out.println("ERROR IN REQUEST QUEUE SEND WORK");
-                        e.printStackTrace();
-                        // TODO: LOGGING
-                    }
-                }
                 try {
-                    Thread.sleep(5);
-                } catch (InterruptedException e) {
-                    //e.printStackTrace();
+                    while ((origin = processingNodes.take()) != null) {
+                        NetworkPacket packet = processQueue.take();
+                        if (packet == null) {
+                            processingNodes.add(origin);
+                            if (threadCount.get() > 1) {
+                                break;
+                            }
+                            continue;
+                        }
+                        packet.setPathType(PathType.SERVICE);
+                        try {
+                            //networkHandler.send(packet,origin.getAddress());
+
+                            outputCounter.incrementAndGet();
+                            internalRouting.sendWork(packet, origin.getAddress());
+                            //System.out.println("Queue sent work to " + origin.getAddress().toString());
+                        } catch (IOException e) {
+                            processQueue.add(packet);
+                            System.out.println("ERROR IN REQUEST QUEUE SEND WORK");
+                            e.printStackTrace();
+                            // TODO: LOGGING
+                        }
+                    }
+                }catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             } while (running);
             this.threadCount.getAndDecrement();

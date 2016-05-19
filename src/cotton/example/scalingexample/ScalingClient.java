@@ -40,6 +40,7 @@ import cotton.network.DummyServiceChain;
 import cotton.network.ServiceChain;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.json.JSONObject;
@@ -57,7 +58,7 @@ public class ScalingClient implements Runnable{
     }
     
     public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException, InterruptedException {
-        int clientAmount = 10;
+        int clientAmount = 1;
         AtomicInteger dones = new AtomicInteger(0);
         long starttime = System.currentTimeMillis();
         
@@ -87,7 +88,7 @@ public class ScalingClient implements Runnable{
     @Override
     public void run() {
         int intos = 1;
-        int sendAmount = 1000;
+        int sendAmount = 100000;
         byte[] data;
         Configurator conf;
         Cotton clientInstance = null;
@@ -106,16 +107,17 @@ public class ScalingClient implements Runnable{
         } catch (Exception ex) {}
         
         clientInstance.start();
-        
-        data = jsonToByteArray("authoriseRequest");
+
+        data = ByteBuffer.allocate(4).putInt(0, 2).array();
+        //data = jsonToByteArray("authoriseRequest");
         for(int i = 0; i < intos; i++)
-            chain.into("database");
+            chain.into("mathpow");
         clientInstance.getClient().sendToService(data, chain);
         
-        data = jsonToByteArray("getDataFromDatabase");
+        //data = jsonToByteArray("getDataFromDatabase");
         for(int i = 1; i < sendAmount+1; i++) {
             for(int j = 0; j < intos; j++)
-                chain.into("database");
+                chain.into("mathpow");
             serviceRequest = clientInstance.getClient().sendWithResponse(data, chain);
             
 //            try {
@@ -124,8 +126,8 @@ public class ScalingClient implements Runnable{
         }
         
         for(int i = 0; i < intos; i++)
-                chain.into("database");
-        data = jsonToByteArray("removeDataFromDatabase");
+                chain.into("mathpow");
+        //data = jsonToByteArray("removeDataFromDatabase");
         clientInstance.getClient().sendToService(data, chain);
 
         System.out.println("Done: " + dones.incrementAndGet());
