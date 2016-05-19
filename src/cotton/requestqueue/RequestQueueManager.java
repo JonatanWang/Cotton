@@ -232,7 +232,11 @@ public class RequestQueueManager implements StatisticsProvider {
         threadPool.shutdown();
 
     }
-
+    /**
+     * compares whether the socket addresses are equal.
+     * @param other
+     * @return
+     */
     public StatisticsData[] getStatisticsForSubSystem(String serviceName) {
         ArrayList<StatisticsData> tdata = new ArrayList<>();
         for (Map.Entry<String, RequestQueue> rq : internalQueueMap.entrySet()) {
@@ -241,6 +245,12 @@ public class RequestQueueManager implements StatisticsProvider {
         return tdata.toArray(new StatisticsData[tdata.size()]);
     }
 
+    /**
+     * returns statistics for a given queue.
+     *
+     * @param serviceName
+     * @return
+     */
     public StatisticsData getStatistics(String[] serviceName) {
         RequestQueue queue = internalQueueMap.get(serviceName[0]);
         if (queue == null) {
@@ -248,34 +258,63 @@ public class RequestQueueManager implements StatisticsProvider {
         }
         return queue.getStatistics(serviceName);
     }
-
+    /**
+     * returns a statistics provider for the request queue.
+     *
+     * @return
+     */
     @Override
     public StatisticsProvider getProvider() {
         return this;
     }
-
+    /**
+     * returns the subsystem that is statistics is requested for.
+     *
+     * @return
+     */
     @Override
     public StatType getStatType() {
         return StatType.REQUESTQUEUE;
     }
-
+    /**
+     * return max capacity for a specific queue
+     *
+     * @param serviceName
+     * @return
+     */
     public int getMaxCapacity(String serviceName) {
         RequestQueue queue = internalQueueMap.get(serviceName);
         return queue.getMaxCapacity();
     }
-
+    /**
+     * return max capacity for a specific queue
+     *
+     * @param serviceName
+     * @return
+     */
     public int getMaxAmountOfQueues() {
         return maxAmountOfQueues;
     }
-
+    /**
+     * Sets the max amount of queues that the request queue manager can handle.
+     *
+     * @param maxAmountOfQueues
+     */
     public void setMaxAmountOfQueues(int maxAmountOfQueues) {
         this.maxAmountOfQueues = maxAmountOfQueues;
     }
-
+    /**
+     * Sets an internal routing component so that the request queue can send information to be routed within the cloud.
+     * @param internalRouting
+     */
     public void setInternalRouting(InternalRoutingRequestQueue internalRouting) {
         this.internalRouting = internalRouting;
     }
-
+    /** 
+     * processes a command from the command and control unit.
+     * @param command
+     * @return 
+     */
     public StatisticsData[] processCommand(Command command) {
         if(command.isQuery()) {
             return executeQuery(command);

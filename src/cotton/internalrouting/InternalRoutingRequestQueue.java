@@ -54,6 +54,14 @@ public interface InternalRoutingRequestQueue {
      * @throws java.io.IOException
      */
     public void sendWork(NetworkPacket netPacket, SocketAddress dest) throws IOException;
+    /**
+     * Sends a discovery packet and notifies the discovery through a request queue message.
+     * @param packet 
+     */
     public void notifyDiscovery(DiscoveryPacket packet);
+    /**
+     * forwads data to the origin
+     * return boolean
+     */
     public boolean forwardResult(Origin origin, ServiceChain serviceChain, byte[] result);
 }

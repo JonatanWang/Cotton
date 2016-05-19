@@ -42,7 +42,23 @@ import cotton.services.ServiceBuffer;
  * @author tony
  */
 public interface InternalRoutingServiceHandler {
+    /**
+     * forwards the result to the origin.
+     * @param origin
+     * @param serviceChain
+     * @param result
+     * @return 
+     */
     public boolean forwardResult(Origin origin, ServiceChain serviceChain, byte[] result);
+    /**
+     * retrieves a service buffer.
+     * @return 
+     */
     public ServiceBuffer getServiceBuffer();
+    /**
+     * notifies the request queue of the existence of the service handler.
+     * @param serviceName
+     * @return 
+     */
     public boolean notifyRequestQueue(String serviceName);
 }

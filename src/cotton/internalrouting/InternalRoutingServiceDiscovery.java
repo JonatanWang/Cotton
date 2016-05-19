@@ -43,10 +43,44 @@ import cotton.servicediscovery.RouteSignal;
  * @author tony
  */
 public interface InternalRoutingServiceDiscovery {
+    /**
+     * Sends information back to origin.
+     * @param origin
+     * @param pathType
+     * @param data
+     * @return 
+     */
     public boolean sendBackToOrigin(Origin origin,PathType pathType,byte[] data);
+    /**
+     * Sends data to a given destination. 
+     * @param dest
+     * @param data
+     * @return 
+     */
     public boolean sendToDestination(DestinationMetaData dest,byte[] data);
+    /**
+     * sends data to a destination and awaits response and also sets a timestamp to the service request.
+     * @param dest
+     * @param data
+     * @param timeout
+     * @return 
+     */
     public ServiceRequest sendWithResponse(DestinationMetaData dest, byte[] data, int timeout);
+    /**
+     * notifies the request queue of the service discovery
+     * @param destination
+     * @param route
+     * @param serviceName
+     * @return 
+     */
     public boolean notifyRequestQueue(DestinationMetaData destination,RouteSignal route, String serviceName);
+    /**
+     * Sends data locally.
+     * @param destination
+     * @param route
+     * @param data
+     * @return 
+     */
     public boolean sendLocal(DestinationMetaData destination,RouteSignal route,byte[] data);
     
 }

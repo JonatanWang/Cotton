@@ -89,7 +89,11 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         timeManger.cancel();
         timeManger.purge();
     }
-
+    /**
+     * Tells a specific service to change capacity. 
+     * @param name
+     * @param amount
+     */
     public void setServiceConfig(String name, int amount) {
         ServiceMetaData service = serviceLookup.getService(name);
         if (service == null) {
@@ -111,7 +115,7 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
     }
 
     /*
-    *   Statistics 
+     *   Statistics 
      */
     public StatisticsData[] getStatisticsForSubSystem(String name) {
         ArrayList<StatisticsData> result = new ArrayList<>();
@@ -123,7 +127,12 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         StatisticsData[] ret = result.toArray(new StatisticsData[result.size()]);
         return ret;
     }
-
+    /**
+     * returns statistics for a specific service handler.
+     *
+     * @param cmdline
+     * @return
+     */
     @Override
     public StatisticsData getStatistics(String[] cmdline) {
         ServiceMetaData metaData = serviceLookup.getService(cmdline[0]);
@@ -157,12 +166,19 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         return new StatisticsData();
 
     }
-
+    /**
+     * returns a statistics provider for the service handler.
+     * return StatisticsProvider
+     */
     @Override
     public StatisticsProvider getProvider() {
         return this;
     }
-
+    /**
+     * returns the type of subsystem that statistics is requested for
+     *
+     * @return
+     */
     @Override
     public StatType getStatType() {
         return StatType.SERVICEHANDLER;
@@ -206,7 +222,10 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         }
         return new StatisticsData[0];
     }
-
+    /**
+     * processes a command that is received from the command and control unit.
+     *
+     */
     @Override
     public StatisticsData[] processCommand(Command command) {
         if (command.getCommandType() == CommandType.USAGEHISTORY) {
@@ -259,7 +278,11 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         }
         return true;
     }
-
+    /**
+     * returns the type of subsystem that statistics is requested for
+     *
+     * @return
+     */
     public boolean hasRunningTimer(ServiceMetaData service) {
         TimeSliceTask timer = timers.get(service.getServiceId());
         if (timer == null) {

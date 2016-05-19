@@ -38,7 +38,22 @@ package cotton.internalrouting;
  * @author Magnus
  */
 public interface ServiceRequest {
+    /**
+     * returns the data from that has been set to the latch.
+     *
+     * @return
+     */
     public byte[] getData();
+    /**
+     * if there is an error with the data it could be set to failed so that the
+     * latch is released.
+     *
+     * @param errorMessage
+     */
     public void setFailed(String errorMessage);
+    /**
+     * returns an error message.
+     * @return
+     */
     public String getErrorMessage();
 }
