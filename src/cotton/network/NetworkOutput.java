@@ -53,6 +53,7 @@ public class NetworkOutput implements Runnable {
     private ConcurrentHashMap<InetSocketAddress, SocketChannel> openChannels;
     private AtomicBoolean run;
     private SocketSelectionNetworkHandler handler;
+    private ByteBuffer size;
 
     /**
      * Returns a <code>NetworkOutput</code> using the specified parameters.
@@ -66,6 +67,7 @@ public class NetworkOutput implements Runnable {
         this.openChannels = openChannels;
         this.queue = queue;
         run = new AtomicBoolean(true);
+        size = ByteBuffer.allocate(4);
     }
 
     @Override
@@ -83,14 +85,15 @@ public class NetworkOutput implements Runnable {
                 SocketChannel sendChannel = null;
 
                 //System.out.println(packet.getType()+" packet of "+output.capacity()+" bytes outgoing from: "+getLocalAddress()+" normal send.");
+                size.putInt(0, output.capacity());
 
                 if ((sendChannel = openChannels.get((InetSocketAddress) dest)) != null) {
-                    ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity());
-                    synchronized (sendChannel) {
-                        sendChannel.write(size);
-
-                        sendChannel.write(output);
-                    }
+                    sendChannel.write(size);
+                    size.clear();
+                    size.putInt(0, packet.getType().ordinal());
+                    sendChannel.write(size);
+                    size.clear();
+                    sendChannel.write(output);
                 } else {
                     sendChannel = SocketChannel.open();
                     sendChannel.connect(dest);
@@ -98,12 +101,12 @@ public class NetworkOutput implements Runnable {
                     while (!sendChannel.finishConnect())
                         System.out.println("Not finished connecting");
 
-                    ByteBuffer size = ByteBuffer.allocate(4).putInt(0, output.capacity());
-                    synchronized (sendChannel) {
-                        sendChannel.write(size);
-
-                        sendChannel.write(output);
-                    }
+                    sendChannel.write(size);
+                    size.clear();
+                    size.putInt(0, packet.getType().ordinal());
+                    sendChannel.write(size);
+                    size.clear();
+                    sendChannel.write(output);
                     handler.registerChannel(sendChannel);
                     openChannels.putIfAbsent((InetSocketAddress) dest, sendChannel);
                 }
@@ -120,6 +123,7 @@ public class NetworkOutput implements Runnable {
 
         tp.writeDelimitedTo(baos);
         ByteBuffer b = ByteBuffer.wrap(baos.toByteArray());
+        //ByteBuffer b = ByteBuffer.wrap(tp.toByteArray());
 
         return b;
     }
@@ -152,7 +156,7 @@ public class NetworkOutput implements Runnable {
 
         builder.setData(com.google.protobuf.ByteString.copyFrom(input.getData()));
 
-        builder.setPathtype(TransportPacket.Packet.PathType.valueOf(input.getType().toString()));
+        //builder.setPathtype(TransportPacket.Packet.PathType.valueOf(input.getType().toString()));
 
         return builder;
     }

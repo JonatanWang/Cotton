@@ -301,30 +301,64 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         }
     }
 
+    private NetworkPacket getInput(SocketChannel sc){
+        if(packetSize == null)
+            packetSize = ByteBuffer.allocate(4);
+
+        try{
+            while(packetSize.hasRemaining())
+                sc.read(packetSize);
+
+            int size = packetSize.getInt(0);
+            packetSize.clear();
+
+            while(packetSize.hasRemaining())
+                sc.read(packetSize);
+
+            PathType type = PathType.values()[packetSize.getInt(0)];
+            packetSize.clear();
+
+            ByteBuffer packet = ByteBuffer.allocate(size);
+
+            while(packet.hasRemaining())
+                sc.read(packet);
+
+            packet.flip();
+            return new NetworkPacket(type, packet);
+        } catch(IOException e) {
+            System.out.println("Read input error: " + e.toString());
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
     private void handleRequest(SocketChannel channel) throws IOException{
-        InputStream inStream = readInput(channel);
+        //InputStream inStream = readInput(channel);
+        NetworkPacket packet = getInput(channel);
 
-        if(inStream == null){
+        //if(inStream == null){
+        if(packet == null){
             return;
         }
 
-        TransportPacket.Packet input = TransportPacket.Packet.parseDelimitedFrom(inStream);
+        //TransportPacket.Packet input = TransportPacket.Packet.parseDelimitedFrom(inStream);
 
-        if(input == null) {
-            System.out.println("TransportPacket null");
-            return;
-        }
+        //if(input == null) {
+        //    System.out.println("TransportPacket null");
+        //    return;
+        //}
 
-        NetworkPacket np = parseTransportPacket(input);
+        //NetworkPacket np = parseTransportPacket(input);
 
-        if(input.getSerializedSize() == 0) {
-            System.out.println("Empty transportpacket");
-            return;
-        }
+        //if(input.getSerializedSize() == 0) {
+        //    System.out.println("Empty transportpacket");
+        //    return;
+        //}
 
         //System.out.println(np.getType()+" packet of "+input.getSerializedSize()+" bytes received on "+getLocalAddress()+".");
 
-        internalRouting.pushNetworkPacket(np);
+        internalRouting.pushNetworkPacket(packet);
     }
 
     private Origin parseOrigin(TransportPacket.Packet input) throws java.net.UnknownHostException{
