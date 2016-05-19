@@ -41,6 +41,7 @@ import cotton.network.ServiceChain;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.json.JSONObject;
 
 /**
@@ -49,11 +50,21 @@ import org.json.JSONObject;
  * @author Jonathan
  */
 public class ScalingClient implements Runnable{
+    private AtomicInteger dones;
+    
+    public ScalingClient(AtomicInteger dones){
+        this.dones = dones;
+    }
+    
     public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException, InterruptedException {
-        int clientAmount = 8;
+        int clientAmount = 10;
+        AtomicInteger dones = new AtomicInteger(0);
+        long starttime = System.currentTimeMillis();
         
         for(int i = 0; i < clientAmount; i++) 
-            new Thread(new ScalingClient()).start();
+            new Thread(new ScalingClient(dones)).start();
+        while(dones.get() != clientAmount){}
+        System.out.println("Time: "+(System.currentTimeMillis()-starttime));
     }
     
     private static JSONObject byteArrayToJson(byte[] data) {
@@ -76,7 +87,7 @@ public class ScalingClient implements Runnable{
     @Override
     public void run() {
         int intos = 1;
-        int sendAmount = 200;
+        int sendAmount = 1000;
         byte[] data;
         Configurator conf;
         Cotton clientInstance = null;
@@ -117,7 +128,7 @@ public class ScalingClient implements Runnable{
         data = jsonToByteArray("removeDataFromDatabase");
         clientInstance.getClient().sendToService(data, chain);
 
-        System.out.println("Done");
+        System.out.println("Done: " + dones.incrementAndGet());
         
         clientInstance.shutdown();
     }
