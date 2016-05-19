@@ -78,9 +78,11 @@ public class NetworkOutput implements Runnable {
                 NetworkPacket packet = p.getPacket();
                 SocketAddress dest = p.getDestination();
 
-                TransportPacket.Packet tp = buildTransportPacket(packet, p.isKeepAlive());
-
-                ByteBuffer output = writeOutput(tp);
+                //TransportPacket.Packet tp = buildTransportPacket(packet, p.isKeepAlive());
+                //ByteBuffer output = writeOutput(tp);
+                ByteBuffer output = packet.getSerializedData();
+                if(output == null)
+                    output = writeOutput(buildTransportPacket(packet, p.isKeepAlive()));
 
                 SocketChannel sendChannel = null;
 

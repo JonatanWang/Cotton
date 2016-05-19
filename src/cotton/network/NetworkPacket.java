@@ -174,11 +174,18 @@ public class NetworkPacket implements Serializable{
     }
 
     /**
-     * Removes the data in the <code>NetworkPacket</code> by setting it to 
+     * Removes the data in the <code>NetworkPacket</code> by setting it to
      * <code>null</code>.
      */
     public void removeData(){
         data = null;
+    }
+
+    public ByteBuffer getSerializedData(){
+        if(serializedData == null){
+            
+        }
+        return serializedData;
     }
 
     private Origin parseOrigin(TransportPacket.Packet input){
@@ -222,7 +229,7 @@ public class NetworkPacket implements Serializable{
         try{
             tp = TransportPacket.Packet.parseDelimitedFrom(new ByteArrayInputStream(serializedData.array()));
         }catch(IOException e){e.printStackTrace();}
-        serializedData = null;
+        //        serializedData = null;
         path = parsePath(tp);
         origin = parseOrigin(tp);
         data = tp.getData().toByteArray();
