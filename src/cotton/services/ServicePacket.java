@@ -44,6 +44,7 @@ import java.util.Arrays;
  * @author Magnus
  * @author Tony
  */
+@Deprecated
 public class ServicePacket implements Serializable{
     private byte[] data;
     private Origin origin;

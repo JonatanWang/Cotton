@@ -748,8 +748,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                     discovery.discoveryUpdate(packet.getOrigin(), packet.getData());
                     break;
                 case SERVICE:
-                    ServicePacket servicePacket = new ServicePacket(packet.getOrigin(), packet.getData(), packet.getPath());
-                    serviceHandlerBridge.add(servicePacket);
+                    //ServicePacket servicePacket = new ServicePacket(packet.getOrigin(), packet.getData(), packet.getPath());
+                    serviceHandlerBridge.add(packet);
                     break;
                 case REQUESTQUEUE:
                     if (requestQueueManager == null) {

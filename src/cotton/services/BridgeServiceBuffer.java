@@ -33,6 +33,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package cotton.services;
 
+import cotton.network.NetworkPacket;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
@@ -46,13 +47,13 @@ import java.util.logging.Logger;
  */
 public class BridgeServiceBuffer implements ServiceBuffer{
 
-    private LinkedBlockingQueue<ServicePacket> buffer;
+    private LinkedBlockingQueue<NetworkPacket> buffer;
 
     public BridgeServiceBuffer(){
         buffer = new LinkedBlockingQueue<>();
     }
 
-    public ServicePacket nextPacket(){
+    public NetworkPacket nextPacket(){
         try {
             return buffer.take();//.poll();
         } catch (InterruptedException ex) {
@@ -60,7 +61,7 @@ public class BridgeServiceBuffer implements ServiceBuffer{
         return null;
     }
 
-    public boolean add(ServicePacket servicePacket){
+    public boolean add(cotton.network.NetworkPacket servicePacket){
         return buffer.add(servicePacket);
     }
 

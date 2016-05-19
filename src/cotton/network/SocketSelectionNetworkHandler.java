@@ -56,7 +56,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-import com.mongodb.connection.Server;
+
 import cotton.configuration.NetworkConfigurator;
 import cotton.internalrouting.InternalRoutingNetwork;
 

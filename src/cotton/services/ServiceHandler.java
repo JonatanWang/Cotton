@@ -32,6 +32,7 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.services;
 
 import cotton.internalrouting.InternalRoutingServiceHandler;
+import cotton.network.NetworkPacket;
 import cotton.systemsupport.Command;
 import cotton.systemsupport.CommandType;
 import java.util.concurrent.Executors;
@@ -46,6 +47,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ServiceHandler implements Runnable, StatisticsProvider {
 
@@ -55,6 +61,8 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
     private ExecutorService threadPool;
     private volatile boolean active = true;
     private ConcurrentHashMap<UUID, TimeSliceTask> timers;
+    private ConcurrentHashMap<String, DataPath> bufferChannels = new ConcurrentHashMap<String, DataPath>();
+    
     private Timer timeManger = new Timer();
 
     public ServiceHandler(ActiveServiceLookup serviceLookup, InternalRoutingServiceHandler internalRouting) {
@@ -67,17 +75,35 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
 
     public void run() {
         while (active) {
-            ServicePacket packet = workBuffer.nextPacket();
-
+            NetworkPacket packet = workBuffer.nextPacket();
+            String nextServiceName = packet.getPath().getNextServiceName();
+            ServiceMetaData service = this.serviceLookup.getService(nextServiceName);
             //TODO: if the threadcap met put packet back into buffer.
-            if (packet == null) {
+            if (service == null) {
 //                try{
 //                    Thread.sleep(5); //change to exponential fallback strategy.
 //                } catch (InterruptedException ex) {
 //                }
             } else {
-                ServiceDispatcher th = new ServiceDispatcher(packet);
-                threadPool.execute(th);
+                DataPath path = bufferChannels.get(nextServiceName);
+                if(path != null) {
+                    path.put(packet);
+                }else {
+                    path = new DataPath(nextServiceName);
+                    DataPath oldPath = null;
+                    oldPath = this.bufferChannels.putIfAbsent(nextServiceName, path);
+                    if(oldPath != null) {
+                        path = oldPath;
+                    }
+                    path.put(packet);
+                    ServiceDispatcher th = new ServiceDispatcher(path);
+                    threadPool.execute(th);
+                }
+                if(path.getListenerCount().get() <= service.getMaxCapacity()) {
+                    ServiceDispatcher th = new ServiceDispatcher(path);
+                    threadPool.execute(th);
+                }
+                
             }
         }
         threadPool.shutdownNow();
@@ -297,6 +323,40 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         }
     }
 
+    private class DataPath {
+        private LinkedBlockingQueue<NetworkPacket> buffer;
+        private String name;
+        private AtomicInteger listenerCount = new AtomicInteger(0);
+        private AtomicBoolean stopOne = new AtomicBoolean(false);
+        public DataPath(String name) {
+            this.name = name;
+            this.buffer = new LinkedBlockingQueue<NetworkPacket>();
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public AtomicInteger getListenerCount() {
+            return listenerCount;
+        }
+        
+        public boolean put(NetworkPacket pkt) {
+            return this.buffer.offer(pkt);
+        }
+        public NetworkPacket getPacket() throws InterruptedException {
+            return this.buffer.take();
+        }
+        
+        public void stopOneThread() {
+            this.stopOne.set(true);
+        }
+        public boolean getStopSignal() {
+            return this.stopOne.getAndSet(false);
+        }
+        
+    }
+    
     /**
      * ServiceDispatcher runs a service
      */
@@ -304,21 +364,23 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
 
         private ServiceFactory serviceFactory;
         private boolean succesfulInit = true;
-        private ServicePacket servicePacket;
         private String serviceName;
         private ServiceMetaData serviceMetaData;
+        private DataPath dataPath;
 
-        public ServiceDispatcher(ServicePacket servicePacket) {
-            this.servicePacket = servicePacket;
-            this.serviceName = this.servicePacket.getTo().getNextServiceName();
-
+        public ServiceDispatcher(DataPath dataPath) {
+           this.dataPath = dataPath;
+           this.serviceName = dataPath.getName();
+            dataPath.getListenerCount().incrementAndGet();
             if (this.serviceName == null) {
+                dataPath.getListenerCount().decrementAndGet();
                 succesfulInit = false;
                 return;
             }
 
             this.serviceMetaData = serviceLookup.getService(serviceName);
             if (serviceMetaData == null) {
+                dataPath.getListenerCount().decrementAndGet();
                 succesfulInit = false;
                 return;
             }
@@ -332,29 +394,45 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
             this.serviceFactory = serviceMetaData.getServiceFactory();
 
         }
-
-        @Override
-        public void run() {
-            if (succesfulInit == false) {
-                return;
-            }
+        
+        private void startService(NetworkPacket packet) {
             Service service = serviceFactory.newService();
             try {
                 if (serviceMetaData.isSampling()) {
                     serviceMetaData.incrementInputCounter();
                 }
-                byte[] result = service.execute(null, servicePacket.getOrigin(), servicePacket.getData(), servicePacket.getTo());
+                byte[] result = service.execute(null, packet.getOrigin(), packet.getData(), packet.getPath());
 
-                internalRouting.forwardResult(servicePacket.getOrigin(), servicePacket.getTo(), result);
+                internalRouting.forwardResult(packet.getOrigin(), packet.getPath(), result);
                 serviceLookup.getService(serviceName).decrementThreadCount();
                 internalRouting.notifyRequestQueue(serviceName);
                 if (serviceMetaData.isSampling()) {
                     serviceMetaData.incrementOutputCounter();
                 }
             } catch (Exception e) {
-                serviceLookup.getService(serviceName).decrementThreadCount();
+                
                 e.printStackTrace();
             }
+        }
+
+        @Override
+        public void run() {
+            if (succesfulInit == false) {
+                return;
+            }
+            NetworkPacket packet = null;
+            do {
+                for(int i = 0; i < 10; i++ ) {
+                    try {
+                         packet = this.dataPath.getPacket();
+                         if(packet == null) {
+                             break;
+                         }
+                         startService(packet);
+                    } catch (InterruptedException ex) {}
+                }
+            }while(this.dataPath.getStopSignal() == false);
+            serviceLookup.getService(serviceName).decrementThreadCount();
         }
     }
 }
