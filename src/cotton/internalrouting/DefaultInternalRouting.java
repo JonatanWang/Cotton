@@ -119,6 +119,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      * The InternalRoutingNetwork implementation
      */
     /**
+     * adds a network packet to the routing queue to be processed
      *
      * @param networkPacket
      */
@@ -128,9 +129,9 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     }
 
     /**
+     * adds a network packet to the routing queue to be processed
      *
      * @param networkPacket
-     * @param latch
      */
     @Override
     public void pushKeepAlivePacket(NetworkPacket networkPacket, SocketLatch latch) {
@@ -175,6 +176,8 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      * The InternalRoutingClient implementation
      */
     /**
+     * Sends works to the service by using resolve destination to find where the
+     * data is to be delivered
      *
      * @param data
      * @param serviceChain
@@ -649,17 +652,29 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
     public StatisticsData getStatistics(String[] name) {
         return new StatisticsData();
     }
-
+    /**
+     * returns a statistics provider that can be asked for statistics.
+     *
+     * @return
+     */
     @Override
     public StatisticsProvider getProvider() {
         return this;
     }
-
+    /**
+     * returns what the component type that the statistics were requested for.
+     *
+     * @return
+     */
     @Override
     public StatType getStatType() {
         return StatType.INTERNALROUTING;
     }
-
+    /**
+     * processes a command from the command and control unit.
+     * @param command
+     * @return
+     */
     @Override
     public StatisticsData[] processCommand(Command command) {
         return new StatisticsData[0];

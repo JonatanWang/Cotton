@@ -71,19 +71,35 @@ public class DestinationMetaData implements Serializable {
         this.socketAddress = socketAddress;
         this.pathType = pathType;
     }
-
+    /**
+     * returns the ip and port to the destination
+     *
+     * @return
+     */
     public SocketAddress getSocketAddress() {
         return socketAddress;
     }
-
+    /**
+     * sets the socket address for the destination.
+     *
+     * @param socketAddress
+     */
     public void setSocketAddress(SocketAddress socketAddress) {
         this.socketAddress = socketAddress;
     }
-
+    /**
+     * sets the socket address for the destination.
+     *
+     * @param socketAddress
+     */
     public PathType getPathType() {
         return pathType;
     }
-
+    /**
+     * sets the path type for the destination.
+     *
+     * @param pathType
+     */
     public void setPathType(PathType pathType) {
         this.pathType = pathType;
     }
@@ -116,7 +132,11 @@ public class DestinationMetaData implements Serializable {
         }
         return true;
     }
-
+    /**
+     * compares whether the socket addresses are equal.
+     * @param other
+     * @return
+     */
     public boolean compareAddress(SocketAddress other) {
         return ((InetSocketAddress) socketAddress).equals((InetSocketAddress) other);
     }

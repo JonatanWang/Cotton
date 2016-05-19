@@ -51,7 +51,11 @@ public class DefaultServiceRequest implements ServiceRequest{
     public DefaultServiceRequest(long timeStamp){
         this.timeStamp = timeStamp;
     }
-
+    /**
+     * A latch that blocks the thread until there is data to be read.
+     *
+     * @return data in a byte array
+     */
     public byte[] getData() {
         boolean loop = false;
         do {
@@ -62,23 +66,38 @@ public class DefaultServiceRequest implements ServiceRequest{
         }while(loop);
         return data;
     }
-
+    /**
+     * sets the data and releases the latch.
+     *
+     * @param data
+     */
     public void setData(byte[] data) {
         this.data = data;
         latch.countDown();
     }
-
+    /**
+     * sets an error message and releases the latch.
+     *
+     * @param errorMessage
+     */
     public void setFailed(String errorMessage) {
         if(data == null){
             this.errorMessage = errorMessage;
             latch.countDown();
         }
     }
-
+    /**
+     * returns a timeStamp for when the data was set.
+     *
+     * @return
+     */
     public long getTimeStamp(){
         return timeStamp;
     }
-
+    /**
+     * sets a timestamp.
+     * @param timeStamp
+     */
     public void setTimeStamp(long timeStamp){
         this.timeStamp = timeStamp;
     }

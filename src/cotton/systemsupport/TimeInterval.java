@@ -50,43 +50,78 @@ public class TimeInterval implements Serializable {
         this.outputCount = 0;
         this.deltaTime = deltaTime;
     }
-
+    /**
+     * Returns the time difference between this time interval and the next.
+     *
+     * @return
+     */
     public long getDeltaTime(){
         return deltaTime;
     }
-    
+    /**
+     * calculates and returns input intensity
+     *
+     * @return
+     */
     public double calculateInputIntensity() {
         double time = (double) deltaTime / 1000;
         return (deltaTime == 0) ? 0 : ((float) inputCount / time);
 
     }
-
+    /**
+     * calculates and returns output intensity
+     *
+     * @return
+     */
     public double calculateOutputIntensity() {
         double time = (double) deltaTime / 1000;
         return (deltaTime == 0) ? 0 : ((float) outputCount / time);
 
     }
-
+    /**
+     * calculates and returns output intensity
+     *
+     * @return
+     */
     public void setInputCount(int inputCount) {
         this.inputCount = inputCount;
     }
-
+    /**
+     * sets output count
+     *
+     * @param outputCount
+     */
     public void setOutputCount(int outputCount) {
         this.outputCount = outputCount;
     }
-
+    /**
+     * returns the current workload of the queue
+     *
+     * @return
+     */
     public long getCurrentQueueCount() {
         return currentQueueCount;
     }
-
+    /**
+     * returns the current workload of the queue
+     *
+     * @return
+     */
     public void setCurrentQueueCount(long currentQueueCount) {
         this.currentQueueCount = currentQueueCount;
     }
-
+    /**
+     * returns the current workload of the queue
+     *
+     * @return
+     */
     public long getInputCount() {
         return inputCount;
     }
-
+    /**
+     * returns output count of the queue.
+     * @return
+     */
     public long getOutputCount() {
         return outputCount;
     }
