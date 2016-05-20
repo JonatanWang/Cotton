@@ -88,7 +88,7 @@ public class ScalingClient implements Runnable{
     @Override
     public void run() {
         int intos = 1;
-        int sendAmount = 100000;
+        int sendAmount = 1000;
         byte[] data;
         Configurator conf;
         Cotton clientInstance = null;
@@ -110,25 +110,24 @@ public class ScalingClient implements Runnable{
 
         data = ByteBuffer.allocate(4).putInt(0, 2).array();
         //data = jsonToByteArray("authoriseRequest");
-        for(int i = 0; i < intos; i++)
-            chain.into("mathpow");
-        clientInstance.getClient().sendToService(data, chain);
+//        for(int i = 0; i < intos; i++)
+//            chain.into("mathpow");
+//        clientInstance.getClient().sendToService(data, chain);
         
         //data = jsonToByteArray("getDataFromDatabase");
         for(int i = 1; i < sendAmount+1; i++) {
             for(int j = 0; j < intos; j++)
                 chain.into("mathpow");
             serviceRequest = clientInstance.getClient().sendWithResponse(data, chain);
-            
 //            try {
 //                System.out.println("Number: " + i + " " + byteArrayToJson(serviceRequest.getData()));
 //            } catch(Exception e) {}
         }
         
-        for(int i = 0; i < intos; i++)
-                chain.into("mathpow");
-        //data = jsonToByteArray("removeDataFromDatabase");
-        clientInstance.getClient().sendToService(data, chain);
+//        for(int i = 0; i < intos; i++)
+//                chain.into("mathpow");
+//        //data = jsonToByteArray("removeDataFromDatabase");
+//        clientInstance.getClient().sendToService(data, chain);
 
         System.out.println("Done: " + dones.incrementAndGet());
         
