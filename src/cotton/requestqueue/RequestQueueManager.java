@@ -53,7 +53,6 @@ import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.TimeInterval;
 import cotton.systemsupport.UsageHistory;
-import sun.security.provider.NativePRNG;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
