@@ -80,8 +80,8 @@ public class Cotton {
 
         if(config.hasDatabase())
             dataBaseWrapperStart(config);
-        //initNetwork(new SocketSelectionNetworkHandler(config.getNetworkConfigurator()));
-        initNetwork(new DefaultNetworkHandler(config.getNetworkConfigurator()));
+        initNetwork(new SocketSelectionNetworkHandler(config.getNetworkConfigurator()));
+        //initNetwork(new DefaultNetworkHandler(config.getNetworkConfigurator()));
         initDiscovery(config);
         initLookup(config.getServiceConfigurator());
         initRouting();

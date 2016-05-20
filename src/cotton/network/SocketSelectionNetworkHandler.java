@@ -56,7 +56,6 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-
 import cotton.configuration.NetworkConfigurator;
 import cotton.internalrouting.InternalRoutingNetwork;
 
@@ -75,7 +74,7 @@ import java.util.logging.Logger;
  */
 public class SocketSelectionNetworkHandler implements NetworkHandler {
     private int localPort;
-    private ByteBuffer packetSize;
+    private ByteBuffer packetSize, packet;
     private InetAddress localIP;
     private InternalRoutingNetwork internalRouting;
     private ExecutorService threadPool;
@@ -272,6 +271,9 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
     private InputStream readInput(SocketChannel sc){
         if(packetSize==null)
             packetSize = ByteBuffer.allocate(4);
+        if(packet == null)
+            packet = ByteBuffer.allocate(2000000);
+
         try {
             while(packetSize.hasRemaining())
                 sc.read(packetSize);
@@ -279,14 +281,16 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
             int size = packetSize.getInt(0);
             packetSize.clear();
 
-            ByteBuffer packet = ByteBuffer.allocate(size);
+            //ByteBuffer packet = ByteBuffer.allocate(size);
 
-            while(packet.hasRemaining())
+            while(packet.remaining() == 2000000)
                 sc.read(packet);
 
             packet.flip();
+            InputStream result = new ByteArrayInputStream(packet.array());
+            packet.clear();
 
-            return new ByteArrayInputStream(packet.array());
+            return result;
         } catch(IOException e) {
             System.out.println("Read input error: " + e.toString());
             e.printStackTrace();
