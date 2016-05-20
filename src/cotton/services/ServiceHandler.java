@@ -347,13 +347,15 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
     }
 
     private class DataPath {
-        private LinkedBlockingQueue<NetworkPacket> buffer;
+        //private LinkedBlockingQueue<NetworkPacket> buffer;
+        private ServiceBuffer buffer;
         private String name;
         private AtomicInteger listenerCount = new AtomicInteger(0);
         private AtomicBoolean stopOne = new AtomicBoolean(false);
         public DataPath(String name) {
             this.name = name;
-            this.buffer = new LinkedBlockingQueue<NetworkPacket>();
+            //this.buffer = new LinkedBlockingQueue<NetworkPacket>();
+            this.buffer = new BridgeServiceBuffer();
         }
 
         public String getName() {
@@ -365,10 +367,12 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         }
         
         public boolean put(NetworkPacket pkt) {
-            return this.buffer.offer(pkt);
+            //return this.buffer.offer(pkt);
+            return this.buffer.add(pkt);
         }
         public NetworkPacket getPacket() throws InterruptedException {
-            return this.buffer.take();
+            //return this.buffer.take();
+            return this.buffer.nextPacket();
         }
         
         public void stopOneThread() {

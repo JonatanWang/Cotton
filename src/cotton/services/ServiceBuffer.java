@@ -58,4 +58,9 @@ public interface ServiceBuffer{
      * @return <code>true</code> if the buffer changed as a result of the <code>add</code>.
      */
     public boolean add(cotton.network.NetworkPacket servicePacket);
+    /**
+     * Returns the current size,
+     * @return number of items currently in buffer
+     */
+    public int size();
 }
