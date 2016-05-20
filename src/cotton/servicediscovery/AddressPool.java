@@ -63,6 +63,14 @@ public class AddressPool {
         return true;
     }
 
+    public DestinationMetaData[] copyPoolData() {
+        DestinationMetaData[] data = null;
+         synchronized (this) {
+            data = pool.toArray(new DestinationMetaData[pool.size()]);
+        }
+        return data;
+    }
+    
     /**
      * removes an address from the addresspool
      * @param dest The address of the invalid destination.
@@ -91,5 +99,17 @@ public class AddressPool {
             }
         }
         return addr;
+    }
+    /**
+     * returns the amount of addresses in the pool
+     * @return size of the pool.
+     */
+    public int size(){
+        return pool.size();
+    }
+
+    @Override
+    public String toString() {
+        return "AddressPool{" + "pool=" + pool + '}';
     }
 }

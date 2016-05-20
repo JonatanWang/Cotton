@@ -69,21 +69,22 @@ public class TestDSB {
     
     @Test
     public void testAdd() {
+        System.out.println("Now running: testAdd");
         ServiceBuffer sb = new BridgeServiceBuffer();
         
-        ServicePacket sp = new ServicePacket(null, null, new DummyServiceChain("Coloring"));
-        
-        assertEquals(true, sb.add(sp));
+        NetworkPacket np = NetworkPacket.newBuilder().setPath(new DummyServiceChain("Coloring")).build();
+        assertEquals(true, sb.add(np));
     }
     
     @Test
     public void testNextPacket() {
+        System.out.println("Now running: testNextPacket");
         ServiceBuffer sb = new BridgeServiceBuffer();
         
-        ServicePacket[] sp = new ServicePacket[3];
+        NetworkPacket[] sp = new NetworkPacket[3];
         
         for(int i = 0; i < sp.length; i++)
-            sp[i] = new ServicePacket(null, null, new DummyServiceChain("Coloring" + Integer.toString(i)));
+            sp[i] =  NetworkPacket.newBuilder().setPath(new DummyServiceChain("Coloring" + Integer.toString(i))).build();
         
         for(int i = 0; i < sp.length; i++)
             sb.add(sp[i]);
@@ -91,6 +92,6 @@ public class TestDSB {
         sb.nextPacket();
         sb.nextPacket();
         
-        assertEquals("Coloring2", sb.nextPacket().getTo().getNextServiceName());
+        assertEquals("Coloring2", sb.nextPacket().getPath().getNextServiceName());
     }
 }

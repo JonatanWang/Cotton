@@ -48,7 +48,6 @@ public class TopologyPacket {
      * instance <code>SocketAddress</code> and the service list.
      * 
      * @param instanceAddress the <code>Cotton</code> instance address.
-     * @param serviceList the <code>Cotton</code> instance service list.
      */
     public TopologyPacket(DestinationMetaData instanceAddress,SocketAddress originalSource,int count) {
         this.instanceAddress = instanceAddress;
@@ -122,4 +121,15 @@ public class TopologyPacket {
   	public void setLastJump(SocketAddress lastJump){
         this.lastJump = lastJump;
   	}
+
+    @Override
+    public String toString() {
+        return "TopologyPacket{" +
+                "instanceAddress=" + instanceAddress +
+                ", originalSource=" + originalSource +
+                ", lastJump=" + lastJump +
+                ", isGlobalDiscovery=" + isGlobalDiscovery +
+                ", count=" + count +
+                '}';
+    }
 }

@@ -29,9 +29,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
 package cotton.network;
+
 import cotton.network.PathType;
 import java.io.Serializable;
 import java.net.SocketAddress;
@@ -43,39 +42,64 @@ import java.util.Objects;
  * @author tony
  */
 public class DestinationMetaData implements Serializable {
+
     private SocketAddress socketAddress;
     private PathType pathType;
 
     /**
-  	* Default empty DestinationMetaData constructor
-  	*/
-  	public DestinationMetaData() {
-      socketAddress = null;
-      pathType = PathType.NOTFOUND;
-  	}
+     * Default empty DestinationMetaData constructor
+     */
+    public DestinationMetaData() {
+        socketAddress = null;
+        pathType = PathType.NOTFOUND;
+    }
 
     /**
-    *
-    *
-    **/
+     * This will create a new DestinationMetaData from a old one
+     * @param old the one that should be copy
+     */
+    public DestinationMetaData(DestinationMetaData old) {
+        socketAddress = old.socketAddress;
+        pathType = old.pathType;
+    }
+    /**
+     *
+     *
+     *
+     */
     public DestinationMetaData(SocketAddress socketAddress, PathType pathType) {
         this.socketAddress = socketAddress;
         this.pathType = pathType;
     }
-
-
+    /**
+     * returns the ip and port to the destination
+     *
+     * @return
+     */
     public SocketAddress getSocketAddress() {
         return socketAddress;
     }
-
+    /**
+     * sets the socket address for the destination.
+     *
+     * @param socketAddress
+     */
     public void setSocketAddress(SocketAddress socketAddress) {
         this.socketAddress = socketAddress;
     }
-
+    /**
+     * sets the socket address for the destination.
+     *
+     * @param socketAddress
+     */
     public PathType getPathType() {
         return pathType;
     }
-
+    /**
+     * sets the path type for the destination.
+     *
+     * @param pathType
+     */
     public void setPathType(PathType pathType) {
         this.pathType = pathType;
     }
@@ -108,8 +132,18 @@ public class DestinationMetaData implements Serializable {
         }
         return true;
     }
+    /**
+     * compares whether the socket addresses are equal.
+     * @param other
+     * @return
+     */
+    public boolean compareAddress(SocketAddress other) {
+        return ((InetSocketAddress) socketAddress).equals((InetSocketAddress) other);
+    }
 
-   	public boolean compareAddress(SocketAddress other){
-      	return ((InetSocketAddress)socketAddress).equals((InetSocketAddress)other);
-  	}
+    @Override
+    public String toString() {
+        return "DestinationMetaData{" + "socketAddress=" + (InetSocketAddress) socketAddress + ", pathType=" + pathType + '}';
+    }
+
 }

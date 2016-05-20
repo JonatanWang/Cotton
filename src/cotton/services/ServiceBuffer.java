@@ -33,6 +33,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package cotton.services;
 
+import cotton.network.NetworkPacket;
+
 /**
  * A <code>ServiceBuffer</code> stores incoming <code>ServicePackets</code> and 
  * distributes packets.
@@ -47,7 +49,7 @@ public interface ServiceBuffer{
      * 
      * @return the next <code>ServicePacket</code> in the buffer.
      */
-    public ServicePacket nextPacket();
+    public NetworkPacket nextPacket();
     
     /**
      * Stores a <code>ServicePacket</code> in the buffer.
@@ -55,5 +57,5 @@ public interface ServiceBuffer{
      * @param servicePacket the <code>ServicePacket</code> to store.
      * @return <code>true</code> if the buffer changed as a result of the <code>add</code>.
      */
-    public boolean add(ServicePacket servicePacket);
+    public boolean add(cotton.network.NetworkPacket servicePacket);
 }

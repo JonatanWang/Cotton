@@ -51,6 +51,7 @@ public class GlobalDiscoveryDNS {
     
     public GlobalDiscoveryDNS()throws SecurityException{
         this.addressArray = new SocketAddress[0];
+        /*
         BufferedReader bufferedReader = null;
         try{
             FileReader fileReader = new FileReader("dnsconfig");
@@ -66,7 +67,7 @@ public class GlobalDiscoveryDNS {
                 if(bufferedReader != null) 
                     bufferedReader.close();
             }catch(IOException e){}
-        }
+        }*/
 
         //TODO: read from config and get the global ServiceDiscovery SocketAddress
     }
@@ -109,7 +110,7 @@ public class GlobalDiscoveryDNS {
             ipaddress = addressInfo[0];
             port = Integer.parseInt(addressInfo[1]);
             addr = new InetSocketAddress(ipaddress,port);
-            System.out.println("testing" + ((InetSocketAddress)addr).toString());
+            System.out.println("testing " + ((InetSocketAddress)addr).toString());
 
         }catch(NumberFormatException e){
             System.out.println("Global DNS format error (port)");

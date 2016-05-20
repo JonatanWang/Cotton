@@ -76,6 +76,11 @@ public class FileWriterService implements Service{
         return new FileFactory();
     }
 
+    @Override
+    public ServiceFactory loadFactory(){
+        return new FileFactory();
+    }
+
     public static class FileFactory implements ServiceFactory {
 
         @Override

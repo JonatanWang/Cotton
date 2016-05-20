@@ -29,15 +29,16 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
 package cotton.servicediscovery;
 
-import cotton.internalRouting.InternalRoutingServiceDiscovery;
+import cotton.configuration.Configurator;
+import cotton.internalrouting.InternalRoutingServiceDiscovery;
+import cotton.internalrouting.ServiceRequest;
 import cotton.network.DestinationMetaData;
 import cotton.network.Origin;
 import cotton.network.PathType;
 import cotton.network.ServiceChain;
+import cotton.requestqueue.RequestQueueManager;
 import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
 import cotton.services.ActiveServiceLookup;
 import java.io.ByteArrayInputStream;
@@ -50,12 +51,26 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
-import java.util.concurrent.ConcurrentHashMap.KeySetView;
+
 import cotton.services.ServiceMetaData;
+import cotton.systemsupport.Command;
+import cotton.systemsupport.CommandType;
 import java.util.ArrayList;
 import java.io.Serializable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import cotton.systemsupport.StatisticsProvider;
+import cotton.systemsupport.StatisticsData;
+import cotton.systemsupport.StatType;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
@@ -68,18 +83,41 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     private InternalRoutingServiceDiscovery internalRouting;
     private AddressPool discoveryCache;
     private ConcurrentHashMap<String, AddressPool> serviceCache;
+    private ConcurrentHashMap<String, AddressPool> sleepingServiceCache = new ConcurrentHashMap<String, AddressPool>();
     private ActiveServiceLookup localServiceTable = null;
     private ExecutorService threadPool;
-    private ConcurrentHashMap<String,AddressPool> activeQueue;
+    private ConcurrentHashMap<String, AddressPool> activeQueue;
+    private ConcurrentHashMap<String, AddressPool> sleepingQueue = new ConcurrentHashMap<String, AddressPool>();
+    private ConcurrentHashMap<DestinationMetaData, AtomicInteger> destFailStat = new ConcurrentHashMap();
+    private RequestQueueManager queueManager;
+    private final ScheduledThreadPoolExecutor deadAddressValidator;
+    private ConcurrentLinkedQueue<ReapedAddress> deadAddresses;
+    private LinkedBlockingQueue<UpdateItem> updateQueue = new LinkedBlockingQueue<>();
+
+    private final boolean upScalingActive = true; // if we add queues to sleeping instead of active when they are announced
+    private AtomicInteger runDownScaling = new AtomicInteger(1);
     /**
      * Fills in a list of all pre set globalServiceDiscovery addresses
+     *
      * @param globalDNS information from the config file
      */
     private void initGlobalDiscoveryPool(GlobalDiscoveryDNS globalDNS) {
         if (globalDNS != null) {
             SocketAddress[] addrArr = globalDNS.getGlobalDiscoveryAddress();
             for (int i = 0; i < addrArr.length; i++) {
-                DestinationMetaData gAddr = new DestinationMetaData(addrArr[i],PathType.DISCOVERY); 
+                DestinationMetaData gAddr = new DestinationMetaData(addrArr[i], PathType.DISCOVERY);
+                System.out.println("GlobalDiscovery adddress:" + gAddr.toString());
+                discoveryCache.addAddress(gAddr);
+            }
+        }
+    }
+    
+    private void initGlobalDiscoveryPool(Configurator conf) {
+        if (conf != null) {
+            SocketAddress[] addrArr = conf.getDiscoverySocketAddresses();
+            for (int i = 0; i < addrArr.length; i++) {
+                DestinationMetaData gAddr = new DestinationMetaData(addrArr[i], PathType.DISCOVERY);
+                System.out.println("GlobalDiscovery adddress:" + gAddr.toString());
                 discoveryCache.addAddress(gAddr);
             }
         }
@@ -89,12 +127,33 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         this.discoveryCache = new AddressPool();
         initGlobalDiscoveryPool(dnsConfig);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
-        threadPool = Executors.newCachedThreadPool();
+        //threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newCachedThreadPool();//newFixedThreadPool(10);
         this.activeQueue = new ConcurrentHashMap<>();
+        this.deadAddresses = new ConcurrentLinkedQueue<>();
+        deadAddressValidator = new ScheduledThreadPoolExecutor(1);
+        this.startDownScaling();
+
+    }
+    
+    public GlobalServiceDiscovery(boolean config, Configurator conf) {
+        for(SocketAddress s: conf.getDiscoverySocketAddresses())
+            System.out.println("global sockets: " + s);
+        this.discoveryCache = new AddressPool();
+        initGlobalDiscoveryPool(conf);
+        this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
+        //threadPool = Executors.newCachedThreadPool();
+        threadPool = Executors.newFixedThreadPool(10);
+        this.activeQueue = new ConcurrentHashMap<>();
+        this.deadAddresses = new ConcurrentLinkedQueue<>();
+        deadAddressValidator = new ScheduledThreadPoolExecutor(1);
+        this.startDownScaling();
+
     }
 
     /**
      * So we can get out to other machines
+     *
      * @param network GlobalServiceDiscovery way out to the world
      * @param localAddress what machine its one and its port
      */
@@ -106,37 +165,90 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     /**
      * If this machine runs local services set the lookup table
-     * @param serviceTable a table with all the local services that can be run on this machine
+     *
+     * @param serviceTable a table with all the local services that can be run
+     * on this machine
      */
     @Override
     public void setLocalServiceTable(ActiveServiceLookup serviceTable) {
         this.localServiceTable = serviceTable;
     }
 
-    /**
-     * Notifyes ServiceDiscovery that a destination cant be reached
-     * @param dest the faulty destination
-     * @param serviceName optional name for the service that the address was for
-     * @return a new destiantion if 
-     */
-    @Override
-  	public DestinationMetaData destinationUnreachable(DestinationMetaData dest,String serviceName){
-        if(serviceName != null){
+    private DestinationMetaData destinationRemove(DestinationMetaData dest, String serviceName) {
+        if (serviceName != null) {
             AddressPool pool = serviceCache.get(serviceName);
-            if(pool != null){
+            if (pool != null) {
                 pool.remove(dest);
-                return pool.getAddress();  
+                return pool.getAddress();
             }
         }
-        if(dest.getPathType() == PathType.DISCOVERY){
+        if (dest.getPathType() == PathType.DISCOVERY) {
             discoveryCache.remove(dest);
             return discoveryCache.getAddress();
         }
         return null;
-  	}
+    }
+
+    /**
+     * Notifyes ServiceDiscovery that a destination cant be reached
+     *
+     * @param dest the faulty destination
+     * @param serviceName optional name for the service that the address was for
+     * @return a new destiantion if
+     */
+    @Override
+    public DestinationMetaData destinationUnreachable(DestinationMetaData dest, String serviceName) {
+        AtomicInteger failCount = null;
+        AtomicInteger newFailCount = new AtomicInteger(1);
+        if (dest == null) {
+            System.out.println("global, destinationUnreachable: dest is null");
+            return null;
+        }
+        failCount = this.destFailStat.putIfAbsent(dest, newFailCount);
+        int value = 1;
+
+        if (failCount != null) {
+            value = failCount.incrementAndGet();
+        } else {
+            value = newFailCount.incrementAndGet();
+        }
+        PathType type = dest.getPathType();
+        AddressPool currentPool = null;
+        switch (type) {
+            case REQUESTQUEUE:
+                currentPool = activeQueue.get(serviceName);
+                break;
+            case DISCOVERY:
+                currentPool = discoveryCache;
+                break;
+            case SERVICE:
+                currentPool = serviceCache.get(serviceName);
+                break;
+        }
+        // TODO: change to threashold over time
+        if (value > 5) {
+            DestinationMetaData newAddress = destinationRemove(dest, serviceName);
+            this.deadAddresses.add(new ReapedAddress(serviceName, dest));
+            if (currentPool.size() < 2) {
+                checkDeadAddresses(currentPool);
+            }
+            return newAddress;
+        }
+        if (serviceName != null) {
+            AddressPool pool = serviceCache.get(serviceName);
+            if (pool != null) {
+                return pool.getAddress();
+            }
+        }
+        if (dest.getPathType() == PathType.DISCOVERY) {
+            return discoveryCache.getAddress();
+        }
+        return null;
+    }
 
     /**
      * Search globaly for a destination with a service named serviceName
+     *
      * @param destination in/out gets filled in with the address and pathtype
      * @param serviceName name of the service to search for.
      * @return
@@ -148,7 +260,9 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     }
 
     /**
-     * Finds the next hop destination, fills in destination, and return a RouteSignal
+     * Finds the next hop destination, fills in destination, and return a
+     * RouteSignal
+     *
      * @param destination in/out gets filled in with the address and pathType
      * @param origin where this msg/packet came from
      * @param to a chain of services that should be visited next
@@ -169,14 +283,14 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         }
 
         // TODO: check load factors and so on..
-        if(this.localServiceTable != null && localServiceTable.getService(serviceName) != null) {
+        if (this.localServiceTable != null && localServiceTable.getService(serviceName) != null) {
             signal = RouteSignal.LOCALDESTINATION;
             destination.setPathType(PathType.SERVICE);
             return signal;
         }
         // this is a GlobalServiceDiscovery so check cache first
         AddressPool pool = this.activeQueue.get(serviceName);
-        if(pool == null){    
+        if (pool == null) {
             pool = this.serviceCache.get(serviceName);
             if (pool == null) {
                 return searchForService(destination, serviceName);
@@ -187,11 +301,12 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         if (addr != null) {
             destination.setSocketAddress(addr.getSocketAddress());
             PathType path = addr.getPathType();
-            path = (path == null) ? PathType.SERVICE : path; 
+            path = (path == null) ? PathType.SERVICE : path;
             destination.setPathType(path); // default pathType for now
             signal = RouteSignal.NETWORKDESTINATION;
+            return signal;
         }
-
+        System.out.println("Last return (global: getDestination): " + serviceName + " Signal: " + signal);
         return signal;
     }
 
@@ -222,6 +337,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
      */
     private RouteSignal resolveOriginRoute(Origin origin) {
         if (origin == null) {
+            System.out.println("resolveOriginRoute: Origin null");
             return RouteSignal.NOTFOUND;
         }
 
@@ -249,65 +365,154 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         return RouteSignal.LOCALDESTINATION;
     }
 
-    private void printAnnounceList(String[] nameList){
+    private void printAnnounceList(String[] nameList) {
         System.out.println("Service list");
-        for(String s: nameList){
+        for (String s : nameList) {
             System.out.println("\t" + s);
         }
     }
+
     /**
      * Announces the available services on this node.
      *
      */
     @Override
     public boolean announce() {
-        if(localServiceTable == null)
+        if (localServiceTable == null) {
             return false;
+        }
 //        InetSocketAddress destAddr = (InetSocketAddress) discoveryCache.getAddress();
 //        if(destAddr == null)
 //            return false;
         DestinationMetaData dest = discoveryCache.getAddress();
-        if(dest == null)
+        if (dest == null) {
             return false;
-        KeySetView<String,ServiceMetaData> keys = localServiceTable.getKeySet();
-        ArrayList<String> serviceList = new ArrayList<>();
-        for(String key : keys){
-            serviceList.add(key);
         }
-        String[] nameList = serviceList.toArray(new String[serviceList.size()]);
-        AnnouncePacket announce = new AnnouncePacket(localAddress,nameList);
-        announce.setGlobalDiscovery(true);
-        DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.ANNOUNCE);
-        packet.setAnnonce(announce);
-        printAnnounceList(nameList);
+        ArrayList<ConfigEntry> entryList = new ArrayList<>();
+        Set<Map.Entry<String, ServiceMetaData>> keys = localServiceTable.getEntrySet();
+        int totalServiceCapacity = 0;
+        for (Map.Entry<String, ServiceMetaData> entry : keys) {
+            ServiceMetaData metaData = entry.getValue();
+            int maxCapacity = metaData.getMaxCapacity();
+            totalServiceCapacity += maxCapacity;
+            entryList.add(new ConfigEntry(entry.getKey(), maxCapacity, PathType.SERVICE, ServiceStatus.ACTIVE));
+        }
+
+        int totalQueueCapacity = 0;
+        int maxAmountOfQueues = 0;
+        if (queueManager != null) {
+            String[] nameList = this.queueManager.getActiveQueues();
+            // String[] nameList = serviceList.toArray(new String[serviceList.size()]);
+            for (String s : nameList) {
+                int maxCapacity = queueManager.getMaxCapacity(s);
+                totalQueueCapacity += maxCapacity;
+                entryList.add(new ConfigEntry(s, maxCapacity, PathType.REQUESTQUEUE, ServiceStatus.ACTIVE));
+                addQueue(new DestinationMetaData(localAddress, PathType.REQUESTQUEUE), s);
+            }
+            maxAmountOfQueues = queueManager.getMaxAmountOfQueues();
+        }
+        ConfigurationPacket configPacket = new ConfigurationPacket(localAddress, maxAmountOfQueues, totalServiceCapacity, true);
+        configPacket.setConfigEntry(entryList.toArray(new ConfigEntry[entryList.size()]));
+        DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.CONFIG);
+        packet.setConfigPacket(configPacket);
+
         //DestinationMetaData dest = new DestinationMetaData(destAddr,PathType.DISCOVERY);
         boolean success = false;
-        try{
+        try {
             byte[] bytes = serializeToBytes(packet);
-            success = internalRouting.SendToDestination(dest,bytes);
-            if(!success){
-                dest = destinationUnreachable(dest,null);
-                success = internalRouting.SendToDestination(dest, bytes);
+            success = internalRouting.sendToDestination(dest, bytes);
+            if (!success) {
+                dest = destinationUnreachable(dest, null);
+                success = internalRouting.sendToDestination(dest, bytes);
             }
-        }catch(IOException ex){
+        } catch (IOException ex) {
             return false;
         }
+
         return true;
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private byte[] serializeToBytes(Serializable data) throws IOException{
+    private byte[] serializeToBytes(Serializable data) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         ObjectOutputStream objectStream = new ObjectOutputStream(stream);
         objectStream.writeObject(data);
         return stream.toByteArray();
     }
 
+    private void checkPoolReachabillity(AddressPool pool, String key) {
+        if (pool == null || key == null) {
+            return;
+        }
+        DestinationMetaData[] destinations = pool.copyPoolData();
+        for (int i = 0; i < destinations.length; i++) {
+            DiscoveryProbe probe = new DiscoveryProbe(key, destinations[i]);
+            DiscoveryPacket response = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
+            response.setProbe(probe);
+            byte[] data = null;
+            try {
+                data = serializeToBytes(response);
+            } catch (IOException e) {
+            }
+            DestinationMetaData target = new DestinationMetaData(destinations[i].getSocketAddress(), PathType.DISCOVERY);
+            ServiceRequest request = internalRouting.sendWithResponse(target, data, 70);
+            if (request == null || request.getData() == null) {
+                boolean flag = pool.remove(destinations[i]);
+                System.out.println("FLAG VALUE" + flag);
+            }
+        }
+    }
+
+    private void checkDeadAddresses(AddressPool pool) {
+        ConcurrentLinkedQueue<ReapedAddress> reapedAddresses = this.deadAddresses;
+
+        InternalRoutingServiceDiscovery routing = this.internalRouting;
+        Runnable command = new Runnable() {
+            @Override
+            public void run() {
+                for (ReapedAddress addr : reapedAddresses) {
+                    DiscoveryProbe probe = new DiscoveryProbe(addr.getName(), addr.getReapedAddress());
+                    DiscoveryPacket response = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
+                    response.setProbe(probe);
+                    byte[] data = null;
+                    try {
+                        data = serializeToBytes(response);
+                    } catch (IOException e) {
+                    }
+                    DestinationMetaData target = new DestinationMetaData(addr.getReapedAddress().getSocketAddress(), PathType.DISCOVERY);
+                    ServiceRequest request = routing.sendWithResponse(target, data, 70);
+                    if (request != null || request.getData() != null) {
+                        pool.addAddress(addr.getReapedAddress());
+                    }
+                }
+            }
+        };
+        ScheduledFuture<?> addressValidator = this.deadAddressValidator.scheduleAtFixedRate(command, 10, 10, TimeUnit.SECONDS);
+        this.deadAddressValidator.schedule(new Runnable() {
+            public void run() {
+                addressValidator.cancel(true);
+            }
+        }, 2 * 10 * 10, TimeUnit.SECONDS);
+    }
+
+    private void validateServiceActivity() {
+        AddressPool pool;
+        DestinationMetaData[] destinations;
+        for (Map.Entry<String, AddressPool> entry : serviceCache.entrySet()) {
+            pool = entry.getValue();
+            String key = entry.getKey();
+            checkPoolReachabillity(pool, key);
+        }
+    }
+
     @Override
     public void stop() {
-        threadPool.shutdown();
+        threadPool.shutdownNow();
+        deadAddressValidator.shutdownNow();
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    private AtomicInteger threadCount = new AtomicInteger(0);
 
     /**
      * updates the discovery lookup table
@@ -317,9 +522,13 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
      */
     @Override
     public void discoveryUpdate(Origin origin, byte[] data) {
-        DiscoveryLookup lookup = new DiscoveryLookup(origin,data);
-        threadPool.execute(lookup);
-        
+        if (this.threadCount.get() < 5 || (this.updateQueue.size() > 10 && this.threadCount.get() < 20 )) {
+            this.threadCount.incrementAndGet();
+            DiscoveryLookup lookup = new DiscoveryLookup(origin, data);
+            threadPool.execute(lookup);
+            return;
+        }
+        this.updateQueue.offer(new UpdateItem(origin, data));
     }
 
     private DiscoveryPacket packetUnpack(byte[] data) {
@@ -335,90 +544,93 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         return probe;
     }
 
-    private void propagateTopology(TopologyPacket packet){
+    private void propagateTopology(TopologyPacket packet) {
         int count = packet.decrementCount();
-      	if(count <= 0)
+        if (count <= 0) {
             return;
-      	DestinationMetaData nextHop = null;
-        InetSocketAddress lastJump = (InetSocketAddress)packet.getLastJump();
-        InetSocketAddress originalSource = (InetSocketAddress)packet.getOriginalSource();
-        for(int i = 0; i < count; i++) {
+        }
+        DestinationMetaData nextHop = null;
+        InetSocketAddress lastJump = (InetSocketAddress) packet.getLastJump();
+        InetSocketAddress originalSource = (InetSocketAddress) packet.getOriginalSource();
+        for (int i = 0; i < count; i++) {
             nextHop = this.discoveryCache.getAddress();
-            if(nextHop.equals(lastJump) || nextHop.equals(originalSource))
+            if (nextHop.equals(lastJump) || nextHop.equals(originalSource)) {
                 continue;
+            }
             DiscoveryPacket discPack = new DiscoveryPacket(DiscoveryPacketType.TOPOLOGY);
             packet.setLastJump(localAddress);
             discPack.setTopologyPacket(packet);
             boolean success = false;
-            try{
+            try {
                 byte[] data = serializeToBytes(discPack);
-                success = internalRouting.SendToDestination(nextHop,data);
-                if(!success){
-                    destinationUnreachable(nextHop,null);
+                success = internalRouting.sendToDestination(nextHop, data);
+                if (!success) {
+                    destinationUnreachable(nextHop, null);
                 }
-            }catch(IOException e){
+            } catch (IOException e) {
                 // TODO: LOGGING
             }
         }
 
     }
 
-  	private void processTopologyPackets(TopologyPacket packet){
-        
-        this.discoveryCache.addAddress(packet.getInstanceAddress());
-      	propagateTopology(packet);
-  	}
+    private void processTopologyPackets(TopologyPacket packet) {
 
-    private void addService(DestinationMetaData addr,String name){
+        this.discoveryCache.addAddress(packet.getInstanceAddress());
+        propagateTopology(packet);
+    }
+
+    private void addService(DestinationMetaData addr, String name) {
         AddressPool pool = new AddressPool();
-        AddressPool oldPool = this.serviceCache.putIfAbsent(name,pool);
-        if(oldPool != null){
+        AddressPool oldPool = this.serviceCache.putIfAbsent(name, pool);
+        if (oldPool != null) {
             oldPool.addAddress(addr);
-        }else{
+        } else {
             pool.addAddress(addr);
         }
     }
 
     // register announced services in global service discovery
-    private void processAnnouncePacket(AnnouncePacket packet){
+    private void processAnnouncePacket(AnnouncePacket packet) {
         String[] serviceList = packet.getServiceList();
         SocketAddress addr = packet.getInstanceAddress();
-        if(addr == null){
+        if (addr == null) {
             return;
         }
-        
-        DestinationMetaData sAddr = new DestinationMetaData(addr,PathType.SERVICE);
+
+        DestinationMetaData sAddr = new DestinationMetaData(addr, PathType.SERVICE);
         ArrayList<QueuePacket> queueList = new ArrayList<>();
         for (String s : serviceList) {
             addService(sAddr, s);
             AddressPool addressPool = activeQueue.get(s);
-            if(addressPool != null){
+            if (addressPool != null) {
                 DestinationMetaData dest = addressPool.getAddress();
-                if(dest == null)
+                if (dest == null) {
                     continue;
-                QueuePacket queuePacket = new QueuePacket(dest.getSocketAddress(),serviceList);
+                }
+                QueuePacket queuePacket = new QueuePacket(dest.getSocketAddress(), serviceList);
                 queueList.add(queuePacket);
-                
+
             }
-                                      
+
         }
-        if(packet.isGlobalDiscovery()){
-            DestinationMetaData globUpdate= new DestinationMetaData(addr,PathType.DISCOVERY);
+        if (packet.isGlobalDiscovery()) {
+            DestinationMetaData globUpdate = new DestinationMetaData(addr, PathType.DISCOVERY);
             discoveryCache.addAddress(globUpdate);
-          	TopologyPacket topology = new TopologyPacket(globUpdate,localAddress,4);
+            TopologyPacket topology = new TopologyPacket(globUpdate, localAddress, 4);
             propagateTopology(topology);
         }
-        DestinationMetaData dest = new DestinationMetaData(addr,PathType.DISCOVERY);
-        
-        for(QueuePacket queuePacket: queueList){
+        DestinationMetaData dest = new DestinationMetaData(addr, PathType.DISCOVERY);
+
+        for (QueuePacket queuePacket : queueList) {
             DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
             discoveryPacket.setQueue(queuePacket);
-            try{
+            try {
                 byte[] data = serializeToBytes(discoveryPacket);
-                if(!internalRouting.SendToDestination(dest,data)){
+                if (!internalRouting.sendToDestination(dest, data)) {
                     break;
                 }
-            }catch(IOException e){
+            } catch (IOException e) {
                 e.printStackTrace();
                 // TODO: Logg error
             }
@@ -427,19 +639,31 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     }
 
     // it sends back a filled discovery request probe
-    private void processProbeRequest(Origin origin, DiscoveryProbe probe){
-        
+    private void processProbeRequest(Origin origin, DiscoveryProbe probe) {
+
         AddressPool pool = null;
-        if((pool = this.activeQueue.get(probe.getName())) == null){
+        if (probe.getName() != null && (pool = this.activeQueue.get(probe.getName())) == null) {
             pool = this.serviceCache.get(probe.getName());
         }
-        
-        if(pool == null){
+        if (probe.getAddress() != null) {
+            if (origin.getAddress().equals(probe.getAddress().getSocketAddress()) && probe.getName() != null) {
+                byte[] tmp = new byte[0];
+                try {
+                    tmp = serializeToBytes(new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, tmp);
+            }
+        }
+
+        if (pool == null) {
             byte[] data = new byte[0];
-            try{
-            data = serializeToBytes(new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE));
-            }catch(IOException e){}
-            internalRouting.SendBackToOrigin(origin,PathType.DISCOVERY,data);
+            try {
+                data = serializeToBytes(new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE));
+            } catch (IOException e) {
+            }
+            internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, data);
             return;
         }
         DestinationMetaData addr = pool.getAddress();
@@ -447,40 +671,104 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE);
         packet.setProbe(probe);
         byte[] data = new byte[0];
-        try{
+        try {
             data = serializeToBytes(packet);
-        }catch(IOException ex){
-            
+        } catch (IOException ex) {
+
         }
-        internalRouting.SendBackToOrigin(origin,PathType.DISCOVERY,data);
-        
+        internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, data);
+
     }
 
-    private void addQueue(DestinationMetaData addr,String queue){
+    private void sendToPool(byte[] data, AddressPool pool, PathType type) {
+        if (pool == null) {
+            return;
+        }
+        int size = pool.size();
+        DestinationMetaData dest = null;
+        for (int i = 0; i < size; i++) {
+            DestinationMetaData tmp = pool.getAddress();
+            if (type != null) {
+                dest = new DestinationMetaData(tmp);
+                dest.setPathType(type);
+            } else {
+                dest = tmp;
+            }
+            this.internalRouting.sendToDestination(dest, data);
+        }
+    }
+
+    private void addQueue(DestinationMetaData addr, String queue) {
         AddressPool pool = new AddressPool();
-        AddressPool oldPool = this.activeQueue.putIfAbsent(queue,pool);
-        if(oldPool != null){
+        AddressPool oldPool = this.activeQueue.putIfAbsent(queue, pool);
+        if (oldPool != null) {
             oldPool.addAddress(addr);
-        }else{
+        } else {
             pool.addAddress(addr);
         }
+        QueuePacket q = new QueuePacket(addr.getSocketAddress(), queue);
+        DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
+        discoveryPacket.setQueue(q);
+        byte[] data;
+        try {
+            data = serializeToBytes(discoveryPacket);
+        } catch (IOException e) {
+            return;
+        }
+        sendToPool(data, this.serviceCache.get(queue), PathType.DISCOVERY);
+    }
+    
+    private void notifyRemoveQueue(String queue,DestinationMetaData addr) {
+        QueuePacket q = new QueuePacket(addr.getSocketAddress(), queue);
+        q.setShouldRemove(true);;
+        DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
+        discoveryPacket.setQueue(q);
+        byte[] data;
+        try {
+            data = serializeToBytes(discoveryPacket);
+        } catch (IOException e) {
+            return;
+        }
+        sendToPool(data, this.serviceCache.get(queue), PathType.DISCOVERY);
     }
 
-    private void processQueuePacket(QueuePacket packet){
-        if(packet == null){
+    private void removeQueueFromPool(QueuePacket packet) {
+        String[] qname = packet.getRequestQueueList();
+        if(qname == null || qname.length < 1) {
             return;
+        }
+        AddressPool pool = this.activeQueue.get(qname[0]);
+        if(pool == null || pool.size() < 1) {
+            return;
+        }
+        DestinationMetaData dest = new DestinationMetaData(packet.getInstanceAddress(),PathType.REQUESTQUEUE);
+        boolean succsess = pool.remove(dest);
+        if(!succsess) {
+            System.out.println("LocalServiceDiscovery:removeQueueFromPool: failed to remove queue");
+            return;
+        }else {
+            this.addToSleepingQueue(dest, qname[0]);
+        }
+    }
+    
+    private void processQueuePacket(QueuePacket packet) {
+        if (packet == null) {
+            return;
+        }
+        if(packet.isShouldRemove()) {
+            removeQueueFromPool(packet);
         }
         String[] queueList = packet.getRequestQueueList();
         SocketAddress addr = packet.getInstanceAddress();
-        if(queueList == null){
+        if (queueList == null) {
             System.out.println("Queuelist is null in processQueuePacket GlobalServiceDiscovery");
             return;
         }
-        DestinationMetaData qAddr = new DestinationMetaData(addr,PathType.REQUESTQUEUE);
+        DestinationMetaData qAddr = new DestinationMetaData(addr, PathType.REQUESTQUEUE);
         if (qAddr == null) {
             return;
         }
-        System.out.println("registrating queues: " + qAddr.toString());
+        System.out.println("Registering queues: " + qAddr.toString());
         for (String s : queueList) {
             System.out.println("\t" + s);
             addQueue(qAddr, s);
@@ -491,72 +779,346 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
      * Finds the destination to the request queue.
      *
      * @param destination destination the destination address for the queueList
-     * @param serviceName serviceName the name for the service that needs new work.
+     * @param serviceName serviceName the name for the service that needs new
+     * work.
      */
     @Override
-    public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName){
+    public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName) {
         AddressPool pool = activeQueue.get(serviceName);
-        if(pool == null)
-            return RouteSignal.NOTFOUND;
-        DestinationMetaData addr = pool.getAddress();
-        if (addr == null || addr.getSocketAddress() == null){
+        if (pool == null) {
             return RouteSignal.NOTFOUND;
         }
-        InetSocketAddress socketAddress = (InetSocketAddress)addr.getSocketAddress();
-        if(socketAddress.equals((InetSocketAddress) localAddress)) {
+        DestinationMetaData addr = pool.getAddress();
+        if (addr == null || addr.getSocketAddress() == null) {
+            return RouteSignal.NOTFOUND;
+        }
+        InetSocketAddress socketAddress = (InetSocketAddress) addr.getSocketAddress();
+        if (socketAddress.equals((InetSocketAddress) localAddress)) {
             destination.setPathType(addr.getPathType());
             return RouteSignal.LOCALDESTINATION;
         }
-    
+
         destination.setSocketAddress(addr.getSocketAddress());
         destination.setPathType(addr.getPathType());
         return RouteSignal.NETWORKDESTINATION;
     }
 
     /**
-     * Announces active queues 
-     * @param queueList a list of names for the queues.
+     * Announces active queues.
      */
-    public boolean announceQueues(String[] queueList){
-        DestinationMetaData dest = discoveryCache.getAddress();
-        if(dest == null)
-            return false;
-        QueuePacket queuePacket = new QueuePacket(localAddress,queueList);
-        DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
-        discoveryPacket.setQueue(queuePacket);
-        boolean success = false;
-        try{
-            byte[] data = serializeToBytes(discoveryPacket);
-            success = internalRouting.SendToDestination(dest,data);
-            if(!success){
-                DestinationMetaData destination = destinationUnreachable(dest,null);
-            	success = internalRouting.SendToDestination(destination,data);
-            }
-        }catch(IOException e){
-            e.printStackTrace();
-            return false;
-        }
-        return success;
+    public boolean announceQueues(RequestQueueManager queueManager) {
+        this.queueManager = queueManager;
+        return true;
     }
 
-    private class DiscoveryLookup implements Runnable {
+    private void triggeredCircuitBreaker(Origin origin, CircuitBreakerPacket circuit) {
+        AddressPool pool;
 
-        private Origin origin;
-        private byte[] data;
+        System.out.println("INCOMMING CIRCUITBREAKER MESSAGE IN GLOBAL SERVICE DISCOVERY: " + circuit.getCircuitName());
+        pool = serviceCache.get(circuit.getCircuitName());
+        if (pool == null) {
+            return;
+        }
+        DestinationMetaData dest = new DestinationMetaData(pool.getAddress());
+        dest.setPathType(PathType.COMMANDCONTROL);
+        Command com = new Command(StatType.SERVICEHANDLER, circuit.getCircuitName(), null, 100, CommandType.CHANGE_ACTIVEAMOUNT);
+        sendCommandPacket(dest, com);
+        AddressPool sqPool = this.sleepingQueue.get(circuit.getCircuitName());
+        if(sqPool != null) {
+            DestinationMetaData qaddress = sqPool.getAddress();
+            if(qaddress != null) {
+                sqPool.remove(qaddress);
+                this.addQueue(qaddress, circuit.getCircuitName());
+            }
+        }
+    }
+
+    @Override
+    public StatisticsData[] processCommand(Command command) {
+        StatisticsData[] retSystem;
+        if (command.getCommandType() == CommandType.CHECK_REACHABILLITY) {
+            threadPool.execute(new Runnable() {
+                @Override
+                public void run() {
+                    validateServiceActivity();
+                }
+            });
+            return new StatisticsData[0];
+        } else if (command.getCommandType() == CommandType.STATISTICS_FORSUBSYSTEM){
+            return retSystem = this.getStatisticsForSubSystem(command.getName());
+        } else if (command.getCommandType() == CommandType.STATISTICS_FORSYSTEM) {
+            StatisticsData[] retForSystem = new StatisticsData[1];
+            retForSystem[0] = this.getStatistics(command.getTokens());
+            return retForSystem;
+        }
+        return null;
+    }
+
+    private boolean sendCommandPacket(DestinationMetaData destination, Command command) {
+        byte[] data;
+        try {
+            data = serializeToBytes(command);
+        } catch (IOException e) {
+            return false;
+        }
+        //destination.setPathType(PathType.COMMANDCONTROL);
+        this.internalRouting.sendToDestination(destination, data);
+        return true;
+    }
+
+    private boolean processLocalCommand(Command command) {
+        byte[] data;
+        try {
+            data = serializeToBytes(command);
+        } catch (IOException e) {
+            return false;
+        }
+        DestinationMetaData destination = new DestinationMetaData(localAddress, PathType.COMMANDCONTROL);
+        this.internalRouting.sendLocal(destination, RouteSignal.LOCALDESTINATION, data);
+        return true;
+    }
+
+    private final AtomicInteger queuePoolScaling = new AtomicInteger(0);
+    private void addToSleepingQueue(DestinationMetaData qAddr,String name) {
+        if(qAddr == null) {
+            return;
+        }
+        AddressPool pool = this.sleepingQueue.get(name);
+        if(pool == null) {
+            pool = new AddressPool();
+            AddressPool tmp = this.sleepingQueue.putIfAbsent(name, pool);
+            pool = (tmp == null) ? pool : tmp;
+        }
+        pool.addAddress(qAddr);
         
-        public DiscoveryLookup(Origin origin, byte[] data) {
-            this.origin = origin;
-            this.data = data;
+    }
+    
+    private class DownScalingItem {
+        public String name;
+        public DestinationMetaData dest;
+
+        public DownScalingItem(String name, DestinationMetaData dest) {
+            this.name = name;
+            this.dest = dest;
         }
 
-        @Override
-        public void run() {
-            DiscoveryPacket packet = packetUnpack(data);
-            DiscoveryPacketType type = packet.getPacketType();
-            //to do: switch not functioning properly with enums
-//            System.out.println("DefaultGlobalServiceDiscovery: " + type
-//                    + " from: " + ((InetSocketAddress) origin.getAddress()).toString());
-            switch (type) {
+        public String getName() {
+            return name;
+        }
+
+        public DestinationMetaData getDest() {
+            return dest;
+        }
+        
+    }
+    private void startDownScaling() {
+        final Runnable squeue = new Runnable(){
+            @Override
+            public void run() {
+                while(runDownScaling.get() == 2) {
+                    Set<Map.Entry<String, AddressPool>> entrySet = activeQueue.entrySet();
+                    ArrayList<DownScalingItem> removed = new ArrayList<>();
+                    for (Map.Entry<String, AddressPool> entry : entrySet) {
+                        AddressPool p = entry.getValue();
+                        if(p == null || p.size() < 3) {
+                            continue;
+                        }
+                        DestinationMetaData address = p.getAddress();
+                        if(address == null) {
+                            continue;
+                        }
+                        removed.add(new DownScalingItem(entry.getKey() , address));
+                        addToSleepingQueue(address,entry.getKey());
+                        
+                        notifyRemoveQueue(entry.getKey(),address);
+                        
+                    }
+                    for (DownScalingItem item : removed) {
+                        AddressPool get = activeQueue.get(item.getName());
+                        get.remove(item.getDest());
+                    }
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException ex) {
+                    }
+                    
+                }
+            }
+        };
+        if(this.runDownScaling.getAndSet(2) == 1) {
+            this.threadPool.execute(squeue);
+        }
+    }
+    
+    private void processConfigPacket(ConfigurationPacket packet) {
+        System.out.println("processConfigPacket: ");
+        if (packet == null) {
+            System.out.println("GlobalServiceDiscovery:processConfigPacket: packet null");
+            return;
+        }
+        SocketAddress addr = packet.getInstanceAddress();
+        ConfigEntry[] entry = packet.getConfigEntry();
+        ArrayList<QueuePacket> availableQueues = new ArrayList<>();
+        for (int i = 0; i < entry.length; i++) {
+            ConfigEntry configEntry = entry[i];
+            System.out.println("configEntry: " + i + " " + configEntry.getName() + " pathtype" + configEntry.getPathType());
+            if (configEntry.getPathType() == PathType.REQUESTQUEUE) {
+                int qcount = queuePoolScaling.incrementAndGet();
+                DestinationMetaData qAddr = new DestinationMetaData(addr, PathType.REQUESTQUEUE);
+                AddressPool p = this.activeQueue.get(configEntry.getName());
+                if (upScalingActive && (p != null && p.size() < 1)) {
+                    addToSleepingQueue(qAddr, configEntry.getName());
+                } else {
+                    addQueue(qAddr, configEntry.getName());
+                }
+            } else if (configEntry.getPathType() == PathType.SERVICE) {
+                DestinationMetaData qAddr = new DestinationMetaData(addr, PathType.SERVICE);
+                addService(qAddr, configEntry.getName());
+                AddressPool pool = this.activeQueue.get(configEntry.getName());
+                if (pool == null) {
+                    continue;
+                }
+                DestinationMetaData metaData = pool.getAddress();
+                if (metaData == null) {
+                    continue;
+                }
+                availableQueues.add(new QueuePacket(metaData.getSocketAddress(), configEntry.getName()));
+            }
+        }
+        if (packet.isGlobalServiceDiscovery()) {
+            discoveryCache.addAddress(new DestinationMetaData(addr, PathType.DISCOVERY));
+        }
+
+        DestinationMetaData returnAddress = new DestinationMetaData(addr, PathType.DISCOVERY);
+        for (QueuePacket queues : availableQueues) {
+            DiscoveryPacket discoveryPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
+            discoveryPacket.setQueue(queues);
+            try {
+                byte[] data = serializeToBytes(discoveryPacket);
+                if (!internalRouting.sendToDestination(returnAddress, data)) {
+                    break;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                // TODO: Logg error
+            }
+        }
+    }
+
+    private DestinationMetaData[] connectedDiscoveryNodes() {
+        return this.discoveryCache.copyPoolData();
+    }
+
+    private DestinationMetaData[] connectedServiceNode(String serviceName) {
+        AddressPool pool = this.serviceCache.get(serviceName);
+        if (pool == null) {
+            return new DestinationMetaData[0];
+        }
+        return pool.copyPoolData();
+    }
+
+    private DestinationMetaData[] connectedRequestQueueNode(String serviceName) {
+        AddressPool pool = this.activeQueue.get(serviceName);
+        if (pool == null) {
+            return new DestinationMetaData[0];
+        }
+        return pool.copyPoolData();
+    }
+
+    @Override
+    public StatisticsData[] getStatisticsForSubSystem(String name) {
+        if (name.equals("discoveryNodes")) {
+            DestinationMetaData[] discoveryNodes = connectedDiscoveryNodes();
+            if (discoveryNodes.length <= 0) {
+                return new StatisticsData[0];
+            }
+            StatisticsData[] ret = new StatisticsData[1];
+            ret[0] = new StatisticsData<DestinationMetaData>(StatType.DISCOVERY, name, discoveryNodes);
+            return ret;
+        }
+
+        if (name.equals("requestQueueNodes")) {
+            ArrayList<StatisticsData> result = new ArrayList<>();
+            for (Map.Entry<String, AddressPool> entry : this.activeQueue.entrySet()) {
+                DestinationMetaData[] nodes = connectedRequestQueueNode(entry.getKey());
+                result.add(new StatisticsData(StatType.DISCOVERY, entry.getKey(), nodes));
+            }
+            StatisticsData[] ret = result.toArray(new StatisticsData[result.size()]);
+            return ret;
+        }
+
+        if (name.equals("serviceNodes")) {
+            ArrayList<StatisticsData> result = new ArrayList<>();
+            for (Map.Entry<String, AddressPool> entry : this.serviceCache.entrySet()) {
+                DestinationMetaData[] nodes = connectedServiceNode(entry.getKey());
+                result.add(new StatisticsData(StatType.DISCOVERY, entry.getKey(), nodes));
+            }
+            StatisticsData[] ret = result.toArray(new StatisticsData[result.size()]);
+            return ret;
+        }
+
+        return new StatisticsData[0];
+    }
+
+    @Override
+    public StatisticsData getStatistics(String[] name) {
+        if (name[0].equals("discoveryNodes")) {
+            DestinationMetaData[] discoveryNodes = connectedDiscoveryNodes();
+            if (discoveryNodes.length <= 0) {
+                return new StatisticsData();
+            }
+            return new StatisticsData(StatType.DISCOVERY, name[0], discoveryNodes);
+
+        }
+
+        if (name.length <= 1) {
+            return new StatisticsData();
+        }
+        if (name[0].equals("requestQueueNodes")) {
+            DestinationMetaData[] reqQueueNodes = connectedRequestQueueNode(name[1]);
+            if (reqQueueNodes.length <= 0) {
+                return new StatisticsData();
+            }
+            return new StatisticsData(StatType.DISCOVERY, name[1], reqQueueNodes);
+
+        }
+
+        if (name[0].equals("serviceNodes")) {
+            DestinationMetaData[] servNodes = connectedServiceNode(name[1]);
+            if (servNodes.length <= 0) {
+                return new StatisticsData();
+            }
+            return new StatisticsData(StatType.DISCOVERY, name[1], servNodes);
+
+        }
+
+        return new StatisticsData();
+
+    }
+
+    @Override
+    public StatisticsProvider getProvider() {
+        return this;
+    }
+
+    @Override
+    public StatType getStatType() {
+        return StatType.DISCOVERY;
+    }
+
+    @Override
+    public void requestQueueMessage(DiscoveryPacket packet) {
+        Origin origin = new Origin();
+        origin.setAddress(localAddress);
+        decodeDiscoveryPacket(origin, packet);
+    }
+
+    private void decodeDiscoveryPacket(Origin origin, DiscoveryPacket packet) {
+        DiscoveryPacketType type = packet.getPacketType();
+        //to do: switch not functioning properly with enums
+        //            System.out.println("DefaultGlobalServiceDiscovery: " + type
+        //                    + " from: " + ((InetSocketAddress) origin.getAddress()).toString());
+        switch (type) {
             case DISCOVERYREQUEST:
                 processProbeRequest(origin, packet.getProbe());
                 break;
@@ -569,11 +1131,93 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             case REQUESTQUEUE:
                 processQueuePacket(packet.getQueue());
                 break;
+            case CONFIG:
+                System.out.println("Incomming config packet");
+                processConfigPacket(packet.getConfigPacket());
+                break;
+            case CIRCUITBREAKER:
+                triggeredCircuitBreaker(origin, packet.getCircuitBreakerPacket());
+                break;
             default: //Logger.getLogger(DefaultLocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, null);
                 System.out.println("DefaultGlobalServiceDiscovery updateHandling recieved, not yet implemented: " + type);
                 break;
-            }
+        }
+    }
+
+    private class UpdateItem {
+
+        private Origin origin;
+        private byte[] data;
+
+        public UpdateItem(Origin origin, byte[] data) {
+            this.origin = origin;
+            this.data = data;
         }
 
+        public Origin getOrigin() {
+            return origin;
+        }
+
+        public byte[] getData() {
+            return data;
+        }
+
+    }
+
+    private class DiscoveryLookup implements Runnable {
+
+        private Origin origin;
+        private byte[] data;
+
+        public DiscoveryLookup(Origin origin, byte[] data) {
+            this.origin = origin;
+            this.data = data;
+        }
+
+        @Override
+        public void run() {
+            DiscoveryPacket packet = packetUnpack(data);
+            decodeDiscoveryPacket(origin, packet);
+            int loop = 5;
+            while (loop > 0) {
+                UpdateItem take = null;
+                try {
+                    take = updateQueue.take();
+                    packet = packetUnpack(take.getData());
+                    decodeDiscoveryPacket(take.getOrigin(), packet);
+
+//                    take = updateQueue.poll();
+//                    if (take == null) {
+//                        loop--;
+//                        continue;
+//                    }
+//                    packet = packetUnpack(take.getData());
+//                    decodeDiscoveryPacket(take.getOrigin(), packet);
+                } catch (InterruptedException ex) {}
+
+                loop = 0;
+
+            }
+            threadCount.decrementAndGet();
+        }
+    }
+
+    private class ReapedAddress {
+
+        private String name;
+        private DestinationMetaData reapedAddress;
+
+        public ReapedAddress(String name, DestinationMetaData reapedAddress) {
+            this.name = name;
+            this.reapedAddress = reapedAddress;
+        }
+
+        public String getName() {
+            return this.name;
+        }
+
+        public DestinationMetaData getReapedAddress() {
+            return this.reapedAddress;
+        }
     }
 }

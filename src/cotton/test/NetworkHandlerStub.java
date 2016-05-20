@@ -34,7 +34,7 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.test;
 
 import cotton.network.NetworkHandler;
-import cotton.internalRouting.InternalRoutingNetwork;
+import cotton.internalrouting.InternalRoutingNetwork;
 import cotton.network.SocketLatch;
 import java.net.SocketAddress;
 import cotton.network.NetworkPacket;
@@ -104,8 +104,4 @@ public class NetworkHandlerStub implements NetworkHandler{
     @Override
     public void run(){}
 
-    @Override
-    public void sendOverActiveLink(NetworkPacket netPacket, SocketAddress dest) throws IOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
 }

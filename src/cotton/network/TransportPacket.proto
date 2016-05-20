@@ -43,6 +43,8 @@ enum PathType{
 		UNKNOWN = 3;
     NOTFOUND = 4;
     REQUESTQUEUE = 5;
+    COMMANDCONTROL = 6;
+    REQUESTQUEUEUPDATE = 7;
 }
 
   optional bool keepalive = 1;
@@ -50,7 +52,7 @@ enum PathType{
 	optional bytes data = 3;
 	optional Origin origin = 4;
   repeated string path = 6;
-optional bool activelink = 7;
+  optional int32 lastHopPort = 7;
 }
 
 message Origin{

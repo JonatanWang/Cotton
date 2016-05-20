@@ -72,13 +72,13 @@ public final class TransportPacket {
         getPathBytes(int index);
 
     /**
-     * <code>optional bool activelink = 7;</code>
+     * <code>optional int32 lastHopPort = 7;</code>
      */
-    boolean hasActivelink();
+    boolean hasLastHopPort();
     /**
-     * <code>optional bool activelink = 7;</code>
+     * <code>optional int32 lastHopPort = 7;</code>
      */
-    boolean getActivelink();
+    int getLastHopPort();
   }
   /**
    * Protobuf type {@code cotton.network.Packet}
@@ -177,7 +177,7 @@ public final class TransportPacket {
             }
             case 56: {
               bitField0_ |= 0x00000010;
-              activelink_ = input.readBool();
+              lastHopPort_ = input.readInt32();
               break;
             }
           }
@@ -251,6 +251,14 @@ public final class TransportPacket {
        * <code>REQUESTQUEUE = 5;</code>
        */
       REQUESTQUEUE(5, 5),
+      /**
+       * <code>COMMANDCONTROL = 6;</code>
+       */
+      COMMANDCONTROL(6, 6),
+      /**
+       * <code>REQUESTQUEUEUPDATE = 7;</code>
+       */
+      REQUESTQUEUEUPDATE(7, 7),
       ;
 
       /**
@@ -277,6 +285,14 @@ public final class TransportPacket {
        * <code>REQUESTQUEUE = 5;</code>
        */
       public static final int REQUESTQUEUE_VALUE = 5;
+      /**
+       * <code>COMMANDCONTROL = 6;</code>
+       */
+      public static final int COMMANDCONTROL_VALUE = 6;
+      /**
+       * <code>REQUESTQUEUEUPDATE = 7;</code>
+       */
+      public static final int REQUESTQUEUEUPDATE_VALUE = 7;
 
 
       public final int getNumber() { return value; }
@@ -289,6 +305,8 @@ public final class TransportPacket {
           case 3: return UNKNOWN;
           case 4: return NOTFOUND;
           case 5: return REQUESTQUEUE;
+          case 6: return COMMANDCONTROL;
+          case 7: return REQUESTQUEUEUPDATE;
           default: return null;
         }
       }
@@ -436,19 +454,19 @@ public final class TransportPacket {
       return path_.getByteString(index);
     }
 
-    public static final int ACTIVELINK_FIELD_NUMBER = 7;
-    private boolean activelink_;
+    public static final int LASTHOPPORT_FIELD_NUMBER = 7;
+    private int lastHopPort_;
     /**
-     * <code>optional bool activelink = 7;</code>
+     * <code>optional int32 lastHopPort = 7;</code>
      */
-    public boolean hasActivelink() {
+    public boolean hasLastHopPort() {
       return ((bitField0_ & 0x00000010) == 0x00000010);
     }
     /**
-     * <code>optional bool activelink = 7;</code>
+     * <code>optional int32 lastHopPort = 7;</code>
      */
-    public boolean getActivelink() {
-      return activelink_;
+    public int getLastHopPort() {
+      return lastHopPort_;
     }
 
     private void initFields() {
@@ -457,7 +475,7 @@ public final class TransportPacket {
       data_ = com.google.protobuf.ByteString.EMPTY;
       origin_ = cotton.network.TransportPacket.Origin.getDefaultInstance();
       path_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      activelink_ = false;
+      lastHopPort_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -488,7 +506,7 @@ public final class TransportPacket {
         output.writeBytes(6, path_.getByteString(i));
       }
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeBool(7, activelink_);
+        output.writeInt32(7, lastHopPort_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -526,7 +544,7 @@ public final class TransportPacket {
       }
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(7, activelink_);
+          .computeInt32Size(7, lastHopPort_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -660,7 +678,7 @@ public final class TransportPacket {
         bitField0_ = (bitField0_ & ~0x00000008);
         path_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000010);
-        activelink_ = false;
+        lastHopPort_ = 0;
         bitField0_ = (bitField0_ & ~0x00000020);
         return this;
       }
@@ -718,7 +736,7 @@ public final class TransportPacket {
         if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
           to_bitField0_ |= 0x00000010;
         }
-        result.activelink_ = activelink_;
+        result.lastHopPort_ = lastHopPort_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -757,8 +775,8 @@ public final class TransportPacket {
           }
           onChanged();
         }
-        if (other.hasActivelink()) {
-          setActivelink(other.getActivelink());
+        if (other.hasLastHopPort()) {
+          setLastHopPort(other.getLastHopPort());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -1098,34 +1116,34 @@ public final class TransportPacket {
         return this;
       }
 
-      private boolean activelink_ ;
+      private int lastHopPort_ ;
       /**
-       * <code>optional bool activelink = 7;</code>
+       * <code>optional int32 lastHopPort = 7;</code>
        */
-      public boolean hasActivelink() {
+      public boolean hasLastHopPort() {
         return ((bitField0_ & 0x00000020) == 0x00000020);
       }
       /**
-       * <code>optional bool activelink = 7;</code>
+       * <code>optional int32 lastHopPort = 7;</code>
        */
-      public boolean getActivelink() {
-        return activelink_;
+      public int getLastHopPort() {
+        return lastHopPort_;
       }
       /**
-       * <code>optional bool activelink = 7;</code>
+       * <code>optional int32 lastHopPort = 7;</code>
        */
-      public Builder setActivelink(boolean value) {
+      public Builder setLastHopPort(int value) {
         bitField0_ |= 0x00000020;
-        activelink_ = value;
+        lastHopPort_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional bool activelink = 7;</code>
+       * <code>optional int32 lastHopPort = 7;</code>
        */
-      public Builder clearActivelink() {
+      public Builder clearLastHopPort() {
         bitField0_ = (bitField0_ & ~0x00000020);
-        activelink_ = false;
+        lastHopPort_ = 0;
         onChanged();
         return this;
       }
@@ -2029,15 +2047,17 @@ public final class TransportPacket {
   static {
     java.lang.String[] descriptorData = {
       "\n\025TransportPacket.proto\022\016cotton.network\"" +
-      "\206\002\n\006Packet\022\021\n\tkeepalive\030\001 \001(\010\0221\n\010pathtyp" +
+      "\264\002\n\006Packet\022\021\n\tkeepalive\030\001 \001(\010\0221\n\010pathtyp" +
       "e\030\002 \001(\0162\037.cotton.network.Packet.PathType" +
       "\022\014\n\004data\030\003 \001(\014\022&\n\006origin\030\004 \001(\0132\026.cotton." +
-      "network.Origin\022\014\n\004path\030\006 \003(\t\022\022\n\nactiveli" +
-      "nk\030\007 \001(\010\"^\n\010PathType\022\t\n\005RELAY\020\000\022\r\n\tDISCO" +
-      "VERY\020\001\022\013\n\007SERVICE\020\002\022\013\n\007UNKNOWN\020\003\022\014\n\010NOTF" +
-      "OUND\020\004\022\020\n\014REQUESTQUEUE\020\005\"F\n\006Origin\022\017\n\007la" +
-      "tchId\030\001 \001(\t\022\021\n\trequestId\030\002 \001(\t\022\n\n\002ip\030\003 \001" +
-      "(\t\022\014\n\004port\030\004 \001(\005B\021B\017TransportPacket"
+      "network.Origin\022\014\n\004path\030\006 \003(\t\022\023\n\013lastHopP" +
+      "ort\030\007 \001(\005\"\212\001\n\010PathType\022\t\n\005RELAY\020\000\022\r\n\tDIS" +
+      "COVERY\020\001\022\013\n\007SERVICE\020\002\022\013\n\007UNKNOWN\020\003\022\014\n\010NO" +
+      "TFOUND\020\004\022\020\n\014REQUESTQUEUE\020\005\022\022\n\016COMMANDCON" +
+      "TROL\020\006\022\026\n\022REQUESTQUEUEUPDATE\020\007\"F\n\006Origin" +
+      "\022\017\n\007latchId\030\001 \001(\t\022\021\n\trequestId\030\002 \001(\t\022\n\n\002",
+      "ip\030\003 \001(\t\022\014\n\004port\030\004 \001(\005B\021B\017TransportPacke" +
+      "t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2056,7 +2076,7 @@ public final class TransportPacket {
     internal_static_cotton_network_Packet_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_cotton_network_Packet_descriptor,
-        new java.lang.String[] { "Keepalive", "Pathtype", "Data", "Origin", "Path", "Activelink", });
+        new java.lang.String[] { "Keepalive", "Pathtype", "Data", "Origin", "Path", "LastHopPort", });
     internal_static_cotton_network_Origin_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_cotton_network_Origin_fieldAccessorTable = new

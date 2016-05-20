@@ -51,13 +51,12 @@ import cotton.services.ServiceLookup;
 import cotton.test.services.MathPowV2;
 import cotton.network.NetworkHandler;
 import cotton.servicediscovery.ServiceDiscovery;
-import cotton.internalRouting.ServiceRequest;
+import cotton.internalrouting.ServiceRequest;
 import java.nio.ByteBuffer;
-import cotton.internalRouting.DefaultInternalRouting;
-import cotton.internalRouting.InternalRoutingClient;
-import cotton.services.Service;
-import cotton.services.ServiceFactory;
+import cotton.internalrouting.DefaultInternalRouting;
+import cotton.internalrouting.InternalRoutingClient;
 import cotton.services.ServiceHandler;
+import cotton.services.ServiceMetaData;
 
 /**
  *
@@ -110,6 +109,26 @@ public class TestServiceDiscovery {
             Origin origin, ServiceChain to) {
         RouteSignal sig = gd.getLocalInterface(origin, to);
         assertTrue(check == sig);
+    }
+    
+    @Test
+    public void ActiveServiceLookupGetCapacity(){        
+        System.out.println("Now running: ActiveServiceLookupGetCapacity");
+        ActiveServiceLookup lookup = new ServiceLookup();
+        lookup.registerService("hej", null, 10);
+        ServiceMetaData service = lookup.getService("hej");
+        assertEquals(10,service.getMaxCapacity());
+    }
+
+    @Test
+    public void ActiveServiceLookupRemove(){        
+        System.out.println("Now running: ActiveServiceLookupRemove");
+        ActiveServiceLookup lookup = new ServiceLookup();
+
+        lookup.registerService("test", null, 10);
+
+        lookup.removeServiceEntry("test");
+        assertNull(lookup.getService("test"));
     }
 
     /**

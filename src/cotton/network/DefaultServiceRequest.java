@@ -32,7 +32,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package cotton.network;
 
-import cotton.internalRouting.ServiceRequest;
+import cotton.internalrouting.ServiceRequest;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -42,6 +42,7 @@ import java.util.concurrent.CountDownLatch;
  * @author Gunnlaugur
  * @author Magnus
  **/
+@Deprecated
 public class DefaultServiceRequest implements ServiceRequest{
     private byte[] data= null;
     private CountDownLatch latch = new CountDownLatch(1);
@@ -64,8 +65,13 @@ public class DefaultServiceRequest implements ServiceRequest{
     }
     
     @Override
-    public void setFailed(byte[] errorMessage) {
+    public void setFailed(String errorMessage) {
         this.data = null;
         latch.countDown();
+    }
+
+    @Override
+    public String getErrorMessage() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

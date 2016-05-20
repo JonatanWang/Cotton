@@ -46,7 +46,38 @@ import java.net.SocketAddress;
 public class QueuePacket implements Serializable {
     private SocketAddress instanceAddress;
     private String[] requestQueueList;
+    private boolean shouldRemove = false;
+    /**
+     * Constructs a <code>AnnouncePacket</code> containing the current <code>Cotton</code> 
+     * instance <code>SocketAddress</code> and the service list.
+     * 
+     * @param instanceAddress the <code>Cotton</code> instance address.
+     */
+    public QueuePacket(SocketAddress instanceAddress,String name) {
+        this.instanceAddress = instanceAddress;
+        String[] serviceName = new String[]{name};
+        this.requestQueueList = serviceName;
+        
+    }
 
+    /**
+     * True indicates that the listed queues should be removed instead of added
+     * @return 
+     */
+    public boolean isShouldRemove() {
+        return shouldRemove;
+    }
+
+    /**
+     *  True indicates that the listed queues should be removed instead of added
+     * @param shouldRemove set true if the listed queue should be removed, it defaults to false
+     */
+    public void setShouldRemove(boolean shouldRemove) {
+        this.shouldRemove = shouldRemove;
+    }
+    
+    
+    
     /**
      * Constructs a <code>AnnouncePacket</code> containing the current <code>Cotton</code> 
      * instance <code>SocketAddress</code> and the service list.

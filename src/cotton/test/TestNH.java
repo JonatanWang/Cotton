@@ -28,12 +28,12 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
- */
+*/
 
 
 package cotton.test;
 
-import cotton.internalRouting.InternalRoutingNetwork;
+import cotton.internalrouting.InternalRoutingNetwork;
 import cotton.network.DefaultNetworkHandler;
 import cotton.network.DummyServiceChain;
 import cotton.network.NetworkPacket;
@@ -58,13 +58,13 @@ import cotton.network.NetworkHandler;
  * @author Magnus
  */
 public class TestNH {
-    
+
     public TestNH() {
     }
-    
+
     public class InternalRoutingStub implements InternalRoutingNetwork {
         private NetworkPacket networkPacket;
-        
+
         public InternalRoutingStub(NetworkHandler nh) throws UnknownHostException {
             nh.setInternalRouting(this);
         }
@@ -73,7 +73,7 @@ public class TestNH {
         public void pushNetworkPacket(NetworkPacket networkPacket) {
             this.networkPacket = networkPacket;
         }
-        
+
         public NetworkPacket getNetworkPacket() {
             return networkPacket;
         }
@@ -82,92 +82,95 @@ public class TestNH {
         public void pushKeepAlivePacket(NetworkPacket receivedPacket, SocketLatch latch) {
             int receivedNumber = ByteBuffer.wrap(receivedPacket.getData()).getInt();
             byte[] numberAsBytes = ByteBuffer.allocate(4).putInt(receivedNumber * 2).array();
-            
+
             networkPacket = rebuildPacket(numberAsBytes, receivedPacket, false);
 
             latch.setData(networkPacket);
         }
-        
+
         private NetworkPacket rebuildPacket(byte[] data, NetworkPacket np, boolean keepAlive) {
             NetworkPacketBuilder npb = new NetworkPacketBuilder();
-            
+
             npb.setData(data);
             npb.setPath(np.getPath());
             npb.setOrigin(np.getOrigin());
             npb.setKeepAlive(keepAlive);
             npb.setPathType(np.getType());
-            
+
             return npb.build();
         }
     }
-    
-    private NetworkPacket buildPacket(byte[] data, boolean keepAlive, UUID latch) throws UnknownHostException {
+
+    private NetworkPacket buildPacket(byte[] data, boolean keepAlive, UUID latch,int port) throws UnknownHostException {
         NetworkPacketBuilder npb = new NetworkPacketBuilder();
-        
+
         npb.setData(data);
         npb.setPath(new DummyServiceChain("sendNumber"));
-        Origin origin = new Origin(new InetSocketAddress(Inet4Address.getLocalHost(), 4455), UUID.randomUUID());
+        Origin origin = new Origin(new InetSocketAddress(Inet4Address.getLocalHost(), port), UUID.randomUUID());
         if(latch != null)
             origin.setSocketLatchID(latch);
         npb.setOrigin(origin);
         npb.setKeepAlive(keepAlive);
         npb.setPathType(PathType.SERVICE);
-        
+
         return npb.build();
     }
-    
+
     @Test
     public void TestSend() throws IOException, InterruptedException{
         int numberToSend = 5;
-        
-        DefaultNetworkHandler clientNH = new DefaultNetworkHandler(4455);
-        
-        DefaultNetworkHandler serverNH = new DefaultNetworkHandler(4466);
+
+        int port = 4455;
+        NetworkHandler clientNH = new DefaultNetworkHandler(port);
+
+        NetworkHandler serverNH = new DefaultNetworkHandler(4466);
         InternalRoutingStub ir = new InternalRoutingStub(serverNH);
         new Thread(serverNH).start(); 
-        
+
         Thread.sleep(1000);
-        
+
         byte[] numberAsBytes = ByteBuffer.allocate(4).putInt(numberToSend).array();
-        NetworkPacket sendPacket = buildPacket(numberAsBytes, false, null);
-        
+        NetworkPacket sendPacket = buildPacket(numberAsBytes, false, null,port);
+
         clientNH.send(sendPacket, new InetSocketAddress(Inet4Address.getLocalHost(),4466));
-        
+
         Thread.sleep(1000);
-        
+
         NetworkPacket receivedPacket = ir.getNetworkPacket();
         int receivedNumber = ByteBuffer.wrap(receivedPacket.getData()).getInt();
-        
+
         assertTrue(5 == receivedNumber);
     }
-    
+
     @Test
     public void TestSendKeepAlive() throws IOException, InterruptedException{
         int numberToSend = 5;
-        
-        DefaultNetworkHandler clientNH = new DefaultNetworkHandler(5566);        
-        DefaultNetworkHandler serverNH = new DefaultNetworkHandler(5577);
-        
+
+        int port = 5566;
+        NetworkHandler clientNH = new DefaultNetworkHandler(port);
+        NetworkHandler serverNH = new DefaultNetworkHandler(5577);
+
         InternalRoutingStub serverIR = new InternalRoutingStub(serverNH);
         InternalRoutingStub clientIR = new InternalRoutingStub(clientNH);
-        
+
         new Thread(serverNH).start();
         new Thread(clientNH).start();
-        
+
         Thread.sleep(1000);
-        
+
         byte[] numberAsBytes = ByteBuffer.allocate(4).putInt(numberToSend).array();
-        NetworkPacket sendPacket = buildPacket(numberAsBytes, true, UUID.randomUUID());
-        
+        NetworkPacket sendPacket = buildPacket(numberAsBytes, true, UUID.randomUUID(),port);
+
         clientNH.sendKeepAlive(sendPacket, new InetSocketAddress(Inet4Address.getLocalHost(),5577));
-        
+
         Thread.sleep(1000);
-        
+
         NetworkPacket receivedPacket = clientIR.getNetworkPacket();
+
         int receivedNumber = ByteBuffer.wrap(receivedPacket.getData()).getInt();
-        
+
         System.out.println("Received number: " + receivedNumber);
-        
+
         assertTrue(10 == receivedNumber);
     }
 }

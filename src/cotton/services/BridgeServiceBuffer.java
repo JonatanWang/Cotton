@@ -33,7 +33,11 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package cotton.services;
 
+import cotton.network.NetworkPacket;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -43,17 +47,33 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class BridgeServiceBuffer implements ServiceBuffer{
 
-    private ConcurrentLinkedQueue<ServicePacket> buffer;
+    private LinkedBlockingQueue<NetworkPacket> buffer;
 
     public BridgeServiceBuffer(){
-        buffer = new ConcurrentLinkedQueue<>();
+        buffer = new LinkedBlockingQueue<>();
     }
-
-    public ServicePacket nextPacket(){
-        return buffer.poll();
+    
+/**
+     * Distributes the next packet in the <code>ServiceBuffer</code>.
+     *
+     * @return the next <code>ServicePacket</code> in the buffer.
+     */
+    public NetworkPacket nextPacket(){
+        try {
+            return buffer.take();//.poll();
+        } catch (InterruptedException ex) {
+        }
+        return null;
     }
-
-    public boolean add(ServicePacket servicePacket){
+    
+/**
+     * Stores a <code>ServicePacket</code> in the buffer.
+     *
+     * @param NetworkPacket the <code>ServicePacket</code> to store.
+     * @return <code>true</code> if the buffer changed as a result of the
+     * <code>add</code>.
+     */
+    public boolean add(cotton.network.NetworkPacket servicePacket){
         return buffer.add(servicePacket);
     }
 

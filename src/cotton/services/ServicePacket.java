@@ -36,6 +36,7 @@ package cotton.services;
 import cotton.network.Origin;
 import cotton.network.ServiceChain;
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  *
@@ -43,6 +44,7 @@ import java.io.Serializable;
  * @author Magnus
  * @author Tony
  */
+@Deprecated
 public class ServicePacket implements Serializable{
     private byte[] data;
     private Origin origin;
@@ -66,4 +68,12 @@ public class ServicePacket implements Serializable{
         return to;
     }
 
+    @Override
+    public String toString() {
+        return "ServicePacket{" +
+                "data=" + Arrays.toString(data) +
+                ", origin=" + origin +
+                ", to=" + to +
+                '}';
+    }
 }
