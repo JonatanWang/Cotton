@@ -162,7 +162,7 @@ public class TestUsageHistory {
 
         }
         try {
-            Thread.sleep(1000);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -191,7 +191,7 @@ public class TestUsageHistory {
         return b.toString();
     }
 
-    //@Test
+    @Test
     public void TestUsageHistoryQuery() throws UnknownHostException {
         System.out.println("TestQueueUsage");
         InetAddress ip = Inet4Address.getLocalHost();
@@ -199,25 +199,28 @@ public class TestUsageHistory {
         System.out.println("Port is:" + port);
         InetSocketAddress addr = new InetSocketAddress(ip, port);
         Cotton discovery = new Cotton(true, port);
-        //discovery.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
-
-        //AtomicInteger counter = new AtomicInteger(0);
-        // MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
-        //discovery.getServiceRegistation().registerService("result", resFactory, 10);
         String name = "result";
         String pow = "mathpow21";
-        RequestQueueManager qm = new RequestQueueManager();
-        qm.startQueue(name);
-        qm.startQueue(pow);
-        discovery.setRequestQueueManager(qm);
-
+        
         discovery.start();
         GlobalDnsStub gDns = new GlobalDnsStub();
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = new InetSocketAddress(Inet4Address.getLocalHost(), port);
         gDns.setGlobalDiscoveryAddress(arr);
         try {
-            Thread.sleep(1000);
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Cotton queueManager = new Cotton(false, gDns);
+        RequestQueueManager qm = new RequestQueueManager();
+        qm.startQueue(name);
+        qm.startQueue(pow);
+        queueManager.setRequestQueueManager(qm);
+        queueManager.start();
+        
+        try {
+            Thread.sleep(200);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -234,7 +237,7 @@ public class TestUsageHistory {
         ser2.start();
 
         try {
-            Thread.sleep(1000);
+            Thread.sleep(200);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -242,13 +245,13 @@ public class TestUsageHistory {
         c.start();
         Console cl = c.getConsole();
         Command cmd = new Command(StatType.REQUESTQUEUE, null, new String[]{pow, "setUsageRecordingInterval"}, 200, CommandType.USAGEHISTORY);
-        DestinationMetaData dest = new DestinationMetaData(addr, PathType.COMMANDCONTROL);
+        DestinationMetaData dest = new DestinationMetaData(queueManager.getNetwork().getLocalAddress(), PathType.COMMANDCONTROL);
         try {
             cl.sendCommand(cmd, dest);
         } catch (IOException ex) {
         }
         try {
-            Thread.sleep(2000);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -256,6 +259,7 @@ public class TestUsageHistory {
         ServiceChain chain = new DummyServiceChain().into(pow).into(name).into(pow).into(pow).into(name);
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
+        
         client.sendToService(data, chain);
         try {
             Thread.sleep(1000);
@@ -263,8 +267,8 @@ public class TestUsageHistory {
             e.printStackTrace();
         }
 
-        String[] cmdline = new String[]{pow, "getUsageRecordingInterval"};
-        Command query = new Command(StatType.REQUESTQUEUE, null, cmdline, 200, CommandType.STATISTICS_FORSYSTEM);
+        String[] cmdline = new String[]{pow, "getUsageRecordingInterval","" + 0,"" + 1000};
+        Command query = new Command(StatType.REQUESTQUEUE, null, cmdline, 200, CommandType.USAGEHISTORY);
         StatisticsData<TimeInterval>[] res = null;
         try {
             res = cl.sendQueryCommand(query, dest);
@@ -287,13 +291,12 @@ public class TestUsageHistory {
         }
         System.out.println("res: size" + res.length);
         try {
-            Thread.sleep(2000);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        if (res != null) {
-            System.out.println("Result: \n" + res[0].toString());
-        }
+        assertTrue("query returned empty",res.length > 0);
+        System.out.println("Result: \n" + res[0].toString());
 
         ser1.shutdown();
         ser2.shutdown();
@@ -384,7 +387,7 @@ public class TestUsageHistory {
         for (int i = 0; i < interval.length; i++) {
             taskDone += interval[i].getOutputCount();
         }
-        System.out.println("TestServiceStat:task done:" + taskDone + "?=" + sendCount);
+        System.out.println("TestServiceStat:task done:" + taskDone + "==" + sendCount);
         client.shutdown();
         serv.shutdown();
         disc.shutdown();
