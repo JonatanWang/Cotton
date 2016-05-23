@@ -43,7 +43,7 @@ public class TimeInterval implements Serializable {
     private long inputCount;
     private long outputCount;
     private long deltaTime;
-    private long currentQueueCount = 0;
+    private long currentActiveCount = 0;
 
     public TimeInterval(long deltaTime) {
         this.inputCount = 0;
@@ -99,16 +99,16 @@ public class TimeInterval implements Serializable {
      *
      * @return
      */
-    public long getCurrentQueueCount() {
-        return currentQueueCount;
+    public long getCurrentActiveCount() {
+        return currentActiveCount;
     }
     /**
      * returns the current workload of the queue
      *
      * @return
      */
-    public void setCurrentQueueCount(long currentQueueCount) {
-        this.currentQueueCount = currentQueueCount;
+    public void setCurrentActiveCount(long currentQueueCount) {
+        this.currentActiveCount = currentQueueCount;
     }
     /**
      * returns the current workload of the queue
@@ -128,7 +128,7 @@ public class TimeInterval implements Serializable {
 
     @Override
     public String toString() {
-        return "TimeInterval{" + "inputIntensity=" + calculateInputIntensity() + ", outputIntensity=" + calculateOutputIntensity() + "in/out count:" +this.inputCount + "/" + this.outputCount + ", deltaTime=" + deltaTime + ", currentQueueCount=" + currentQueueCount + '}';
+        return "TimeInterval{" + "inputIntensity=" + calculateInputIntensity() + ", outputIntensity=" + calculateOutputIntensity() + "in/out count:" +this.inputCount + "/" + this.outputCount + ", deltaTime=" + deltaTime + ", currentQueueCount=" + currentActiveCount + '}';
     }
 
 }

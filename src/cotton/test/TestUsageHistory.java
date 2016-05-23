@@ -341,11 +341,10 @@ public class TestUsageHistory {
             Integer endPoint = startPoint + 500;
             endNumb = endPoint.toString();
         } else {
-            System.out.println("TestServiceStat: isSampling failed");
-            assertTrue(false);
+            assertTrue("TestServiceStat: isSampling failed",false);
         }
 
-        Command startRecording = new Command(StatType.SERVICEHANDLER, null, new String[]{serviceName, "setUsageRecordingInterval"}, 100, CommandType.USAGEHISTORY);
+        Command startRecording = new Command(StatType.SERVICEHANDLER, null, new String[]{serviceName, "setUsageRecordingInterval",startNumb,endNumb}, 100, CommandType.USAGEHISTORY);
         console.sendCommand(startRecording, destination);
         try {
             Thread.sleep(500);
@@ -387,6 +386,8 @@ public class TestUsageHistory {
         for (int i = 0; i < interval.length; i++) {
             taskDone += interval[i].getOutputCount();
         }
+        //System.out.println("Statistics name: " + serviceName + " TIMEINTERVAL:" + intervalToString("\t", interval, "\n"));
+        
         System.out.println("TestServiceStat:task done:" + taskDone + "==" + sendCount);
         client.shutdown();
         serv.shutdown();

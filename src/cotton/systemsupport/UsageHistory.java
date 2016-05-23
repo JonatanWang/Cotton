@@ -54,6 +54,11 @@ public class UsageHistory implements Serializable{
     public void add(TimeInterval element){
         usageHistoryList.add(element);
     }
+    
+    public synchronized void clearHistory() {
+        this.usageHistoryList.clear();
+    }
+    
     /**
      * returns the usage history for the request queue.
      * @return 
@@ -70,10 +75,13 @@ public class UsageHistory implements Serializable{
      * @param last
      * @return 
      */
-    public synchronized ArrayList<TimeInterval> getInterval(int first, int last){  
+    public synchronized TimeInterval[] getInterval(int first, int last){  
         int lastIndex = (last >= usageHistoryList.size()) ? usageHistoryList.size() : last;
         int firstIndex = (first <= 0) ? 0 : first;
-        return new ArrayList<>(usageHistoryList.subList(firstIndex, lastIndex));
+        ArrayList<TimeInterval> tmp = new ArrayList<>(usageHistoryList.subList(firstIndex, lastIndex));
+        TimeInterval[] ret = new TimeInterval[tmp.size()];
+        tmp.toArray(ret);
+        return ret;
     }
     /**
      * returns the total amount of time intervals in the usage history. 

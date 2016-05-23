@@ -33,6 +33,7 @@ package cotton.services;
 
 import cotton.internalrouting.InternalRoutingServiceHandler;
 import cotton.network.NetworkPacket;
+import cotton.systemsupport.ActivityLogger;
 import cotton.systemsupport.Command;
 import cotton.systemsupport.CommandType;
 import java.util.concurrent.Executors;
@@ -43,6 +44,7 @@ import cotton.systemsupport.StatType;
 import cotton.systemsupport.TimeInterval;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -60,20 +62,30 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
     private ServiceBuffer workBuffer;
     private ExecutorService threadPool;
     private volatile boolean active = true;
-    private ConcurrentHashMap<UUID, TimeSliceTask> timers;
-    private ConcurrentHashMap<String, DataPath> bufferChannels = new ConcurrentHashMap<String, DataPath>();
-    
-    private Timer timeManger = new Timer();
+//    private ConcurrentHashMap<UUID, ActivityLogger> activityLogger;
+    private ConcurrentHashMap<String, DataPath> bufferChannels = null;
 
     public ServiceHandler(ActiveServiceLookup serviceLookup, InternalRoutingServiceHandler internalRouting) {
         this.internalRouting = internalRouting;
         this.serviceLookup = serviceLookup;
         this.workBuffer = internalRouting.getServiceBuffer();
         this.threadPool = Executors.newCachedThreadPool();//.newFixedThreadPool(10);
-        this.timers = new ConcurrentHashMap<UUID, TimeSliceTask>();
+        this.bufferChannels = new ConcurrentHashMap<String, DataPath>();
+        //fillBufferChannels();
+//        this.activityLogger = new ConcurrentHashMap<UUID, ActivityLogger>();
+    }
+
+    private void fillBufferChannels() {
+
+        for (Map.Entry<String, ServiceMetaData> entry : this.serviceLookup.getEntrySet()) {
+            String key = entry.getKey();
+            DataPath p = new DataPath(key);
+            this.bufferChannels.putIfAbsent(key, p);
+        }
     }
 
     public void run() {
+        fillBufferChannels();
         while (active) {
             NetworkPacket packet = workBuffer.nextPacket();
             String nextServiceName = packet.getPath().getNextServiceName();
@@ -86,24 +98,24 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
 //                }
             } else {
                 DataPath path = bufferChannels.get(nextServiceName);
-                if(path != null) {
+                if (path != null) {
                     path.put(packet);
-                }else {
+                } else {
                     path = new DataPath(nextServiceName);
                     DataPath oldPath = null;
                     oldPath = this.bufferChannels.putIfAbsent(nextServiceName, path);
-                    if(oldPath != null) {
+                    if (oldPath != null) {
                         path = oldPath;
                     }
                     path.put(packet);
                     ServiceDispatcher th = new ServiceDispatcher(path);
                     threadPool.execute(th);
                 }
-                if(path.getListenerCount().get() <= service.getMaxCapacity()) {
+                if (path.getListenerCount().get() <= service.getMaxCapacity()) {
                     ServiceDispatcher th = new ServiceDispatcher(path);
                     threadPool.execute(th);
                 }
-                
+
             }
         }
         threadPool.shutdownNow();
@@ -111,12 +123,16 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
 
     public void stop() {
         this.active = false;
-        timers.clear();
-        timeManger.cancel();
-        timeManger.purge();
+        for (Map.Entry<String, DataPath> entry : this.bufferChannels.entrySet()) {
+            DataPath value = entry.getValue();
+            value.getActivityLogger().stop();
+        }
+        this.bufferChannels.clear();
     }
+
     /**
-     * Tells a specific service to change capacity. 
+     * Tells a specific service to change capacity.
+     *
      * @param name
      * @param amount
      */
@@ -153,6 +169,7 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         StatisticsData[] ret = result.toArray(new StatisticsData[result.size()]);
         return ret;
     }
+
     /**
      * returns statistics for a specific service handler.
      *
@@ -162,44 +179,53 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
     @Override
     public StatisticsData getStatistics(String[] cmdline) {
         ServiceMetaData metaData = serviceLookup.getService(cmdline[0]);
+        UUID serviceId = metaData.getServiceId();
         if (metaData == null) {
             return new StatisticsData();
         }
-
+        DataPath p = this.bufferChannels.get(cmdline[0]);
+        ActivityLogger logger = null;
+        if (p != null) {
+            logger = p.getActivityLogger();
+        }
         if (cmdline[1].equals("serviceData")) {
             int[] data = {metaData.getMaxCapacity(), metaData.getCurrentThreadCount()};
             return new StatisticsData(StatType.SERVICEHANDLER, cmdline[0], data);
+        } else if (logger == null) {
+            return new StatisticsData();
         } else if (cmdline[1].equals("getUsageRecordingInterval")) {
             TimeInterval[] interval = null;
             if (cmdline.length == 2) {
-                interval = metaData.getUsageHistory().getUsageHistory();
+                interval = logger.getUsageRecording(0, 0);
             } else if (cmdline.length == 4) {
                 int first = Integer.parseInt(cmdline[2]);
                 int last = Integer.parseInt(cmdline[3]);
-                ArrayList<TimeInterval> tmp = metaData.getUsageHistory().getInterval(first, last);
-                interval = tmp.toArray(new TimeInterval[tmp.size()]);
+                interval = logger.getUsageRecording(first, last);
             } else {
                 return new StatisticsData();
             }
             return new StatisticsData(StatType.SERVICEHANDLER, cmdline[0], interval);
         } else if (cmdline[1].equals("isSampling")) {
-            if (hasRunningTimer(metaData)) {
-                return new StatisticsData(StatType.SERVICEHANDLER, cmdline[0], new int[]{1, (int) metaData.getSamplingRate(), metaData.getUsageHistory().getLastIndex()});
+            if (logger == null) {
+                return new StatisticsData(StatType.SERVICEHANDLER, cmdline[0], new int[]{0, 0, 0});
             }
-            return new StatisticsData(StatType.SERVICEHANDLER, cmdline[0], new int[]{0, (int) metaData.getSamplingRate(), metaData.getUsageHistory().getLastIndex()});
+            int on = (logger.hasRunningTimer()) ? 1 : 0;
+            return new StatisticsData(StatType.SERVICEHANDLER, cmdline[0], new int[]{on, (int) logger.getSamplingRate(), logger.getLastIndex()});
         }
 
         return new StatisticsData();
 
     }
+
     /**
-     * returns a statistics provider for the service handler.
-     * return StatisticsProvider
+     * returns a statistics provider for the service handler. return
+     * StatisticsProvider
      */
     @Override
     public StatisticsProvider getProvider() {
         return this;
     }
+
     /**
      * returns the type of subsystem that statistics is requested for
      *
@@ -228,9 +254,9 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
             return false;
         }
         if (task.equals("setUsageRecordingInterval")) {
-            setUsageRecording(service, samplingRate);
+            setUsageRecording(name, samplingRate);
         } else if (task.equals("stopUsageRecording")) {
-            stopUsageRecording(service);
+            stopUsageRecording(name);
         } else {
             return false;
         }
@@ -240,14 +266,47 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
     private StatisticsData[] parseQuery(Command command) {
         String[] tokens = command.getTokens();
         if (tokens != null && tokens.length > 1) {
-            if(tokens[1].equals("getMaxCapacity")) {
+            if (tokens[1].equals("getMaxCapacity")) {
                 int maxcap = this.getServiceCapacity(tokens[0]);
-                StatisticsData ret = new StatisticsData(StatType.SERVICEHANDLER,tokens[0],new int[]{maxcap});
+                StatisticsData ret = new StatisticsData(StatType.SERVICEHANDLER, tokens[0], new int[]{maxcap});
                 return new StatisticsData[]{ret};
             }
         }
         return new StatisticsData[0];
     }
+
+    private StatisticsData[] usageQuery(Command command) {
+        String[] tokens = command.getTokens();
+        if (tokens == null || tokens.length < 1) {
+            return new StatisticsData[0];
+        }
+        if (tokens[1].equals("getMaxCapacity")) {
+            int maxcap = this.getServiceCapacity(tokens[0]);
+            StatisticsData ret = new StatisticsData(StatType.SERVICEHANDLER, tokens[0], new int[]{maxcap});
+            return new StatisticsData[]{ret};
+        }
+        DataPath p = this.bufferChannels.get(tokens[0]);
+        if (p == null) {
+            return new StatisticsData[0];
+        }
+        TimeInterval[] interval = null;
+        ActivityLogger logger = p.getActivityLogger();
+        if (tokens[1].equals("getUsageRecordingInterval") && tokens.length == 2) {
+            interval = logger.getUsageRecording(0, 0);
+        } else if (tokens.length == 4) {
+            int first = Integer.parseInt(tokens[2]);
+            int last = Integer.parseInt(tokens[3]);
+            interval = logger.getUsageRecording(first, last);
+        }else if (tokens[1].equals("isSampling")) {
+            int on = (logger.hasRunningTimer()) ? 1 : 0;
+            StatisticsData ret = new StatisticsData(StatType.SERVICEHANDLER, tokens[0], new int[]{on, (int) logger.getSamplingRate(), logger.getLastIndex()});
+            return new StatisticsData[]{ret};
+        } else {
+            return new StatisticsData[0];
+        }
+        return new StatisticsData[]{new StatisticsData(StatType.SERVICEHANDLER, tokens[0], interval)};
+    }
+
     /**
      * processes a command that is received from the command and control unit.
      *
@@ -255,10 +314,8 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
     @Override
     public StatisticsData[] processCommand(Command command) {
         if (command.getCommandType() == CommandType.USAGEHISTORY) {
-            if(command.isQuery()){
-                StatisticsData res = getStatistics(command.getTokens());
-                return new StatisticsData[]{res};
-            
+            if (command.isQuery()) {
+                return usageQuery(command);
             }
             usageRecording(command);
             return new StatisticsData[0];
@@ -279,15 +336,12 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
      * @param samplingRate
      * @return
      */
-    public boolean setUsageRecording(ServiceMetaData service, long samplingRate) {
-        TimeSliceTask timer = timers.get(service.getServiceId());
-        service.setSamplingRate(samplingRate);
-        if (timer != null) {
-            timer.cancel();
+    public boolean setUsageRecording(String serviceName, long samplingRate) {
+        DataPath p = this.bufferChannels.get(serviceName);
+        if (p == null) {
+            return false;
         }
-        service.setSampling(true);
-        this.timeManger.scheduleAtFixedRate(new TimeSliceTask(service, System.currentTimeMillis()), 0, service.getSamplingRate());
-        return true;
+        return p.getActivityLogger().setUsageRecording(samplingRate);
     }
 
     /**
@@ -295,63 +349,36 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
      *
      * @return
      */
-    public boolean stopUsageRecording(ServiceMetaData service) {
-        TimeSliceTask timer = timers.remove(service.getServiceId());
-        service.setSampling(false);
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
+    public boolean stopUsageRecording(String serviceName) {
+        DataPath p = this.bufferChannels.get(serviceName);
+        if (p == null) {
+            return false;
         }
-        return true;
+        return p.getActivityLogger().stopUsageRecording();
     }
+
     /**
      * returns the type of subsystem that statistics is requested for
      *
      * @return
      */
-    public boolean hasRunningTimer(ServiceMetaData service) {
-        TimeSliceTask timer = timers.get(service.getServiceId());
-        if (timer == null) {
+    public boolean hasRunningTimer(String serviceName) {
+        DataPath p = this.bufferChannels.get(serviceName);
+        if (p == null) {
             return false;
         }
-        return true;
-
-    }
-
-    private class TimeSliceTask extends TimerTask {
-
-        private long startTime;
-        private ServiceMetaData service;
-
-        public TimeSliceTask(ServiceMetaData service, long startTime) {
-            this.startTime = startTime;
-            this.service = service;
-        }
-
-        @Override
-        public void run() {
-            long endTime = System.currentTimeMillis();
-            long deltaTime = endTime - startTime;
-            int in = service.getInputCounter();
-            service.setInputCounter(0);
-
-            int out = service.getOutputCounter();
-            service.setOutputCounter(0);
-            TimeInterval timeInterval = new TimeInterval(deltaTime);
-            timeInterval.setCurrentQueueCount(service.getCurrentThreadCount());
-            timeInterval.setInputCount(in);
-            timeInterval.setOutputCount(out);
-            service.getUsageHistory().add(timeInterval);
-            startTime = System.currentTimeMillis();
-        }
+        return p.getActivityLogger().hasRunningTimer();
     }
 
     private class DataPath {
+
         //private LinkedBlockingQueue<NetworkPacket> buffer;
         private ServiceBuffer buffer;
         private String name;
         private AtomicInteger listenerCount = new AtomicInteger(0);
         private AtomicBoolean stopOne = new AtomicBoolean(false);
+        private ActivityLogger logger = new ActivityLogger(200);
+
         public DataPath(String name) {
             this.name = name;
             //this.buffer = new LinkedBlockingQueue<NetworkPacket>();
@@ -362,28 +389,34 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
             return name;
         }
 
+        public ActivityLogger getActivityLogger() {
+            return this.logger;
+        }
+
         public AtomicInteger getListenerCount() {
             return listenerCount;
         }
-        
+
         public boolean put(NetworkPacket pkt) {
             //return this.buffer.offer(pkt);
             return this.buffer.add(pkt);
         }
+
         public NetworkPacket getPacket() throws InterruptedException {
             //return this.buffer.take();
             return this.buffer.nextPacket();
         }
-        
+
         public void stopOneThread() {
             this.stopOne.set(true);
         }
+
         public boolean getStopSignal() {
             return this.stopOne.getAndSet(false);
         }
-        
+
     }
-    
+
     /**
      * ServiceDispatcher runs a service
      */
@@ -394,10 +427,12 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         private String serviceName;
         private ServiceMetaData serviceMetaData;
         private DataPath dataPath;
+        private ActivityLogger logger;
 
         public ServiceDispatcher(DataPath dataPath) {
-           this.dataPath = dataPath;
-           this.serviceName = dataPath.getName();
+            this.dataPath = dataPath;
+            this.serviceName = dataPath.getName();
+            logger = this.dataPath.getActivityLogger();
             dataPath.getListenerCount().incrementAndGet();
             if (this.serviceName == null) {
                 dataPath.getListenerCount().decrementAndGet();
@@ -411,6 +446,7 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
                 succesfulInit = false;
                 return;
             }
+
             int currentServiceCount = serviceMetaData.incrementThreadCount();
             if (currentServiceCount > serviceMetaData.getMaxCapacity()) {
                 serviceMetaData.decrementThreadCount();
@@ -421,23 +457,19 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
             this.serviceFactory = serviceMetaData.getServiceFactory();
 
         }
-        
+
         private void startService(NetworkPacket packet) {
             Service service = serviceFactory.newService();
             try {
-                if (serviceMetaData.isSampling()) {
-                    serviceMetaData.incrementInputCounter();
-                }
+                this.logger.recordInputEvent();
                 byte[] result = service.execute(null, packet.getOrigin(), packet.getData(), packet.getPath());
 
                 internalRouting.forwardResult(packet.getOrigin(), packet.getPath(), result);
                 serviceLookup.getService(serviceName).decrementThreadCount();
                 internalRouting.notifyRequestQueue(serviceName);
-                if (serviceMetaData.isSampling()) {
-                    serviceMetaData.incrementOutputCounter();
-                }
+                this.logger.recordOutputEvent();
             } catch (Exception e) {
-                
+
                 e.printStackTrace();
             }
         }
@@ -449,16 +481,17 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
             }
             NetworkPacket packet = null;
             do {
-                for(int i = 0; i < 10; i++ ) {
+                for (int i = 0; i < 10; i++) {
                     try {
-                         packet = this.dataPath.getPacket();
-                         if(packet == null) {
-                             break;
-                         }
-                         startService(packet);
-                    } catch (InterruptedException ex) {}
+                        packet = this.dataPath.getPacket();
+                        if (packet == null) {
+                            break;
+                        }
+                        startService(packet);
+                    } catch (InterruptedException ex) {
+                    }
                 }
-            }while(this.dataPath.getStopSignal() == false);
+            } while (this.dataPath.getStopSignal() == false);
             serviceLookup.getService(serviceName).decrementThreadCount();
         }
     }

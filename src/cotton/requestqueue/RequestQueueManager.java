@@ -44,6 +44,7 @@ import cotton.servicediscovery.CircuitBreakerPacket;
 import cotton.servicediscovery.DiscoveryPacket;
 import cotton.servicediscovery.DiscoveryPacket.DiscoveryPacketType;
 import cotton.servicediscovery.QueuePacket;
+import cotton.systemsupport.ActivityLogger;
 import cotton.systemsupport.Command;
 import cotton.systemsupport.CommandType;
 import java.util.Set;
@@ -458,22 +459,24 @@ public class RequestQueueManager implements StatisticsProvider {
         private final String queueName;
         private int maxCapacity;
         private AtomicInteger threadCount = new AtomicInteger(0);
-        private AtomicInteger inputCounter;
-        private AtomicInteger outputCounter;
-        private UsageHistory usageHistory;
-        private Timer timer = new Timer();
-        private TimeSliceTask sliceTask = null;
+//        private AtomicInteger inputCounter;
+//        private AtomicInteger outputCounter;
+//        private UsageHistory usageHistory;
+//        private Timer timer = new Timer();
+//        private TimeSliceTask sliceTask = null;
+        private ActivityLogger logger;
         private volatile boolean running = true;
-        private int samplingRate = 0;
+        private int samplingRate = 200;
 
         public RequestQueue(String queueName, int maxCapacity) {
             this.processQueue = new LinkedBlockingQueue<>();
             this.processingNodes = new LinkedBlockingQueue<>();
             this.queueName = queueName;
             this.maxCapacity = maxCapacity;
-            this.usageHistory = new UsageHistory();
-            this.inputCounter = new AtomicInteger(0);
-            this.outputCounter = new AtomicInteger(0);
+            this.logger = new ActivityLogger(samplingRate);
+//            this.usageHistory = new UsageHistory();
+//            this.inputCounter = new AtomicInteger(0);
+//            this.outputCounter = new AtomicInteger(0);
         }
 
         public String getName() {
@@ -496,21 +499,20 @@ public class RequestQueueManager implements StatisticsProvider {
             } else if (statisticsInformation[1].equals("getUsageRecordingInterval")) {
                 TimeInterval[] interval = null;
                 if (statisticsInformation.length == 2) {
-                    interval = usageHistory.getUsageHistory();
+                    interval = this.logger.getUsageRecording(0, 0);
                 } else if (statisticsInformation.length == 4) {
                     int first = Integer.parseInt(statisticsInformation[2]);
                     int last = Integer.parseInt(statisticsInformation[3]);
-                    ArrayList<TimeInterval> tmp = usageHistory.getInterval(first, last);
-                    interval = tmp.toArray(new TimeInterval[tmp.size()]);
+                    interval = this.logger.getUsageRecording(first, last);
                 } else {
                     return new StatisticsData();
                 }
                 return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], interval);
             } else if (statisticsInformation[1].equals("isSampling")) {
                 if (hasRunningTimer()) {
-                    return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], new int[]{1, this.samplingRate, usageHistory.getLastIndex()});
+                    return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], new int[]{1, this.samplingRate, this.logger.getLastIndex()});
                 }
-                return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], new int[]{0, this.samplingRate, usageHistory.getLastIndex()});
+                return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], new int[]{0, this.samplingRate, this.logger.getLastIndex()});
             }
             return new StatisticsData();
         }
@@ -530,7 +532,7 @@ public class RequestQueueManager implements StatisticsProvider {
                 discPacket.setCircuitBreakerPacket(new CircuitBreakerPacket(queueName));
                 internalRouting.notifyDiscovery(discPacket);
             }
-            inputCounter.incrementAndGet();
+            this.logger.recordInputEvent();
             processQueue.add(packet);
         }
 
@@ -596,7 +598,7 @@ public class RequestQueueManager implements StatisticsProvider {
                         try {
                             //networkHandler.send(packet,origin.getAddress());
 
-                            outputCounter.incrementAndGet();
+                            logger.recordOutputEvent();
                             internalRouting.sendWork(packet, origin.getAddress());
                             //System.out.println("Queue sent work to " + origin.getAddress().toString());
                         } catch (IOException e) {
@@ -628,14 +630,7 @@ public class RequestQueueManager implements StatisticsProvider {
          * @return
          */
         public boolean setUsageRecording(long samplingRate) {
-            this.samplingRate = (int) samplingRate;
-            if (this.sliceTask != null) {
-                sliceTask.cancel();
-
-            }
-            this.sliceTask = new TimeSliceTask(System.currentTimeMillis());
-            timer.scheduleAtFixedRate(sliceTask, 0, this.samplingRate);
-            return true;
+            return this.logger.setUsageRecording(samplingRate);
         }
 
         /**
@@ -644,53 +639,42 @@ public class RequestQueueManager implements StatisticsProvider {
          * @return
          */
         public boolean stopUsageRecording() {
-            if (sliceTask != null) {
-                sliceTask.cancel();
-            }
-            return true;
+            return this.logger.stopUsageRecording();
         }
 
         public boolean hasRunningTimer() {
-            if (timer == null) {
-                return false;
-            }
-            return true;
+            return this.logger.hasRunningTimer();
         }
 
         public void stop() {
             running = false;
-            if(this.sliceTask != null) {
-                this.sliceTask.cancel();
-            }
-            timer.cancel();
-            timer.purge();
-            timer = null;
+            logger.stop();
         }
 
-        private class TimeSliceTask extends TimerTask {
-
-            private long startTime;
-
-            public TimeSliceTask(long startTime) {
-                this.startTime = startTime;
-            }
-
-            @Override
-            public void run() {
-                long endTime = System.currentTimeMillis();
-                long deltaTime = endTime - startTime;
-                int in = inputCounter.get();
-                inputCounter.set(0);
-                int out = outputCounter.get();
-                outputCounter.set(0);
-                TimeInterval timeInterval = new TimeInterval(deltaTime);
-                timeInterval.setCurrentQueueCount(processQueue.size());
-                timeInterval.setInputCount(in);
-                timeInterval.setOutputCount(out);
-                usageHistory.add(timeInterval);
-                startTime = System.currentTimeMillis();
-            }
-        }
+//        private class TimeSliceTask extends TimerTask {
+//
+//            private long startTime;
+//
+//            public TimeSliceTask(long startTime) {
+//                this.startTime = startTime;
+//            }
+//
+//            @Override
+//            public void run() {
+//                long endTime = System.currentTimeMillis();
+//                long deltaTime = endTime - startTime;
+//                int in = inputCounter.get();
+//                inputCounter.set(0);
+//                int out = outputCounter.get();
+//                outputCounter.set(0);
+//                TimeInterval timeInterval = new TimeInterval(deltaTime);
+//                timeInterval.setCurrentActiveCount(processQueue.size());
+//                timeInterval.setInputCount(in);
+//                timeInterval.setOutputCount(out);
+//                usageHistory.add(timeInterval);
+//                startTime = System.currentTimeMillis();
+//            }
+//        }
 
     }
 }
