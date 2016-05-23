@@ -47,7 +47,6 @@ import cotton.network.DummyServiceChain;
 import cotton.network.NetworkHandler;
 import cotton.services.BridgeServiceBuffer;
 import cotton.services.ServiceBuffer;
-import cotton.services.ServicePacket;
 import java.io.IOException;
 
 import cotton.requestqueue.RequestQueueManager;

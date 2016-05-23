@@ -6,8 +6,11 @@
 package cotton.test;
 
 import cotton.Cotton;
+import cotton.internalrouting.DefaultInternalRouting;
+import cotton.internalrouting.InternalRoutingNetwork;
 import cotton.internalrouting.InternalRoutingServiceHandler;
 import cotton.network.DummyServiceChain.ServiceChainBuilder;
+import cotton.network.NetworkHandler;
 import cotton.network.NetworkPacket;
 import cotton.network.Origin;
 import cotton.network.ServiceChain;
@@ -19,9 +22,17 @@ import cotton.services.ServiceLookup;
 import cotton.test.services.MathPowV2;
 import cotton.test.services.MathResult;
 import cotton.test.services.Result;
+import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -41,7 +52,7 @@ public class TestStressTolerance {
         AtomicInteger counter = new AtomicInteger(0);
         int dotFreq = 10000;
         int lineFreq = 100000;
-        Result.Factory resFactory = (Result.Factory) Result.getFactory(counter,dotFreq,lineFreq);
+        Result.Factory resFactory = (Result.Factory) Result.getFactory(counter, dotFreq, lineFreq);
 
         ActiveServiceLookup serviceLookup = new ServiceLookup();
         serviceLookup.registerService("mathpow2", MathPowV2.getFactory(), 20);
@@ -86,7 +97,7 @@ public class TestStressTolerance {
                 .into("mathpow2").into("mathpow21").into("result");
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
-        
+
         for (int i = 0; i < sentChains; i++) {
             NetworkPacket pkt = NetworkPacket.newBuilder()
                     .setOrigin(new Origin())
@@ -100,22 +111,95 @@ public class TestStressTolerance {
         int completedChains = counter.get();
         int timeOut = 0;
         int maxRunTime = 1000;
-        double ratio = 1.0/100.0;
-        int waitTime = (int) ((double)maxRunTime*ratio);
+        double ratio = 1.0 / 100.0;
+        int waitTime = (int) ((double) maxRunTime * ratio);
         int loop = maxRunTime - waitTime;
         System.out.println("MaxRunTime: " + maxRunTime + " ratio: " + ratio + " loop: " + loop + " waitTime: " + waitTime);
         long startTime = System.currentTimeMillis();
         while (completedChains < sentChains && timeOut < loop) {
             try {
                 Thread.sleep(waitTime);
-            } catch (InterruptedException ex) {}
+            } catch (InterruptedException ex) {
+            }
             timeOut++;
         }
         long stopTime = System.currentTimeMillis();
         completedChains = counter.get();
-        float total = (float)(stopTime - startTime)/1000.0f;
-        System.out.println("Chains completed: " + completedChains + " in: " + total +"[s] , " + (float)completedChains/total + "[chains/sec]" );
+        float total = (float) (stopTime - startTime) / 1000.0f;
+        System.out.println("Chains completed: " + completedChains + " in: " + total + "[s] , " + (float) completedChains / total + "[chains/sec]");
         serviceHandler.stop();
         assertTrue(sentChains == completedChains);
+    }
+
+    private class NetworkHandlerStub2 implements NetworkHandler {
+
+        InternalRoutingNetwork internal = null;
+        InetSocketAddress local;
+        InetSocketAddress destAddr;
+        private LinkedBlockingQueue<NetworkPacket> output;
+        private LinkedBlockingQueue<NetworkPacket> input;
+
+        public NetworkHandlerStub2(SocketAddress local, LinkedBlockingQueue<NetworkPacket> output, LinkedBlockingQueue<NetworkPacket> input, SocketAddress destAddr) {
+            this.local = (InetSocketAddress) local;
+            this.output = output;
+            this.input = input;
+            this.destAddr = (InetSocketAddress) destAddr;
+        }
+
+        @Override
+        public void send(NetworkPacket netPacket, SocketAddress dest) throws IOException {
+            if (!this.destAddr.equals((InetSocketAddress) dest)) {
+                throw new IOException("Cant reach addr");
+            }
+            this.output.offer(netPacket);
+        }
+
+        @Override
+        public void sendKeepAlive(NetworkPacket netPacket, SocketAddress dest) throws IOException {
+        }
+
+        @Override
+        public SocketAddress getLocalAddress() {
+            return this.local;
+        }
+
+        @Override
+        public void setInternalRouting(InternalRoutingNetwork internal) {
+            this.internal = internal;
+        }
+
+        AtomicBoolean run = new AtomicBoolean(true);
+
+        @Override
+        public void stop() {
+            this.run.set(false);
+        }
+
+        @Override
+        public void run() {
+            while (this.run.get()) {
+                try {
+                    NetworkPacket take = this.input.take();
+                    this.internal.pushNetworkPacket(take);
+                } catch (InterruptedException ex) {
+                }
+            }
+        }
+    }
+
+    //@Test
+    public void TestInternalRoutingFlood() throws UnknownHostException {
+        int sentChains = 1000000;
+        System.out.println("Now running: TestServiceHandlerFlood: " + sentChains + " chains test");
+        LinkedBlockingQueue<NetworkPacket> link1 = new  LinkedBlockingQueue<>();
+        LinkedBlockingQueue<NetworkPacket> link2 = new  LinkedBlockingQueue<>();
+        InetSocketAddress local1 = new InetSocketAddress("158.0.0.1",6888);
+        InetSocketAddress local2 = new InetSocketAddress("158.0.0.2",7854);
+        NetworkHandler net1 = new NetworkHandlerStub2(local1,link1,link2,local2);
+        NetworkHandler net2 = new NetworkHandlerStub2(local2,link2,link1,local1);
+        
+        DefaultInternalRouting internal = new DefaultInternalRouting(net1,null);
+        
+        
     }
 }
