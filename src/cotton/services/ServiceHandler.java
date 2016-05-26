@@ -61,7 +61,7 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
     private InternalRoutingServiceHandler internalRouting;
     private ServiceBuffer workBuffer;
     private ExecutorService threadPool;
-    private volatile boolean active = true;
+    private AtomicBoolean active = new AtomicBoolean(true);
 //    private ConcurrentHashMap<UUID, ActivityLogger> activityLogger;
     private ConcurrentHashMap<String, DataPath> bufferChannels = null;
 
@@ -86,7 +86,7 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
 
     public void run() {
         fillBufferChannels();
-        while (active) {
+        while (active.get()) {
             NetworkPacket packet = workBuffer.nextPacket();
             String nextServiceName = packet.getPath().getNextServiceName();
             ServiceMetaData service = this.serviceLookup.getService(nextServiceName);
@@ -122,11 +122,12 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
     }
 
     public void stop() {
-        this.active = false;
+        this.active.set(false);
         for (Map.Entry<String, DataPath> entry : this.bufferChannels.entrySet()) {
             DataPath value = entry.getValue();
             value.getActivityLogger().stop();
         }
+        threadPool.shutdownNow();
         this.bufferChannels.clear();
     }
 
@@ -143,8 +144,13 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
         }
         int diff = amount - service.getMaxCapacity();
         service.setMaxCapacity(amount);
+        DataPath path = this.bufferChannels.get(name);
         for (int i = 0; i < diff; i++) {
             internalRouting.notifyRequestQueue(name);
+            if(path != null) {
+                ServiceDispatcher th = new ServiceDispatcher(path);
+                threadPool.execute(th);
+            }
         }
     }
 
@@ -450,6 +456,7 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
             int currentServiceCount = serviceMetaData.incrementThreadCount();
             if (currentServiceCount > serviceMetaData.getMaxCapacity()) {
                 serviceMetaData.decrementThreadCount();
+                dataPath.getListenerCount().decrementAndGet();
                 succesfulInit = false;
                 return;
             }

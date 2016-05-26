@@ -175,9 +175,10 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         SocketChannel clientChannel = null;
 
         while(running.get()){
-            if(!registrationQueue.isEmpty()){
+            SocketChannel poll = registrationQueue.poll();
+            if(poll != null){
                 try {
-                    registrationQueue.poll().register(selector, SelectionKey.OP_READ);
+                    poll.register(selector, SelectionKey.OP_READ);
                 } catch (ClosedChannelException ex) {
                     Logger.getLogger(SocketSelectionNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -312,7 +313,11 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
             while(packetSize.hasRemaining())
                 sc.read(packetSize);
 
-            PathType type = PathType.values()[packetSize.getInt(0)];
+            PathType type = PathType.UNKNOWN;
+            if(PathType.values().length > packetSize.getInt(0)){
+                type = PathType.values()[packetSize.getInt(0)];
+            }
+            
             packetSize.clear();
 
             ByteBuffer packet = ByteBuffer.allocate(size);

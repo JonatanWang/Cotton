@@ -102,7 +102,7 @@ public class ActivityLogger {
     }
 
     public boolean hasRunningTimer() {
-        if (timeManger == null) {
+        if (timeManger == null || sliceTask == null) {
             return false;
         }
         return true;
@@ -155,7 +155,6 @@ public class ActivityLogger {
             long deltaTime = endTime - startTime;
             int in = inputCounter.getAndSet(0);
             int out = outputCounter.getAndSet(0);
-            
             TimeInterval timeInterval = new TimeInterval(deltaTime);
             timeInterval.setCurrentActiveCount(currentActiveCount.get());
             timeInterval.setInputCount(in);

@@ -185,7 +185,9 @@ public class Cotton {
         new Thread(network).start();
         internalRouting.setCommandControl(console);
         internalRouting.start();
-        new Thread(services).start();
+        Thread th = new Thread(services);
+        th.setDaemon(true);
+        th.start();
         if(!discovery.announce()){
             System.out.println("Announce failed");
         }

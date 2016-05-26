@@ -70,6 +70,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -96,6 +97,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
     private final boolean upScalingActive = true; // if we add queues to sleeping instead of active when they are announced
     private AtomicInteger runDownScaling = new AtomicInteger(1);
+    private AtomicBoolean runCheckAddress = new AtomicBoolean(true);
     /**
      * Fills in a list of all pre set globalServiceDiscovery addresses
      *
@@ -128,12 +130,14 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         initGlobalDiscoveryPool(dnsConfig);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         //threadPool = Executors.newCachedThreadPool();
-        threadPool = Executors.newCachedThreadPool();//newFixedThreadPool(10);
+        this.threadPool = Executors.newCachedThreadPool();//newFixedThreadPool(10);
+        
         this.activeQueue = new ConcurrentHashMap<>();
         this.deadAddresses = new ConcurrentLinkedQueue<>();
-        deadAddressValidator = new ScheduledThreadPoolExecutor(1);
+        this.deadAddressValidator = new ScheduledThreadPoolExecutor(2);
         this.startDownScaling();
-
+        //this.startPoolcheckSystem();
+        this.startDeadAddressChecker(20000);
     }
     
     public GlobalServiceDiscovery(boolean config, Configurator conf) {
@@ -143,12 +147,13 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         initGlobalDiscoveryPool(conf);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         //threadPool = Executors.newCachedThreadPool();
-        threadPool = Executors.newFixedThreadPool(10);
+        this.threadPool = Executors.newFixedThreadPool(10);
         this.activeQueue = new ConcurrentHashMap<>();
         this.deadAddresses = new ConcurrentLinkedQueue<>();
         deadAddressValidator = new ScheduledThreadPoolExecutor(1);
         this.startDownScaling();
-
+        //this.startPoolcheckSystem();
+        this.startDeadAddressChecker(20000);
     }
 
     /**
@@ -230,7 +235,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             DestinationMetaData newAddress = destinationRemove(dest, serviceName);
             this.deadAddresses.add(new ReapedAddress(serviceName, dest));
             if (currentPool.size() < 2) {
-                checkDeadAddresses(currentPool);
+                //checkDeadAddresses();
             }
             return newAddress;
         }
@@ -439,11 +444,47 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         objectStream.writeObject(data);
         return stream.toByteArray();
     }
-
+    
+    private void validateServiceActivity() {
+        AddressPool pool;
+        DestinationMetaData[] destinations;
+        for (Map.Entry<String, AddressPool> entry : serviceCache.entrySet()) {
+            pool = entry.getValue();
+            String key = entry.getKey();
+            checkPoolReachabillity(pool, key);
+        }
+    }
+    
+    private void validateQueueActivity() {
+        AddressPool pool;
+        DestinationMetaData[] destinations;
+        for (Map.Entry<String, AddressPool> entry : this.activeQueue.entrySet()) {
+            pool = entry.getValue();
+            String key = entry.getKey();
+            checkPoolReachabillity(pool, key);
+        }
+    }
+    
+    private void startPoolcheckSystem() {
+        final Runnable spcs = new Runnable() {
+            @Override
+            public void run() {
+                while (runCheckAddress.get()) {
+                    try {
+                        Thread.sleep(10000);
+                    } catch (InterruptedException ex) {}
+                    validateServiceActivity();
+                    validateQueueActivity();
+                }
+            }
+        };
+        this.threadPool.execute(spcs);
+    }
     private void checkPoolReachabillity(AddressPool pool, String key) {
         if (pool == null || key == null) {
             return;
         }
+        boolean checkDead = false;
         DestinationMetaData[] destinations = pool.copyPoolData();
         for (int i = 0; i < destinations.length; i++) {
             DiscoveryProbe probe = new DiscoveryProbe(key, destinations[i]);
@@ -458,55 +499,105 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             ServiceRequest request = internalRouting.sendWithResponse(target, data, 70);
             if (request == null || request.getData() == null) {
                 boolean flag = pool.remove(destinations[i]);
-                System.out.println("FLAG VALUE" + flag);
+                DestinationMetaData d = new DestinationMetaData(destinations[i]);
+                this.deadAddresses.add(new ReapedAddress(key,d));
+                //System.out.println("FLAG VALUE" + flag);
+                checkDead = true;
             }
+        }
+        if(checkDead) {
+            //checkDeadAddresses();
         }
     }
 
-    private void checkDeadAddresses(AddressPool pool) {
+    private boolean sendHearthBeat(String name, DestinationMetaData destination) {
+        DestinationMetaData dest= new DestinationMetaData(destination);
+        DiscoveryProbe probe = new DiscoveryProbe(name, dest);
+        DiscoveryPacket response = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
+        response.setProbe(probe);
+        byte[] data = null;
+        try {
+            data = serializeToBytes(response);
+        } catch (IOException e) {
+        }
+        DestinationMetaData target = new DestinationMetaData(dest.getSocketAddress(), PathType.DISCOVERY);
+        ServiceRequest request = this.internalRouting.sendWithResponse(target, data, 70);
+        if (request != null && request.getData() != null) {
+            return true;
+        }
+        return true;
+    }
+    
+    private AddressPool getPool(PathType pt,String name) {
+        AddressPool pool = null;
+        switch(pt){
+            case DISCOVERY:
+                pool = this.discoveryCache;
+                break;
+            case REQUESTQUEUE:
+                pool = this.activeQueue.get(name);
+                break;
+            case SERVICE:
+                pool = this.serviceCache.get(name);
+                break;
+            default:
+                break;
+        }
+        return pool;
+    }
+    
+    private void startDeadAddressChecker(int checkInterval) {
+        this.threadPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                while (runCheckAddress.get()) {
+                    checkDeadAddresses();
+                    try {
+                        Thread.sleep(checkInterval);
+                    } catch (InterruptedException ex) {}
+                }
+            }
+        });
+     
+    }
+    
+    private void checkDeadAddresses() {
         ConcurrentLinkedQueue<ReapedAddress> reapedAddresses = this.deadAddresses;
 
         InternalRoutingServiceDiscovery routing = this.internalRouting;
-        Runnable command = new Runnable() {
-            @Override
-            public void run() {
-                for (ReapedAddress addr : reapedAddresses) {
-                    DiscoveryProbe probe = new DiscoveryProbe(addr.getName(), addr.getReapedAddress());
-                    DiscoveryPacket response = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
-                    response.setProbe(probe);
-                    byte[] data = null;
-                    try {
-                        data = serializeToBytes(response);
-                    } catch (IOException e) {
-                    }
-                    DestinationMetaData target = new DestinationMetaData(addr.getReapedAddress().getSocketAddress(), PathType.DISCOVERY);
-                    ServiceRequest request = routing.sendWithResponse(target, data, 70);
-                    if (request != null || request.getData() != null) {
-                        pool.addAddress(addr.getReapedAddress());
-                    }
+
+        //System.out.println("GlobalServiceDiscovery:checkDeadAddresses:runnable");
+        ReapedAddress addr = null;
+        AddressPool pool = null;
+        ArrayList<ReapedAddress> left = new ArrayList<>();
+        while ((addr = reapedAddresses.poll()) != null) {
+            DiscoveryProbe probe = new DiscoveryProbe(addr.getName(), addr.getReapedAddress());
+            DiscoveryPacket response = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
+            response.setProbe(probe);
+            byte[] data = null;
+            try {
+                data = serializeToBytes(response);
+            } catch (IOException e) {
+            }
+            DestinationMetaData target = new DestinationMetaData(addr.getReapedAddress().getSocketAddress(), PathType.DISCOVERY);
+            ServiceRequest request = routing.sendWithResponse(target, data, 70);
+            if (request != null && request.getData() != null) {
+                pool = getPool(addr.getReapedAddress().getPathType(), addr.getName());
+                if (pool != null) {
+                    pool.addAddress(addr.getReapedAddress());
                 }
+            } else {
+                left.add(addr);
             }
-        };
-        ScheduledFuture<?> addressValidator = this.deadAddressValidator.scheduleAtFixedRate(command, 10, 10, TimeUnit.SECONDS);
-        this.deadAddressValidator.schedule(new Runnable() {
-            public void run() {
-                addressValidator.cancel(true);
-            }
-        }, 2 * 10 * 10, TimeUnit.SECONDS);
+        }
+
     }
 
-    private void validateServiceActivity() {
-        AddressPool pool;
-        DestinationMetaData[] destinations;
-        for (Map.Entry<String, AddressPool> entry : serviceCache.entrySet()) {
-            pool = entry.getValue();
-            String key = entry.getKey();
-            checkPoolReachabillity(pool, key);
-        }
-    }
+    
 
     @Override
     public void stop() {
+        runCheckAddress.set(false);
         threadPool.shutdownNow();
         deadAddressValidator.shutdownNow();
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -817,11 +908,12 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         System.out.println("INCOMMING CIRCUITBREAKER MESSAGE IN GLOBAL SERVICE DISCOVERY: " + circuit.getCircuitName());
         pool = serviceCache.get(circuit.getCircuitName());
         if (pool == null) {
+            System.out.println("GlobalServiceDiscovery:triggeredCircuitBreaker:No service pool");
             return;
         }
         DestinationMetaData dest = new DestinationMetaData(pool.getAddress());
         dest.setPathType(PathType.COMMANDCONTROL);
-        Command com = new Command(StatType.SERVICEHANDLER, circuit.getCircuitName(), null, 100, CommandType.CHANGE_ACTIVEAMOUNT);
+        Command com = new Command(StatType.SERVICEHANDLER, circuit.getCircuitName(), null, 20, CommandType.CHANGE_ACTIVEAMOUNT);
         sendCommandPacket(dest, com);
         AddressPool sqPool = this.sleepingQueue.get(circuit.getCircuitName());
         if(sqPool != null) {
@@ -1209,7 +1301,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
 
         public ReapedAddress(String name, DestinationMetaData reapedAddress) {
             this.name = name;
-            this.reapedAddress = reapedAddress;
+            this.reapedAddress = reapedAddress.duplicate();
         }
 
         public String getName() {

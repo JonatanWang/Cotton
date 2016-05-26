@@ -39,6 +39,7 @@ import cotton.test.services.MathResult;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -50,7 +51,7 @@ import java.util.logging.Logger;
 public class ServiceExample1 {
 
     public static void main(String[] args) throws UnknownHostException {
-        GlobalDnsStub gDns = getDnsStub(null, 9546);
+        GlobalDnsStub gDns = getDnsStub(null, 5888);
         Cotton cotton = new Cotton(false, gDns);
         ServiceFactory factory = MathResult.getFactory(new AtomicInteger(0));
         cotton.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
@@ -58,10 +59,13 @@ public class ServiceExample1 {
 
         System.out.println("ServiceExample1 starts");
         cotton.start();
-        try {
-            Thread.sleep(80000);
-        } catch (InterruptedException ex) {
-            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        Scanner scan = new Scanner(System.in);
+        boolean run = true;
+        while(run) {
+            try {
+                if(Integer.parseInt(scan.nextLine()) == 1)
+                    run = false;
+            } catch(Exception e) {}
         }
         cotton.shutdown();
     }

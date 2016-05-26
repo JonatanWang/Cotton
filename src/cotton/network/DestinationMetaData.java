@@ -71,6 +71,17 @@ public class DestinationMetaData implements Serializable {
         this.socketAddress = socketAddress;
         this.pathType = pathType;
     }
+    
+    /**
+     * Returns a duplication of this
+     * @return 
+     */
+    public DestinationMetaData duplicate() {
+        InetSocketAddress tmp = (InetSocketAddress)this.socketAddress;
+        InetSocketAddress addr = new InetSocketAddress(tmp.getAddress(),tmp.getPort());
+        PathType pt = PathType.values()[this.pathType.ordinal()];
+        return new DestinationMetaData(addr,pt);
+    }
     /**
      * returns the ip and port to the destination
      *

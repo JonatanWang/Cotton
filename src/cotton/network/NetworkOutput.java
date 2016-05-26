@@ -42,6 +42,8 @@ import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Handles all of the network output
@@ -72,19 +74,21 @@ public class NetworkOutput implements Runnable {
 
     @Override
     public void run() {
+        SocketChannel sendChannel = null;
+        SocketAddress dest = null;
         while(run.get()){
             try {
                 OutputPacket p = queue.take();
                 NetworkPacket packet = p.getPacket();
-                SocketAddress dest = p.getDestination();
-
+                dest = p.getDestination();
+                size.clear();
                 //TransportPacket.Packet tp = buildTransportPacket(packet, p.isKeepAlive());
                 //ByteBuffer output = writeOutput(tp);
                 ByteBuffer output = packet.getSerializedData();
                 if(output == null)
                     output = writeOutput(buildTransportPacket(packet, p.isKeepAlive()));
 
-                SocketChannel sendChannel = null;
+                sendChannel = null;
 
                 //System.out.println(packet.getType()+" packet of "+output.capacity()+" bytes outgoing from: "+getLocalAddress()+" normal send.");
                 size.putInt(0, output.capacity());
@@ -114,6 +118,16 @@ public class NetworkOutput implements Runnable {
                 }
             }catch(IOException e){
                 e.printStackTrace();
+                if(sendChannel != null) {
+                    if(dest != null) {
+                        openChannels.remove((InetSocketAddress)dest, sendChannel);
+                    }
+                    try {
+                        sendChannel.close();
+                    } catch (IOException ex) {
+                        Logger.getLogger(NetworkOutput.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
             }catch(InterruptedException e){
                 e.printStackTrace();
             }

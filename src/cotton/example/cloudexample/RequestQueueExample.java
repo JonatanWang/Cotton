@@ -48,7 +48,7 @@ import java.util.Scanner;
 public class RequestQueueExample {
 
     public static void main(String[] args) throws UnknownHostException, IOException {
-        GlobalDnsStub gDns = getDnsStub(null, 9546);
+        GlobalDnsStub gDns = getDnsStub(null, 5888);
         Cotton queueInstance = new Cotton(false, gDns);
         Configurator config = new Configurator();
         config.loadConfigFromFile("configurationtemplate.cfg");
@@ -60,9 +60,13 @@ public class RequestQueueExample {
         queueInstance.start();
         
         Scanner scan = new Scanner(System.in);
-        scan.next();
-        System.out.println("bad");
- 
+        boolean run = true;
+        while(run) {
+            try {
+                if(Integer.parseInt(scan.nextLine()) == 1)
+                    run = false;
+            } catch(Exception e) {}
+        }
         queueInstance.shutdown();
     }
 

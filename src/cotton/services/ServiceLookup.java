@@ -102,6 +102,8 @@ public class ServiceLookup implements ActiveServiceLookup {
      * @return the meta data of the service.
      */
     public ServiceMetaData getService(String serviceName) {
+        if(serviceName == null)
+            return null;
         return hashMap.get(serviceName);
     }
 

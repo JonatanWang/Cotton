@@ -53,7 +53,6 @@ import cotton.systemsupport.StatisticsProvider;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.TimeInterval;
-import cotton.systemsupport.UsageHistory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
@@ -61,8 +60,6 @@ import java.io.Serializable;
 import java.net.SocketAddress;
 
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -83,6 +80,7 @@ public class RequestQueueManager implements StatisticsProvider {
     private AtomicInteger activeQueueCount = new AtomicInteger(0);
     private ConcurrentHashMap<String, String> banList;
     private SocketAddress localAddress = null;
+
     public RequestQueueManager() {
         this.internalQueueMap = new ConcurrentHashMap<>();
         threadPool = Executors.newCachedThreadPool();
@@ -146,7 +144,7 @@ public class RequestQueueManager implements StatisticsProvider {
     public void setLocalAddress(SocketAddress localAddress) {
         this.localAddress = localAddress;
     }
-    
+
     /**
      * A array of names on different queues.
      *
@@ -171,12 +169,12 @@ public class RequestQueueManager implements StatisticsProvider {
         }
         RequestQueue queuePool = new RequestQueue(serviceName, 100);
         RequestQueue old = internalQueueMap.putIfAbsent(serviceName, queuePool);
-        if(old != null) {
-            if(old.getMaxCapacity() < 100){
+        if (old != null) {
+            if (old.getMaxCapacity() < 100) {
                 old.setMaxCapacity(100);
             }
             threadPool.execute(old);
-        }else {
+        } else {
             threadPool.execute(queuePool);
         }
         this.activeQueueCount.incrementAndGet();
@@ -232,8 +230,10 @@ public class RequestQueueManager implements StatisticsProvider {
         threadPool.shutdown();
 
     }
+
     /**
      * compares whether the socket addresses are equal.
+     *
      * @param other
      * @return
      */
@@ -258,6 +258,7 @@ public class RequestQueueManager implements StatisticsProvider {
         }
         return queue.getStatistics(serviceName);
     }
+
     /**
      * returns a statistics provider for the request queue.
      *
@@ -267,6 +268,7 @@ public class RequestQueueManager implements StatisticsProvider {
     public StatisticsProvider getProvider() {
         return this;
     }
+
     /**
      * returns the subsystem that is statistics is requested for.
      *
@@ -276,6 +278,7 @@ public class RequestQueueManager implements StatisticsProvider {
     public StatType getStatType() {
         return StatType.REQUESTQUEUE;
     }
+
     /**
      * return max capacity for a specific queue
      *
@@ -286,6 +289,7 @@ public class RequestQueueManager implements StatisticsProvider {
         RequestQueue queue = internalQueueMap.get(serviceName);
         return queue.getMaxCapacity();
     }
+
     /**
      * return max capacity for a specific queue
      *
@@ -295,6 +299,7 @@ public class RequestQueueManager implements StatisticsProvider {
     public int getMaxAmountOfQueues() {
         return maxAmountOfQueues;
     }
+
     /**
      * Sets the max amount of queues that the request queue manager can handle.
      *
@@ -303,23 +308,28 @@ public class RequestQueueManager implements StatisticsProvider {
     public void setMaxAmountOfQueues(int maxAmountOfQueues) {
         this.maxAmountOfQueues = maxAmountOfQueues;
     }
+
     /**
-     * Sets an internal routing component so that the request queue can send information to be routed within the cloud.
+     * Sets an internal routing component so that the request queue can send
+     * information to be routed within the cloud.
+     *
      * @param internalRouting
      */
     public void setInternalRouting(InternalRoutingRequestQueue internalRouting) {
         this.internalRouting = internalRouting;
     }
-    /** 
+
+    /**
      * processes a command from the command and control unit.
+     *
      * @param command
-     * @return 
+     * @return
      */
     public StatisticsData[] processCommand(Command command) {
-        if(command.isQuery()) {
+        if (command.isQuery()) {
             return executeQuery(command);
 
-        }else {
+        } else {
             executeCommand(command);
         }
         return null;
@@ -335,8 +345,8 @@ public class RequestQueueManager implements StatisticsProvider {
             case STATISTICS_FORSYSTEM:
                 StatisticsData statistics = this.getStatistics(command.getTokens());
                 break;
-            case USAGEHISTORY:                
-                if(tokens == null || tokens.length < 1) {
+            case USAGEHISTORY:
+                if (tokens == null || tokens.length < 1) {
                     return null;
                 }
                 queue = internalQueueMap.get(tokens[0]);
@@ -346,15 +356,15 @@ public class RequestQueueManager implements StatisticsProvider {
                 StatisticsData ret = queue.getStatistics(command.getTokens());
                 return new StatisticsData[]{ret};
             case CHANGE_ACTIVEAMOUNT:
-                if(tokens == null || tokens.length < 1) {
+                if (tokens == null || tokens.length < 1) {
                     return null;
                 }
                 int maxcap = 0;
-                if(tokens[1].equals("getMaxQueueCount")){
+                if (tokens[1].equals("getMaxQueueCount")) {
                     maxcap = this.getMaxAmountOfQueues();
                     StatisticsData tmp = new StatisticsData(StatType.REQUESTQUEUE, tokens[0], new int[]{maxcap});
                     return new StatisticsData[]{tmp};
-                }else if(tokens[1].equals("getQueueCount")) {
+                } else if (tokens[1].equals("getQueueCount")) {
                     int qcount = this.activeQueueCount.get();
                     StatisticsData tmp = new StatisticsData(StatType.REQUESTQUEUE, tokens[0], new int[]{qcount});
                     return new StatisticsData[]{tmp};
@@ -367,7 +377,7 @@ public class RequestQueueManager implements StatisticsProvider {
                     maxcap = queue.getMaxCapacity();
                     StatisticsData tmp = new StatisticsData(StatType.REQUESTQUEUE, tokens[0], new int[]{maxcap});
                     return new StatisticsData[]{tmp};
-                } 
+                }
                 break;
             default:
                 System.out.println("RequestQueueManager:executeQuery: commandType unknown: " + command.getCommandType().toString());
@@ -379,11 +389,11 @@ public class RequestQueueManager implements StatisticsProvider {
     private void executeCommand(Command command) {
         CommandType commandType = command.getCommandType();
         if (commandType != CommandType.USAGEHISTORY && commandType != CommandType.CHANGE_ACTIVEAMOUNT) {
-            return ;
+            return;
         }
         String[] tokens = command.getTokens();
         if (tokens.length < 2) {
-            return ;
+            return;
         }
         String name = tokens[0];
         String task = tokens[1];
@@ -394,7 +404,7 @@ public class RequestQueueManager implements StatisticsProvider {
         }
         RequestQueue queue = internalQueueMap.get(name);
         if (queue == null) {
-            return ;
+            return;
         }
         if (task.equals("setUsageRecordingInterval")) {
             queue.setUsageRecording(samplingRate);
@@ -412,7 +422,7 @@ public class RequestQueueManager implements StatisticsProvider {
     private void removeQueue(RequestQueue queue) {
         //steep 1, notify local discovery
         DiscoveryPacket discPacket = new DiscoveryPacket(DiscoveryPacketType.REQUESTQUEUE);
-        QueuePacket queuePacket = new QueuePacket(this.localAddress,new String[]{queue.getName()});
+        QueuePacket queuePacket = new QueuePacket(this.localAddress, new String[]{queue.getName()});
         queuePacket.setShouldRemove(true);
         discPacket.setQueue(queuePacket);
         this.internalRouting.notifyDiscovery(discPacket);
@@ -436,7 +446,7 @@ public class RequestQueueManager implements StatisticsProvider {
         } catch (IOException ex) {
             Logger.getLogger(RequestQueueManager.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+
         // step 5, all remaining packets arr sent back to the cloud
         for (NetworkPacket packet : emptyAllPackets) {
             this.internalRouting.forwardResult(packet.getOrigin(), packet.getPath(), packet.getData());
@@ -444,14 +454,14 @@ public class RequestQueueManager implements StatisticsProvider {
         queue.stopUsageRecording();
         queue.stop();
     }
-    
+
     private byte[] serializeToBytes(Serializable data) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         ObjectOutputStream objectStream = new ObjectOutputStream(stream);
         objectStream.writeObject(data);
         return stream.toByteArray();
     }
-    
+
     private class RequestQueue implements Runnable {
 
         private BlockingQueue<NetworkPacket> processQueue;
@@ -459,11 +469,6 @@ public class RequestQueueManager implements StatisticsProvider {
         private final String queueName;
         private int maxCapacity;
         private AtomicInteger threadCount = new AtomicInteger(0);
-//        private AtomicInteger inputCounter;
-//        private AtomicInteger outputCounter;
-//        private UsageHistory usageHistory;
-//        private Timer timer = new Timer();
-//        private TimeSliceTask sliceTask = null;
         private ActivityLogger logger;
         private volatile boolean running = true;
         private int samplingRate = 200;
@@ -474,15 +479,12 @@ public class RequestQueueManager implements StatisticsProvider {
             this.queueName = queueName;
             this.maxCapacity = maxCapacity;
             this.logger = new ActivityLogger(samplingRate);
-//            this.usageHistory = new UsageHistory();
-//            this.inputCounter = new AtomicInteger(0);
-//            this.outputCounter = new AtomicInteger(0);
         }
 
         public String getName() {
             return this.queueName;
         }
-        
+
         /**
          * getStatistics for this queue
          *
@@ -509,10 +511,8 @@ public class RequestQueueManager implements StatisticsProvider {
                 }
                 return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], interval);
             } else if (statisticsInformation[1].equals("isSampling")) {
-                if (hasRunningTimer()) {
-                    return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], new int[]{1, this.samplingRate, this.logger.getLastIndex()});
-                }
-                return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], new int[]{0, this.samplingRate, this.logger.getLastIndex()});
+                int on = (logger.hasRunningTimer()) ? 1 : 0;
+                return new StatisticsData(StatType.REQUESTQUEUE, statisticsInformation[0], new int[]{on, this.samplingRate, this.logger.getLastIndex()});
             }
             return new StatisticsData();
         }
@@ -547,30 +547,32 @@ public class RequestQueueManager implements StatisticsProvider {
 
         /**
          * empty all pending requests
+         *
          * @return who was waiting on data
          */
         public ArrayList<Origin> emptyAllPendingRequests() {
             ArrayList<Origin> pendingRequests = new ArrayList<>();
             Origin origin = null;
-            while((origin = processingNodes.poll()) != null) {
+            while ((origin = processingNodes.poll()) != null) {
                 pendingRequests.add(origin);
             }
             return pendingRequests;
         }
-        
+
         /**
          * empty all queue packets
+         *
          * @return all data in the queue
          */
         public ArrayList<NetworkPacket> emptyAllPackets() {
             ArrayList<NetworkPacket> queuePackets = new ArrayList<>();
             NetworkPacket packet = null;
-            while((packet = processQueue.poll()) != null) {
+            while ((packet = processQueue.poll()) != null) {
                 queuePackets.add(packet);
             }
             return queuePackets;
         }
-        
+
         /**
          * polls data and sents it to available instances.
          *
@@ -599,16 +601,18 @@ public class RequestQueueManager implements StatisticsProvider {
                             //networkHandler.send(packet,origin.getAddress());
 
                             logger.recordOutputEvent();
+                            this.logger.setCurrentActiveCount(processQueue.size());
                             internalRouting.sendWork(packet, origin.getAddress());
                             //System.out.println("Queue sent work to " + origin.getAddress().toString());
                         } catch (IOException e) {
                             processQueue.add(packet);
+                            this.logger.setCurrentActiveCount(processQueue.size());
                             System.out.println("ERROR IN REQUEST QUEUE SEND WORK");
                             e.printStackTrace();
                             // TODO: LOGGING
                         }
                     }
-                }catch (InterruptedException e) {
+                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             } while (running);
@@ -618,7 +622,7 @@ public class RequestQueueManager implements StatisticsProvider {
         public int getMaxCapacity() {
             return this.maxCapacity;
         }
-        
+
         public void setMaxCapacity(int newCap) {
             this.maxCapacity = newCap;
         }
@@ -650,31 +654,6 @@ public class RequestQueueManager implements StatisticsProvider {
             running = false;
             logger.stop();
         }
-
-//        private class TimeSliceTask extends TimerTask {
-//
-//            private long startTime;
-//
-//            public TimeSliceTask(long startTime) {
-//                this.startTime = startTime;
-//            }
-//
-//            @Override
-//            public void run() {
-//                long endTime = System.currentTimeMillis();
-//                long deltaTime = endTime - startTime;
-//                int in = inputCounter.get();
-//                inputCounter.set(0);
-//                int out = outputCounter.get();
-//                outputCounter.set(0);
-//                TimeInterval timeInterval = new TimeInterval(deltaTime);
-//                timeInterval.setCurrentActiveCount(processQueue.size());
-//                timeInterval.setInputCount(in);
-//                timeInterval.setOutputCount(out);
-//                usageHistory.add(timeInterval);
-//                startTime = System.currentTimeMillis();
-//            }
-//        }
 
     }
 }

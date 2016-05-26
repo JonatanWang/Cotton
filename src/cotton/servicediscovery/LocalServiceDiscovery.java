@@ -102,11 +102,12 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             }
         }
     }
-    
+
     private void initGlobalDiscoveryPool(Configurator conf) {
-        for(SocketAddress s: conf.getDiscoverySocketAddresses())
+        for (SocketAddress s : conf.getDiscoverySocketAddresses()) {
             System.out.println("local sockets: " + s);
-        
+        }
+
         if (conf != null) {
             SocketAddress[] addrArr = conf.getDiscoverySocketAddresses();
             for (int i = 0; i < addrArr.length; i++) {
@@ -125,13 +126,13 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         this.deadAddresses = new ConcurrentLinkedQueue<>();
         deadAddressValidator = new ScheduledThreadPoolExecutor(1);
     }
-    
+
     public LocalServiceDiscovery(Configurator conf) {
         this.discoveryCache = new AddressPool();
         initGlobalDiscoveryPool(conf);
         this.serviceCache = new ConcurrentHashMap<String, AddressPool>();
         this.activeQueue = new ConcurrentHashMap<>();
-        this.taskScheduler= Executors.newScheduledThreadPool(5);
+        this.taskScheduler = Executors.newScheduledThreadPool(5);
         deadAddressValidator = new ScheduledThreadPoolExecutor(1);
     }
 
@@ -184,7 +185,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     public DestinationMetaData destinationUnreachable(DestinationMetaData dest, String serviceName) {
         AtomicInteger failCount = null;
         AtomicInteger newFailCount = new AtomicInteger(1);
-        if(dest == null){
+        if (dest == null) {
             System.out.println("local, destinationUnreachable: dest is null");
             return null;
         }
@@ -196,7 +197,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             value = newFailCount.incrementAndGet();
         }
         PathType type = dest.getPathType();
-        AddressPool currentPool = null;       
+        AddressPool currentPool = null;
         switch (type) {
             case REQUESTQUEUE:
                 if (serviceName == null) {
@@ -512,20 +513,28 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         if (probe.getAddress() == null) {
             return;
         }
-        if (probe.getAddress() != null) {
-            if (origin.getAddress().equals(probe.getAddress().getSocketAddress()) && probe.getName() != null) {
-                byte[] tmp = new byte[0];
-                try {
-                    tmp = serializeToBytes(new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE));
-                }catch(IOException e){
-                    e.printStackTrace();
-                }
-                internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, tmp);
+        if (origin.getAddress().equals(probe.getAddress().getSocketAddress()) && probe.getName() == null) {
+            byte[] tmp = new byte[0];
+            try {
+                tmp = serializeToBytes(new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE));
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+            internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, tmp);
+            return;
         }
+
         AddressPool pool = null;
-        if (localServiceTable.getService(probe.getName()) == null) {
-            probe.setAddress(null);
+        String name = probe.getName();
+        if (probe.getAddress().getPathType() == PathType.SERVICE) {
+            if (localServiceTable.getService(name) == null) {
+                probe.setAddress(null);
+            }
+        }else if (name != null && probe.getAddress().getPathType() == PathType.REQUESTQUEUE) {
+            AddressPool get = this.activeQueue.get(name);
+            if (get == null || get.size() <= 0) {
+                probe.setAddress(null);
+            }
         }
 
         DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYRESPONSE);
@@ -839,23 +848,23 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     private void removeQueueFromPool(QueuePacket packet) {
         String[] qname = packet.getRequestQueueList();
         AddressPool pool = this.activeQueue.get(qname);
-        if(pool == null || pool.size() < 1) {
+        if (pool == null || pool.size() < 1) {
             return;
         }
-        DestinationMetaData dest = new DestinationMetaData(packet.getInstanceAddress(),PathType.REQUESTQUEUE);
+        DestinationMetaData dest = new DestinationMetaData(packet.getInstanceAddress(), PathType.REQUESTQUEUE);
         boolean succsess = pool.remove(dest);
-        if(!succsess) {
+        if (!succsess) {
             System.out.println("LocalServiceDiscovery:removeQueueFromPool: failed to remove queue");
             return;
-        }    
+        }
     }
-    
+
     private void processQueuePacket(QueuePacket packet) {
         if (packet == null) {
             System.out.println("ERROR in processQueuePacket");
             return;
         }
-        if(packet.isShouldRemove()) {
+        if (packet.isShouldRemove()) {
             removeQueueFromPool(packet);
             return;
         }

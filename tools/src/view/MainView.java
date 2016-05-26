@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.animation.AnimationTimer;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -187,8 +188,8 @@ public class MainView {
             @Override
             public void handle(ActionEvent event) {
                 updateAll();
-                graphRequestQueue.displayData();
-                graphService.displayData();
+                //graphRequestQueue.displayData();
+                //graphService.displayData();
             }
         });
 
@@ -201,8 +202,9 @@ public class MainView {
             public void handle(ActionEvent event) {
                 graphRequestQueue.setDataName(graphField.getText());
                 graphService.setDataName(graphField.getText());
-                graphRequestQueue.updateGraph();
-                graphService.updateGraph();
+                
+                //graphRequestQueue.startAutoUpdate();
+                //graphService.startAutoUpdate();
                 
             }
         });
@@ -351,6 +353,8 @@ public class MainView {
         VBox tableBox3 = tableBox("Services", servBtn, this.serviceTableObs);
         graphRequestQueue = new GraphView("Request Queue","mathPow2",this.controller);
         graphService = new GraphView("Service Queue","mathPow2",this.controller);
+        this.graphRequestQueue.startAutoUpdate();
+        this.graphService.startAutoUpdate();
 //        TimeInterval[] gtest = generateRandomData(10);
 //        TimeInterval[] gtest1 = generateRandomData(10);
 //        graphRequestQueue.pushData("testD", gtest);
@@ -377,7 +381,21 @@ public class MainView {
         mainPane.getChildren().addAll(mainArea);
 
         this.scene = new Scene(mainPane, 800, 500);
+        this.graphRequestQueue.startAutoUpdate();
+        this.graphService.startAutoUpdate();
+        final AnimationTimer t = new AnimationTimer(){
+            @Override
+            public void handle(long now) {
+                System.out.println("Test: now " + now);
+            }
+        };
+        //t.start();
 
+    }
+    
+    public void shutdown() {
+        this.graphRequestQueue.stopAutoUpdate();
+        this.graphService.stopAutoUpdate();
     }
 
     public void showScene(Stage rootStage) {

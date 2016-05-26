@@ -60,6 +60,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -96,6 +98,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         this.routingQueue = new LinkedBlockingQueue<>();
         this.serviceHandlerBridge = new BridgeServiceBuffer();
         taskScheduler = new ScheduledThreadPoolExecutor(7);
+        startTimeoutSchedule(50);
 
     }
 
@@ -442,31 +445,35 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
             return null;
         }
         if (timeStamp != 0) {
-            scheduleTask(timeStamp);
+            //scheduleTask(timeStamp);
         }
         return requestLatch;
     }
     private long nextTime = 0;
 
+    private AtomicBoolean timeoutSchedule = new AtomicBoolean(true);
+    private ConcurrentLinkedQueue<Long> timeoutschedule = new ConcurrentLinkedQueue<>();
     /**
-     * Schedules threads sets a reaper function to go off after at a given
+     * Schedules threads sets a reaper function to repeat every checkInterval
      * timestamp.
      *
-     * @param timeStamp
+     * @param checkInterval the length between check
      */
-    public void scheduleTask(long timeStamp) {
-        long curTime = System.currentTimeMillis();
-        long diff =nextTime - timeStamp;
-        if (diff >= 0 || diff < -50 || curTime - timeStamp > 0) {
-            taskScheduler.schedule(new Runnable() {
-                @Override
-                public void run() {
+    public void startTimeoutSchedule(long checkInterval) {
+        final long checkInterval1 = checkInterval;
+        Thread th = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (timeoutSchedule.get()) {
                     reapTimedOutRequest();
+                    try {
+                        Thread.sleep(checkInterval1);
+                    } catch (InterruptedException ex) {}
                 }
-            }, timeStamp - curTime + 10, TimeUnit.MILLISECONDS);
-            nextTime = timeStamp;
-        }
-
+            }
+        });
+        th.setDaemon(true);
+        th.start();
     }
 
     private void reapTimedOutRequest() {
@@ -616,7 +623,9 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      */
     public void start() {
         this.dispatcher = new RouteDispatcher();
-        new Thread(this.dispatcher).start();
+        Thread th = new Thread(this.dispatcher);
+        th.setDaemon(true);
+        th.start();
         if (requestQueueManager != null) {
             String[] nameList = requestQueueManager.getActiveQueues();
             discovery.announceQueues(requestQueueManager);
