@@ -339,6 +339,39 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     }
 
     /**
+     * Returns one DestinationMetaData for a type 
+     * @param type what type: DISCOVERY,SERVICE,REQUESTQUEUE
+     * @param name if null for discovery, else need to specify
+     * @return one address or null if not found
+     */
+    @Override
+    public DestinationMetaData getDestinationForType(PathType type,String name) {
+        DestinationMetaData ret = null;
+        AddressPool pool = null;
+        switch(type) {
+            case DISCOVERY:
+                pool = this.discoveryCache;
+                break;
+            case SERVICE:
+                if(name == null) {
+                   return null;
+                }
+                pool = this.serviceCache.get(name);
+                break;
+            case REQUESTQUEUE:
+                if(name == null) {
+                   return null;
+                }
+                pool = this.activeQueue.get(name);
+                break;
+        }
+        if(pool == null) {
+            return null;
+        }
+        return pool.getAddress();
+    }
+    
+    /**
      * This is used when a packet have arrived at the origin point, If this is a
      * keepalive bridge it gives back a networkdestination, else indicate if it
      * should go to a local subsystem or fill a serviceRequest

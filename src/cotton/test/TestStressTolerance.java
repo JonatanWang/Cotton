@@ -19,15 +19,23 @@ import cotton.services.BridgeServiceBuffer;
 import cotton.services.ServiceBuffer;
 import cotton.services.ServiceHandler;
 import cotton.services.ServiceLookup;
+import cotton.systemsupport.Command;
+import cotton.systemsupport.CommandType;
+import cotton.systemsupport.StatType;
+import cotton.systemsupport.StatisticsData;
+import cotton.systemsupport.TimeInterval;
 import cotton.test.services.MathPowV2;
 import cotton.test.services.MathResult;
 import cotton.test.services.Result;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,7 +54,7 @@ public class TestStressTolerance {
     }
 
     @Test
-    public void TestServiceHandlerFlood() throws UnknownHostException {
+    public void TestServiceHandlerFlood() throws UnknownHostException, FileNotFoundException, IOException {
         int sentChains = 1000000;
         System.out.println("Now running: TestServiceHandlerFlood: " + sentChains + " chains test");
         AtomicInteger counter = new AtomicInteger(0);
@@ -91,10 +99,12 @@ public class TestStressTolerance {
         Thread th = new Thread(serviceHandler);
         ServiceBuffer serviceBuffer = internal.getServiceBuffer();
         ServiceChainBuilder build = new ServiceChainBuilder();
+        String name1 = "mathpow2";
+        String name2 = "mathpow2";
         build.into("mathpow2")
-                .into("mathpow21").into("mathpow2")
-                .into("mathpow2").into("mathpow21")
-                .into("mathpow2").into("mathpow21").into("result");
+                .into(name1).into(name2)
+                .into(name1).into(name2)
+                .into(name1).into(name2).into("result");
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
 
@@ -107,7 +117,13 @@ public class TestStressTolerance {
             serviceBuffer.add(pkt);
         }
         System.out.println("Service buffer loaded with: " + serviceBuffer.size() + " packets");
+        serviceHandler.fillBufferChannels();
+        boolean recStarted = serviceHandler.setUsageRecording("mathpow2", 100);
+        if(!recStarted) {
+            System.out.println("Failed to start recording");
+        }
         th.start();
+        
         int completedChains = counter.get();
         int timeOut = 0;
         int maxRunTime = 1000;
@@ -116,6 +132,14 @@ public class TestStressTolerance {
         int loop = maxRunTime - waitTime;
         System.out.println("MaxRunTime: " + maxRunTime + " ratio: " + ratio + " loop: " + loop + " waitTime: " + waitTime);
         long startTime = System.currentTimeMillis();
+//        for (int i = 0; i < sentChains; i++) {
+//            NetworkPacket pkt = NetworkPacket.newBuilder()
+//                    .setOrigin(new Origin())
+//                    .setPath(build.build())
+//                    .setData(data)
+//                    .build();
+//            serviceBuffer.add(pkt);
+//        }
         while (completedChains < sentChains && timeOut < loop) {
             try {
                 Thread.sleep(waitTime);
@@ -125,12 +149,48 @@ public class TestStressTolerance {
         }
         long stopTime = System.currentTimeMillis();
         completedChains = counter.get();
+        String[] cmdline = new String[]{"mathpow2", "getUsageRecordingInterval"};
+        Command query = new Command(StatType.SERVICEHANDLER, null, cmdline, 200, CommandType.USAGEHISTORY);
+        query.setQuery(true);
+        StatisticsData<TimeInterval>[] anwser = serviceHandler.processCommand(query);
+        TimeInterval[] data1 = anwser[0].getData();
+        System.out.println("Result:" );
+        printTimeInterval(data1);
         float total = (float) (stopTime - startTime) / 1000.0f;
         System.out.println("Chains completed: " + completedChains + " in: " + total + "[s] , " + (float) completedChains / total + "[chains/sec]");
         serviceHandler.stop();
         assertTrue(sentChains == completedChains);
     }
 
+    private void printTimeInterval(TimeInterval[] data) throws FileNotFoundException, IOException {
+        for (int i = 0; i < data.length; i++) {
+            System.out.println("" + data[i]);
+        }
+        FileOutputStream f = new FileOutputStream("MaxTest.txt");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < data.length; i++) {
+            sb.append("" + data[i].getInputCount() + " "+ data[i].getOutputCount() + "\n");
+        }
+        byte[] data2 = sb.toString().getBytes();
+        f.write(data2);
+        f.close();
+    }
+    
+    /*
+    StringBuilder sb = new StringBuilder();
+            sb.append("Name: " + node.getName() + "\n");
+            DestinationMetaData[] dest = node.getData();
+            sb.append("\tTotal Address:" + dest.length + "\n");
+            int count = 0;
+            for (DestinationMetaData d : dest) {
+                count++;
+                sb.append("\t" + count + " : " + d.toString() + "\n");
+            }
+            byte[] data = sb.toString().getBytes();
+            f.write(data);
+    
+    */
+    
     private class NetworkHandlerStub2 implements NetworkHandler {
 
         InternalRoutingNetwork internal = null;

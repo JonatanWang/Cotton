@@ -52,6 +52,7 @@ import cotton.storagecomponents.MongoDBConnector;
 import cotton.systemsupport.Console;
 import cotton.configuration.Configurator;
 import cotton.configuration.ServiceConfigurator;
+import java.io.IOException;
 import java.net.UnknownHostException;
 
 /**
@@ -182,7 +183,9 @@ public class Cotton {
      *
      */
     public void start(){
-        new Thread(network).start();
+        Thread thnh = new Thread(network);
+        thnh.setDaemon(true);
+        thnh.start();
         internalRouting.setCommandControl(console);
         internalRouting.start();
         Thread th = new Thread(services);
@@ -328,6 +331,13 @@ public class Cotton {
 
     private void initServiceHandler() {
         this.services = new ServiceHandler(lookup, internalRouting);
+    }
+    
+    public String[] getAvailableServices() throws IOException {
+        if(this.console == null){
+            return null;
+        }
+        return this.console.getAvailableServices();
     }
 
     public static void main(String[] args) {

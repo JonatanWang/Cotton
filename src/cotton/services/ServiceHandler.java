@@ -75,7 +75,7 @@ public class ServiceHandler implements Runnable, StatisticsProvider {
 //        this.activityLogger = new ConcurrentHashMap<UUID, ActivityLogger>();
     }
 
-    private void fillBufferChannels() {
+    public void fillBufferChannels() {
 
         for (Map.Entry<String, ServiceMetaData> entry : this.serviceLookup.getEntrySet()) {
             String key = entry.getKey();

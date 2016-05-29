@@ -36,6 +36,7 @@ package cotton.servicediscovery;
 import cotton.internalrouting.InternalRoutingServiceDiscovery;
 import cotton.network.DestinationMetaData;
 import cotton.network.Origin;
+import cotton.network.PathType;
 import cotton.network.ServiceChain;
 import cotton.requestqueue.RequestQueueManager;
 import cotton.services.ActiveServiceLookup;
@@ -59,4 +60,5 @@ public interface ServiceDiscovery extends StatisticsProvider {
     public RouteSignal getRequestQueueDestination(DestinationMetaData destination, String serviceName);
     public boolean announceQueues(RequestQueueManager queueManager);
     public DestinationMetaData destinationUnreachable(DestinationMetaData dest,String serviceName);
+    public DestinationMetaData getDestinationForType(PathType type,String name);
 }

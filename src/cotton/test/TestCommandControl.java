@@ -74,8 +74,10 @@ import cotton.servicediscovery.GlobalServiceDiscovery;
 import cotton.servicediscovery.RouteSignal;
 import cotton.servicediscovery.ServiceDiscovery;
 import cotton.systemsupport.CommandType;
+import static cotton.systemsupport.StatisticsRecorder.getDiscoveryAddress;
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -404,6 +406,59 @@ public class TestCommandControl {
         assertTrue(true);
     }
 
+    @Test
+    public void TestActiveServices() throws UnknownHostException, IOException {
+        System.out.println("Now running: TestActiveServices");
+        int port = new Random().nextInt(25000) + 4000;
+        Cotton discovery = new Cotton(true, port);
+        //GlobalDiscoveryAddress gDns = getDiscoveryAddress(Inet4Address.getLocalHost().toString(), 11777);
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
+        InetSocketAddress discoveryAddress = new InetSocketAddress(Inet4Address.getLocalHost(), port);
+        InetSocketAddress gdAddr = discoveryAddress;
+        InetSocketAddress[] arr = new InetSocketAddress[1];
+        arr[0] = gdAddr;
+        gDns.setGlobalDiscoveryAddress(arr);
+        discovery.start();
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {}
+
+        Cotton ser1 = new Cotton(false, gDns);
+        Cotton ser2 = new Cotton(false, gDns);
+        String name1 = "mathpow2";
+        String name2 = "mathpow21";
+        ser1.getServiceRegistation().registerService(name1, MathPowV2.getFactory(), 10);
+        ser2.getServiceRegistation().registerService(name2, MathPowV2.getFactory(), 10);
+        ser1.start();
+        ser2.start();
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {}
+        Cotton client = new Cotton(false,gDns);
+        client.start();
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {}
+        String[] availableServices = client.getConsole().getAvailableServices();
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {}
+        for (String s : availableServices) {
+            System.out.println(s);
+            if(!(s.equals(name1) || s.equals(name2))){
+                assertTrue(false);
+            }
+        }
+        if(availableServices.length < 1) {
+                assertTrue(false);
+        }
+        ser1.shutdown();
+        ser2.shutdown();
+        discovery.shutdown();
+        client.shutdown();
+        assertTrue(true);
+    }
+    
     private StatisticsData[] packetUnpack(byte[] data) {
         StatisticsData[] statistics = null;
         if(data == null || data.length <= 0){

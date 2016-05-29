@@ -166,6 +166,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     public void setNetwork(InternalRoutingServiceDiscovery network, SocketAddress localAddress) {
         this.internalRouting = network;
         this.localAddress = localAddress;
+        this.discoveryCache.addAddress(new DestinationMetaData(localAddress,PathType.DISCOVERY));
     }
 
     /**
@@ -313,6 +314,39 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         }
         System.out.println("Last return (global: getDestination): " + serviceName + " Signal: " + signal);
         return signal;
+    }
+    
+    /**
+     * Returns one DestinationMetaData for a type 
+     * @param type what type: DISCOVERY,SERVICE,REQUESTQUEUE
+     * @param name if null for discovery, else need to specify
+     * @return one address or null if not found
+     */
+    @Override
+    public DestinationMetaData getDestinationForType(PathType type,String name) {
+        DestinationMetaData ret = null;
+        AddressPool pool = null;
+        switch(type) {
+            case DISCOVERY:
+                pool = this.discoveryCache;
+                break;
+            case SERVICE:
+                if(name == null) {
+                   return null;
+                }
+                pool = this.serviceCache.get(name);
+                break;
+            case REQUESTQUEUE:
+                if(name == null) {
+                   return null;
+                }
+                pool = this.activeQueue.get(name);
+                break;
+        }
+        if(pool == null) {
+            return null;
+        }
+        return pool.getAddress();
     }
 
     /**
@@ -933,10 +967,19 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         }
     }
 
+    private String[] getAvailableServices() {
+        ArrayList<String> str = new ArrayList<>();
+        for (Map.Entry<String, AddressPool> entry : this.serviceCache.entrySet()) {
+            str.add(entry.getKey());
+        }
+        return str.toArray(new String[str.size()]);
+    }
+    
     @Override
     public StatisticsData[] processCommand(Command command) {
         StatisticsData[] retSystem;
-        if (command.getCommandType() == CommandType.CHECK_REACHABILLITY) {
+        CommandType cmdType = command.getCommandType();
+        if (cmdType == CommandType.CHECK_REACHABILLITY) {
             threadPool.execute(new Runnable() {
                 @Override
                 public void run() {
@@ -944,9 +987,15 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                 }
             });
             return new StatisticsData[0];
-        } else if (command.getCommandType() == CommandType.STATISTICS_FORSUBSYSTEM){
+        } else if(cmdType == CommandType.ACTIVE_SERVICES) {
+            StatisticsData<String>[] ret = new StatisticsData[1];
+            ret[0] = new StatisticsData<String>();
+            String[] ser = getAvailableServices();
+            ret[0].setData(ser);
+            return ret;
+        }else if (cmdType == CommandType.STATISTICS_FORSUBSYSTEM){
             return retSystem = this.getStatisticsForSubSystem(command.getName());
-        } else if (command.getCommandType() == CommandType.STATISTICS_FORSYSTEM) {
+        } else if (cmdType == CommandType.STATISTICS_FORSYSTEM) {
             StatisticsData[] retForSystem = new StatisticsData[1];
             retForSystem[0] = this.getStatistics(command.getTokens());
             return retForSystem;
