@@ -261,7 +261,7 @@ public class MainView {
     }
 
     public void updateGraph(String name, DataPusherGraph graph, DestinationMetaData dest, StatType type) {
-        this.controller.requestUsageData(name, graph, dest, type);
+        this.controller.requestUsageData(name, graph, dest,null);
     }
 
     public void parseData(ObservableList<NodeInfo> oblist, ArrayList<StatisticsData<DestinationMetaData>> res) {
@@ -362,12 +362,20 @@ public class MainView {
 
         final HBox gqArea = new HBox();
         final HBox gsArea = new HBox();
+        final HBox qio = new HBox();
+        final HBox sio = new HBox();
+        qio.setSpacing(5);
+        sio.setSpacing(5);
         gqArea.setSpacing(5);
-        gqArea.setPadding(new Insets(10, 0, 0, 10));
-        gqArea.getChildren().addAll(tableBox2, graphRequestQueue.getGraph());
         gsArea.setSpacing(5);
+        qio.setPadding(new Insets(10, 0, 0, 10));
+        sio.setPadding(new Insets(10, 0, 0, 10));
+        gqArea.setPadding(new Insets(10, 0, 0, 10));
         gsArea.setPadding(new Insets(10, 0, 0, 10));
-        gsArea.getChildren().addAll(tableBox3, graphService.getGraph());
+        qio.getChildren().addAll(graphRequestQueue.getInGraph(),graphRequestQueue.getOutGraph());
+        sio.getChildren().addAll(graphService.getInGraph(),graphService.getOutGraph());
+        gqArea.getChildren().addAll(tableBox2, qio);
+        gsArea.getChildren().addAll(tableBox3, sio);
         final VBox monitorArea = new VBox();
         monitorArea.setSpacing(5);
         monitorArea.setPadding(new Insets(10, 0, 0, 10));

@@ -72,7 +72,7 @@ public class TestDSB {
         System.out.println("Now running: testAdd");
         ServiceBuffer sb = new BridgeServiceBuffer();
         
-        NetworkPacket np = NetworkPacket.newBuilder().setPath(new DummyServiceChain("Coloring")).build();
+        NetworkPacket np = NetworkPacket.newBuilder().setPath(new DefaultServiceChain("Coloring")).build();
         assertEquals(true, sb.add(np));
     }
     
@@ -84,7 +84,7 @@ public class TestDSB {
         NetworkPacket[] sp = new NetworkPacket[3];
         
         for(int i = 0; i < sp.length; i++)
-            sp[i] =  NetworkPacket.newBuilder().setPath(new DummyServiceChain("Coloring" + Integer.toString(i))).build();
+            sp[i] =  NetworkPacket.newBuilder().setPath(new DefaultServiceChain("Coloring" + Integer.toString(i))).build();
         
         for(int i = 0; i < sp.length; i++)
             sb.add(sp[i]);

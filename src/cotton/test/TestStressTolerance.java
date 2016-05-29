@@ -9,7 +9,7 @@ import cotton.Cotton;
 import cotton.internalrouting.DefaultInternalRouting;
 import cotton.internalrouting.InternalRoutingNetwork;
 import cotton.internalrouting.InternalRoutingServiceHandler;
-import cotton.network.DummyServiceChain.ServiceChainBuilder;
+import cotton.network.DefaultServiceChain.ServiceChainBuilder;
 import cotton.network.NetworkHandler;
 import cotton.network.NetworkPacket;
 import cotton.network.Origin;

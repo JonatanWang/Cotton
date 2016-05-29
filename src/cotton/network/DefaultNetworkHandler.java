@@ -464,7 +464,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
     }
 
     private ServiceChain parsePath(TransportPacket.Packet input){
-        DummyServiceChain path = new DummyServiceChain();
+        DefaultServiceChain path = new DefaultServiceChain();
 
         for (int i = 0; i < input.getPathCount(); i++)
             path.addService(input.getPath(i));

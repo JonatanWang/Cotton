@@ -33,7 +33,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package cotton.test;
 
-import cotton.network.DummyServiceChain;
+import cotton.network.DefaultServiceChain;
 import cotton.network.Origin;
 import cotton.network.ServiceChain;
 import cotton.servicediscovery.GlobalServiceDiscovery;
@@ -139,7 +139,7 @@ public class TestServiceDiscovery {
         System.out.println("GetLocalInterface01: Checking: Origin empty");
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         Origin origin = originSetup(null, null, null);
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.LOCALDESTINATION, gd, origin, to);
     }
 
@@ -151,7 +151,7 @@ public class TestServiceDiscovery {
         System.out.println("GetLocalInterface02: Checking: ip1 null, socketLatch null, serviceRequest exist ");
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         Origin origin = originSetup(null, null, UUID.randomUUID());
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.ENDPOINT, gd, origin, to);
     }
 
@@ -164,7 +164,7 @@ public class TestServiceDiscovery {
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", 3333);
         Origin origin = originSetup(null, UUID.randomUUID(), null);
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.BRIDGELATCH, gd, origin, to);
     }
 
@@ -177,7 +177,7 @@ public class TestServiceDiscovery {
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.2", 3333);
         Origin origin = originSetup(addr, UUID.randomUUID(), null);
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.RETURNTOORIGIN, gd, origin, to);
     }
 
@@ -190,7 +190,7 @@ public class TestServiceDiscovery {
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", 3335);
         Origin origin = originSetup(addr, UUID.randomUUID(), null);
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.RETURNTOORIGIN, gd, origin, to);
     }
 
@@ -203,7 +203,7 @@ public class TestServiceDiscovery {
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", 3333);
         Origin origin = originSetup(addr, UUID.randomUUID(), null);
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.BRIDGELATCH, gd, origin, to);
     }
 
@@ -217,7 +217,7 @@ public class TestServiceDiscovery {
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", 3333);
         Origin origin = originSetup(addr, null, null);
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.LOCALDESTINATION, gd, origin, to);
     }
 
@@ -231,7 +231,7 @@ public class TestServiceDiscovery {
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", 3333);
         Origin origin = originSetup(addr, null, UUID.randomUUID());
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.ENDPOINT, gd, origin, to);
     }
 
@@ -243,7 +243,7 @@ public class TestServiceDiscovery {
     public void GetLocalInterface09() {
         System.out.println("GetLocalInterface09: Checking: origin == null");
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.NOTFOUND, gd, null, to);
     }
 
@@ -255,7 +255,7 @@ public class TestServiceDiscovery {
     public void GetLocalInterface10() {
         System.out.println("GetLocalInterface10: Checking: to == null and origin == null");
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.NOTFOUND, gd, null, null);
     }
 
@@ -267,7 +267,7 @@ public class TestServiceDiscovery {
         System.out.println("GetLocalInterface11: Checking: serviceChain have links");
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         Origin origin = originSetup(null, null, null);
-        ServiceChain to = new DummyServiceChain().into("test");
+        ServiceChain to = new DefaultServiceChain().into("test");
         localInterfaceSigTest(RouteSignal.LOCALDESTINATION, gd, origin, to);
     }
 
@@ -289,7 +289,7 @@ public class TestServiceDiscovery {
        internal.start();
        new Thread(serviceHandler).start();
        InternalRoutingClient client = internal;
-       ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow2").into("mathpow2");
+       ServiceChain chain = new DefaultServiceChain().into("mathpow2").into("mathpow2").into("mathpow2");
        int num = 2;
        byte[] data = ByteBuffer.allocate(4).putInt(num).array();
        ServiceRequest req = client.sendWithResponse(data,chain);

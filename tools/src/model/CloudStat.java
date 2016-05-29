@@ -41,11 +41,15 @@ import cotton.servicediscovery.GlobalServiceDiscovery;
 import cotton.systemsupport.Command;
 import cotton.systemsupport.CommandType;
 import cotton.systemsupport.Console;
+import cotton.systemsupport.StatisticsRecorder.*;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatisticsProvider;
+import cotton.systemsupport.StatisticsRecorder;
+import cotton.systemsupport.StatisticsRecorder.SampleRange;
+import static cotton.systemsupport.StatisticsRecorder.getDiscoveryAddress;
 import cotton.systemsupport.TimeInterval;
-import cotton.test.services.GlobalDnsStub;
+import cotton.test.services.GlobalDiscoveryAddress;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -82,11 +86,12 @@ public class CloudStat {
     private ExecutorService threadPool;
     private ConcurrentHashMap<String, AtomicInteger> lastPosLookup = null;
     private AtomicBoolean running = new AtomicBoolean(false);
+
     public CloudStat() throws UnknownHostException {
         this.cloudLink = null;//new Cotton(false, null);
         //this.cloudLink.start();
-        
-        this.threadPool = Executors.newFixedThreadPool(3, new ThreadFactory() {
+
+        this.threadPool = Executors.newFixedThreadPool(10, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread th = new Thread(r);
@@ -94,15 +99,30 @@ public class CloudStat {
                 return th;
             }
         });//.newFixedThreadPool(3);
-        
+
         this.running.set(true);
         this.lastPosLookup = new ConcurrentHashMap<String, AtomicInteger>();
     }
 
-    public void getStatData(String name1, DataPusherGraph graph, DestinationMetaData destination, StatType type) {
-        if(running.get() == false) {
+    // RELAY, DISCOVERY, SERVICE, UNKNOWN, NOTFOUND,REQUESTQUEUE,COMMANDCONTROL,REQUESTQUEUEUPDATE
+    private StatType resolveType(DestinationMetaData destination) {
+        StatType ret = StatType.UNKNOWN;
+        switch (destination.getPathType()) {
+            case SERVICE:
+                ret = StatType.SERVICEHANDLER;
+                break;
+            case REQUESTQUEUE:
+                ret = StatType.REQUESTQUEUE;
+                break;
+        }
+        return ret;
+    }
+
+    public void getStatData(String name1, DataPusherGraph graph, DestinationMetaData destination, SampleRange range) {
+        if (running.get() == false) {
             return;
         }
+        StatType type = this.resolveType(destination);
         final String name = name1;
         AtomicInteger tmp = this.lastPosLookup.get(name);
         if (tmp == null) {
@@ -112,86 +132,100 @@ public class CloudStat {
         }
         final AtomicInteger lastRead = tmp;
         DestinationMetaData dest = new DestinationMetaData(destination);
-        dest.setPathType(PathType.COMMANDCONTROL);
+//        dest.setPathType(PathType.COMMANDCONTROL);
         this.threadPool.execute(new Runnable() {
             @Override
             public void run() {
-                Console console = cloudLink.getConsole();
+                SampleRange sampleRange = null;
+                if (range != null) {
+                    sampleRange = new SampleRange(range.getStart(), range.getEnd());
+                }
 
-                String[] queryRequest = new String[]{name, "isSampling"};
-                Command getSample = new Command(type, name, queryRequest, 0, CommandType.USAGEHISTORY);
-                //Command getSample = new Command(type, name, queryRequest, 0, CommandType.STATISTICS_FORSYSTEM);
-
-                String startNumb = Integer.toString(lastRead.get());
-
-                String endNumb = null;
-                boolean setUsage = true;
-                int lastIdx = 0;
                 try {
-                    StatisticsData[] sendQueryCommand = console.sendQueryCommand(getSample, dest);
-                    if (sendQueryCommand != null && sendQueryCommand.length > 0) {
-                        lastIdx = sendQueryCommand[0].getNumberArray()[2];
-                        //startNumb = startPoint.toString();
-                        Integer sPoint =lastIdx;
-                        startNumb = sPoint.toString();
-                        Integer endPoint =lastIdx + 500;
-                        endNumb = endPoint.toString();
-                        setUsage = (sendQueryCommand[0].getNumberArray()[0] == 0);
+                    if (sampleRange == null) {
+                        sampleRange = StatisticsRecorder.isSampling(cloudLink, dest, name, type, null);
                     }
+                    TimeInterval[] result = StatisticsRecorder.nextRecordingInterval(cloudLink, dest, name, type, sampleRange);
+                    graph.pushData(name, destination, result, sampleRange);
                 } catch (IOException ex) {
                     Logger.getLogger(CloudStat.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                Command command = new Command(type, null, new String[]{name, "setUsageRecordingInterval"}, 100, CommandType.USAGEHISTORY);
-                //Command command = new Command(type, null, new String[]{name, "setUsageRecordingInterval"}, 100, CommandType.STATISTICS_FORSYSTEM);
-                if (setUsage) {
-                    try {
-                        console.sendCommand(command, dest);
-                    } catch (IOException ex) {
-                        Logger.getLogger(CloudStat.class.getName()).log(Level.SEVERE, null, ex);
-                        return;
-                    }
-                }
-                try {
-                    Thread.sleep(300);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                String[] cmdline = null;
-                if(endNumb == null || endNumb.equals("")) {
-                    cmdline = new String[]{name, "getUsageRecordingInterval"};
-                    
-                }else {
-                    cmdline = new String[]{name, "getUsageRecordingInterval", startNumb, endNumb};
-                }
-                System.out.println("Command: " + Arrays.toString(cmdline));
-                //Command query = new Command(type, null, cmdline, 200, CommandType.STATISTICS_FORSYSTEM);
-                Command query = new Command(type, null, cmdline, 200, CommandType.USAGEHISTORY);
-                query.setQuery(false);
-                StatisticsData<TimeInterval>[] res = null;
-                try {
-                    res = console.sendQueryCommand(query, dest);
-                } catch (IOException ex) {
-                    Logger.getLogger(CloudStat.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                if (res == null) {
-                    System.out.println("getStatData: fail, return null");
-                    return;
-                }
-                if (res.length < 1) {
-                    System.out.println("getStatData: fail, return < 1");
-                    return;
-                }
-                TimeInterval[] sampling = res[0].getData();
-                System.out.println("Sampling:" + name + " : " + type.toString());
 
-                System.out.println("Sample count: " + sampling.length);
-                for (int i = 0; i < sampling.length; i++) {
-                    System.out.println("\t" + sampling[i].toString());
-                }
-
-                lastRead.set(lastIdx + res[0].getData().length);
-                graph.pushData(name, res[0].getData());
-
+//                Console console = cloudLink.getConsole();
+//
+//                String[] queryRequest = new String[]{name, "isSampling"};
+//                Command getSample = new Command(type, name, queryRequest, 0, CommandType.USAGEHISTORY);
+//                //Command getSample = new Command(type, name, queryRequest, 0, CommandType.STATISTICS_FORSYSTEM);
+//
+//                String startNumb = Integer.toString(lastRead.get());
+//
+//                String endNumb = null;
+//                boolean setUsage = true;
+//                int lastIdx = 0;
+//                try {
+//                    StatisticsData[] sendQueryCommand = console.sendQueryCommand(getSample, dest);
+//                    if (sendQueryCommand != null && sendQueryCommand.length > 0) {
+//                        lastIdx = sendQueryCommand[0].getNumberArray()[2];
+//                        //startNumb = startPoint.toString();
+//                        Integer sPoint =lastIdx;
+//                        startNumb = sPoint.toString();
+//                        Integer endPoint =lastIdx + 500;
+//                        endNumb = endPoint.toString();
+//                        setUsage = (sendQueryCommand[0].getNumberArray()[0] == 0);
+//                    }
+//                } catch (IOException ex) {
+//                    Logger.getLogger(CloudStat.class.getName()).log(Level.SEVERE, null, ex);
+//                }
+//                Command command = new Command(type, null, new String[]{name, "setUsageRecordingInterval"}, 100, CommandType.USAGEHISTORY);
+//                //Command command = new Command(type, null, new String[]{name, "setUsageRecordingInterval"}, 100, CommandType.STATISTICS_FORSYSTEM);
+//                if (setUsage) {
+//                    try {
+//                        console.sendCommand(command, dest);
+//                    } catch (IOException ex) {
+//                        Logger.getLogger(CloudStat.class.getName()).log(Level.SEVERE, null, ex);
+//                        return;
+//                    }
+//                }
+//                try {
+//                    Thread.sleep(300);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//                String[] cmdline = null;
+//                if(endNumb == null || endNumb.equals("")) {
+//                    cmdline = new String[]{name, "getUsageRecordingInterval"};
+//                    
+//                }else {
+//                    cmdline = new String[]{name, "getUsageRecordingInterval", startNumb, endNumb};
+//                }
+//                System.out.println("Command: " + Arrays.toString(cmdline));
+//                //Command query = new Command(type, null, cmdline, 200, CommandType.STATISTICS_FORSYSTEM);
+//                Command query = new Command(type, null, cmdline, 200, CommandType.USAGEHISTORY);
+//                query.setQuery(false);
+//                StatisticsData<TimeInterval>[] res = null;
+//                try {
+//                    res = console.sendQueryCommand(query, dest);
+//                } catch (IOException ex) {
+//                    Logger.getLogger(CloudStat.class.getName()).log(Level.SEVERE, null, ex);
+//                }
+//                if (res == null) {
+//                    System.out.println("getStatData: fail, return null");
+//                    return;
+//                }
+//                if (res.length < 1) {
+//                    System.out.println("getStatData: fail, return < 1");
+//                    return;
+//                }
+//                TimeInterval[] sampling = res[0].getData();
+//                System.out.println("Sampling:" + name + " : " + type.toString());
+//
+//                System.out.println("Sample count: " + sampling.length);
+//                for (int i = 0; i < sampling.length; i++) {
+//                    System.out.println("\t" + sampling[i].toString());
+//                }
+//
+//                lastRead.set(lastIdx + res[0].getData().length);
+//                graph.pushData(name,destination, res[0].getData(),null);
             }
         });
     }
@@ -205,7 +239,7 @@ public class CloudStat {
             running.set(false);
             this.cloudLink.shutdown();
         }
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress addr = new InetSocketAddress(ipAddress, port);
         gDns.setGlobalDiscoveryAddress(new SocketAddress[]{addr});
         try {
@@ -233,7 +267,7 @@ public class CloudStat {
 
     public ArrayList<StatisticsData<DestinationMetaData>> getNodes(StatType subSystem) {
         ArrayList<StatisticsData<DestinationMetaData>> empty = new ArrayList();
-        if(running.get() == false) {
+        if (running.get() == false) {
             return empty;
         }
         Console console = this.cloudLink.getConsole();
@@ -281,6 +315,7 @@ public class CloudStat {
 
         return result;
     }
+//
 
     private static byte[] serializeToBytes(Serializable data) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();

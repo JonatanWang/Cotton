@@ -923,6 +923,14 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                 this.addQueue(qaddress, circuit.getCircuitName());
             }
         }
+        AddressPool ssPool = this.sleepingServiceCache.get(circuit.getCircuitName());
+        if(ssPool != null) {
+            DestinationMetaData saddress = ssPool.getAddress();
+            if(saddress != null) {
+                ssPool.remove(saddress);
+                this.addService(saddress, circuit.getCircuitName());
+            }
+        }
     }
 
     @Override

@@ -29,56 +29,26 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-package Controller;
+package cotton.test.services;
 
-
-import cotton.network.DestinationMetaData;
-import cotton.systemsupport.StatType;
-import cotton.systemsupport.StatisticsData;
-import cotton.systemsupport.StatisticsRecorder.SampleRange;
-import java.util.ArrayList;
-import javafx.stage.Stage;
-import model.CloudStat;
-import view.DataPusherGraph;
-import view.MainView;
+import cotton.servicediscovery.GlobalDiscoveryDNS;
+import java.net.SocketAddress;
 
 /**
  *
- * @author Magnus
- * @author Mats
+ * @author o_0
  */
-public class LoggerController {
-    private MainView view;
-    private Stage primaryStage;
-    private CloudStat cloudStat;
+public class GlobalDiscoveryAddress extends GlobalDiscoveryDNS {
 
-    public LoggerController(MainView view,CloudStat cloudStat, Stage primaryStage) {
-        this.view = view;
-        this.cloudStat = cloudStat;
-        this.primaryStage = primaryStage;
-        this.cloudStat.setDelegate(this);
-        this.view.setDelegate(this);
+        private SocketAddress[] addressArray = null;
+
+        @Override
+        public void setGlobalDiscoveryAddress(SocketAddress[] addresses) {
+            this.addressArray = addresses;
+        }
+
+        @Override
+        public SocketAddress[] getGlobalDiscoveryAddress() {
+            return this.addressArray;
+        }
     }
-    
-    public boolean connectCloud(String ip,int port) {
-        return this.cloudStat.resetCloudLink(ip, port);
-    }
-    
-    public void disconnectCloud() {
-        this.cloudStat.shutDown();
-    }
-    
-    public ArrayList<StatisticsData<DestinationMetaData>> getNodesFor(StatType type) {
-        return this.cloudStat.getNodes(type);
-    }
-    
-    public void requestUsageData(String name, DataPusherGraph graph, DestinationMetaData dest,SampleRange range) {
-        this.cloudStat.getStatData(name, graph, dest,range);
-    }
-    
-    
-    public void showScene(Stage rootStage) {
-        this.view.showScene(rootStage);
-    }
-    
-}

@@ -34,7 +34,7 @@ package cotton.test;
 import cotton.Cotton;
 import cotton.internalrouting.InternalRoutingClient;
 import cotton.internalrouting.ServiceRequest;
-import cotton.network.DummyServiceChain;
+import cotton.network.DefaultServiceChain;
 import cotton.network.NetworkPacket;
 import cotton.network.Origin;
 import cotton.network.PathType;
@@ -45,7 +45,7 @@ import cotton.systemsupport.Console;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatisticsProvider;
-import cotton.test.services.GlobalDnsStub;
+import cotton.test.services.GlobalDiscoveryAddress;
 import cotton.test.services.MathPowV2;
 import cotton.test.services.MathResult;
 import java.io.ByteArrayOutputStream;
@@ -109,7 +109,7 @@ public class TestCommandControl {
     public void TestCommandServiceHandler() throws UnknownHostException {
         System.out.println("Now running: TestCommandServiceHandler");
         Cotton discovery = new Cotton(true, 11243);
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
 
         InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 11243);
         InetSocketAddress[] arr = new InetSocketAddress[1];
@@ -146,7 +146,7 @@ public class TestCommandControl {
         cCotton.start();
 
         InternalRoutingClient client = cCotton.getClient();
-        ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow2").into("mathpow2").into("mathpow2");
+        ServiceChain chain = new DefaultServiceChain().into("mathpow2").into("mathpow2").into("mathpow2").into("mathpow2");
 
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
@@ -169,7 +169,7 @@ public class TestCommandControl {
         System.out.println(Arrays.toString(serviceHandlerStat.getStatisticsForSubSystem(null)));
 
         for (int i = 0; i < 1000; i++) {
-            chain = new DummyServiceChain().into("mathpow2").into("mathpow2").into("mathpow2").into("mathpow2");
+            chain = new DefaultServiceChain().into("mathpow2").into("mathpow2").into("mathpow2").into("mathpow2");
             client.sendToService(data, chain);
         }
         ser1.start();
@@ -185,7 +185,7 @@ public class TestCommandControl {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        chain = new DummyServiceChain().into("mathpow2").into("mathpow2").into("mathpow2").into("mathpow2");
+        chain = new DefaultServiceChain().into("mathpow2").into("mathpow2").into("mathpow2").into("mathpow2");
         ServiceRequest req = client.sendWithResponse(data, chain);
         if (req != null && req.getData() != null) {
             byte[] data2 = req.getData();
@@ -226,7 +226,7 @@ public class TestCommandControl {
     @Test
     public void TestServiceRequestTimeout() {
         System.out.println("Now running: TestServiceRequestTimeout");
-        GlobalDnsStub stub = new GlobalDnsStub();
+        GlobalDiscoveryAddress stub = new GlobalDiscoveryAddress();
         stub.setGlobalDiscoveryAddress(new InetSocketAddress[0]);
         DefaultInternalRouting internalRouting = new DefaultInternalRouting(new NetworkHandlerStub(new InetSocketAddress("127.0.0.1", 16392)), new LocalServiceDiscovery(stub));
         DefaultServiceRequest req = (DefaultServiceRequest) internalRouting.newServiceRequest(new Origin(), 200);
@@ -255,7 +255,7 @@ public class TestCommandControl {
     public void TestNodesServiceReachabillity() throws UnknownHostException {
         System.out.println("Now running: TestNodesServiceReachabillity");
         Cotton discovery = new Cotton(true, 14490);
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
 
         InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 14490);
         InetSocketAddress[] arr = new InetSocketAddress[1];
@@ -311,8 +311,8 @@ public class TestCommandControl {
         }
         Console console = ser1.getConsole();
         ServiceDiscovery serviceDiscovery1 = (ServiceDiscovery) console.getProvider(StatType.DISCOVERY);
-        RouteSignal route = serviceDiscovery1.getDestination(new DestinationMetaData(), new Origin(), new DummyServiceChain().into("mathpow21"));
-        RouteSignal route1 = serviceDiscovery1.getDestination(new DestinationMetaData(), new Origin(), new DummyServiceChain().into("mathpow2"));
+        RouteSignal route = serviceDiscovery1.getDestination(new DestinationMetaData(), new Origin(), new DefaultServiceChain().into("mathpow21"));
+        RouteSignal route1 = serviceDiscovery1.getDestination(new DestinationMetaData(), new Origin(), new DefaultServiceChain().into("mathpow2"));
 
         discovery.shutdown();
         ser1.shutdown();
@@ -342,7 +342,7 @@ public class TestCommandControl {
     public void TestQuerySubSystem() throws UnknownHostException {
         System.out.println("Now running: TestQuerySubSystem");
         Cotton discovery = new Cotton(true, 19876);
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress discoveryAddress = new InetSocketAddress(Inet4Address.getLocalHost(), 19876);
         InetSocketAddress gdAddr = discoveryAddress;
         InetSocketAddress[] arr = new InetSocketAddress[1];

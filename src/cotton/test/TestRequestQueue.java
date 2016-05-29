@@ -32,8 +32,8 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.test;
 
 import cotton.network.DefaultNetworkHandler;
-import cotton.network.DummyServiceChain;
-import cotton.network.DummyServiceChain.ServiceChainBuilder;
+import cotton.network.DefaultServiceChain;
+import cotton.network.DefaultServiceChain.ServiceChainBuilder;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import cotton.Cotton;
@@ -57,7 +57,7 @@ import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatisticsProvider;
 //import cotton.test.experimental.CloudNetwork;
-import cotton.test.services.GlobalDnsStub;
+import cotton.test.services.GlobalDiscoveryAddress;
 import cotton.test.services.MathResult;
 import java.util.Arrays;
 import java.util.Random;
@@ -94,7 +94,7 @@ public class TestRequestQueue {
         System.out.println("Now running: TestRequestQueue");
         int port = new Random().nextInt(25000) + 4000;
         Cotton discovery = new Cotton(true, newNetHandlerFake(port));
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
 
         InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
         InetSocketAddress[] arr = new InetSocketAddress[1];
@@ -133,7 +133,7 @@ public class TestRequestQueue {
         cCotton.start();
 
         InternalRoutingClient client = cCotton.getClient();
-        ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21");
+        ServiceChain chain = new DefaultServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21");
 
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
@@ -141,7 +141,7 @@ public class TestRequestQueue {
 
         //ServiceRequest req = client.sendWithResponse(data, chain);
         for (int i = 0; i < req.length; i++) {
-            chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21");
+            chain = new DefaultServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21");
             req[i] = client.sendWithResponse(data, chain);
 
         }
@@ -185,7 +185,7 @@ public class TestRequestQueue {
         System.out.println("Now running: TestWorkFloodRequestQueue");
         int port = /*9999;*/ new Random().nextInt(25000) + 5000;
         Cotton discovery = new Cotton(true, newNetHandlerFake(port));
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
 
         InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
         InetSocketAddress[] arr = new InetSocketAddress[1];
@@ -228,7 +228,7 @@ public class TestRequestQueue {
         cCotton.start();
 
         InternalRoutingClient client = cCotton.getClient();
-        ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
+        ServiceChain chain = new DefaultServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
         //ServiceChainBuilder builder = new ServiceChainBuilder();
         ServiceChainBuilder builder = new ServiceChainBuilder().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
         int num = 2;
@@ -296,7 +296,7 @@ public class TestRequestQueue {
     public void TestStatistics() throws UnknownHostException {
         System.out.println("Now running: TestStatistics");
         Cotton discovery = new Cotton(true, 8161);
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
 
         InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 8161);
         InetSocketAddress[] arr = new InetSocketAddress[1];
@@ -402,7 +402,7 @@ public class TestRequestQueue {
         System.out.println("Now running: TestMassInstances");
         int port = new Random().nextInt(20000) + 5000;
         Cotton discovery = new Cotton(true, newNetHandlerFake(port));
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
 
         InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
         InetSocketAddress[] arr = new InetSocketAddress[1];

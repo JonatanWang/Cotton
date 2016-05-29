@@ -77,7 +77,7 @@ public class NetworkPacket implements Serializable{
         this.origin = origin;
         this.path = path;
         if(this.path == null) {
-            this.path = new DummyServiceChain();
+            this.path = new DefaultServiceChain();
         }
         this.pt = pt;
         this.keepAlive = false;
@@ -214,7 +214,7 @@ public class NetworkPacket implements Serializable{
     }
 
     private ServiceChain parsePath(TransportPacket.Packet input){
-        DummyServiceChain path = new DummyServiceChain();
+        DefaultServiceChain path = new DefaultServiceChain();
 
         for (int i = 0; i < input.getPathCount(); i++)
             path.addService(input.getPath(i));

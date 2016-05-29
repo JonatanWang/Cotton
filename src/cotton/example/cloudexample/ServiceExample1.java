@@ -33,7 +33,7 @@ package cotton.example.cloudexample;
 
 import cotton.Cotton;
 import cotton.services.ServiceFactory;
-import cotton.test.services.GlobalDnsStub;
+import cotton.test.services.GlobalDiscoveryAddress;
 import cotton.test.services.MathPowV2;
 import cotton.test.services.MathResult;
 import java.net.Inet4Address;
@@ -51,7 +51,7 @@ import java.util.logging.Logger;
 public class ServiceExample1 {
 
     public static void main(String[] args) throws UnknownHostException {
-        GlobalDnsStub gDns = getDnsStub(null, 5888);
+        GlobalDiscoveryAddress gDns = getDnsStub(null, 5888);
         Cotton cotton = new Cotton(false, gDns);
         ServiceFactory factory = MathResult.getFactory(new AtomicInteger(0));
         cotton.getServiceRegistation().registerService("mathpow2", MathPowV2.getFactory(), 10);
@@ -70,8 +70,8 @@ public class ServiceExample1 {
         cotton.shutdown();
     }
 
-    private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
-        GlobalDnsStub gDns = new GlobalDnsStub();
+    private static GlobalDiscoveryAddress getDnsStub(String dest, int port) throws UnknownHostException {
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress gdAddr = null;
         if (dest == null) {
             gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);

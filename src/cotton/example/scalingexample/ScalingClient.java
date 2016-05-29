@@ -36,7 +36,7 @@ package cotton.example.scalingexample;
 import cotton.Cotton;
 import cotton.configuration.Configurator;
 import cotton.internalrouting.ServiceRequest;
-import cotton.network.DummyServiceChain;
+import cotton.network.DefaultServiceChain;
 import cotton.network.ServiceChain;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -93,7 +93,7 @@ public class ScalingClient implements Runnable{
         Configurator conf;
         Cotton clientInstance = null;
         ServiceRequest serviceRequest = null;
-        ServiceChain chain = new DummyServiceChain();;
+        ServiceChain chain = new DefaultServiceChain();;
         
         try {
             conf = new Configurator("Scalingconfig.cfg");

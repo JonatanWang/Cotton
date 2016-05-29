@@ -34,7 +34,7 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.example.cloudexample;
 
 import cotton.Cotton;
-import cotton.test.services.GlobalDnsStub;
+import cotton.test.services.GlobalDiscoveryAddress;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -48,7 +48,7 @@ import java.util.Scanner;
 public class DiscoveryExample {
     public static void main(String[] args) throws UnknownHostException {
         Cotton discovery = null;
-        GlobalDnsStub gDns = getDnsStub(null, 5888);
+        GlobalDiscoveryAddress gDns = getDnsStub(null, 5888);
         try {
             //discovery = new Cotton(true, 5888);
             discovery = new Cotton(true, gDns);
@@ -69,8 +69,8 @@ public class DiscoveryExample {
         discovery.shutdown();
     }
     
-    private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
-        GlobalDnsStub gDns = new GlobalDnsStub();
+    private static GlobalDiscoveryAddress getDnsStub(String dest, int port) throws UnknownHostException {
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress gdAddr = null;
         if (dest == null) {
             gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);

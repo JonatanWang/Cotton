@@ -31,11 +31,14 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package view;
 
+import cotton.network.DestinationMetaData;
+import cotton.systemsupport.StatisticsRecorder;
+
 /**
  *
  * @author Magnus
  * @author Mats
  */
 public interface DataPusherGraph<T> {
-    public void pushData(String name,T[] data);
+    public void pushData(String name,DestinationMetaData destination,T[] data,StatisticsRecorder.SampleRange range);
 }

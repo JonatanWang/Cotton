@@ -34,7 +34,7 @@ package cotton.example.cloudexample;
 import cotton.Cotton;
 import cotton.configuration.Configurator;
 import cotton.requestqueue.RequestQueueManager;
-import cotton.test.services.GlobalDnsStub;
+import cotton.test.services.GlobalDiscoveryAddress;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
@@ -48,7 +48,7 @@ import java.util.Scanner;
 public class RequestQueueExample {
 
     public static void main(String[] args) throws UnknownHostException, IOException {
-        GlobalDnsStub gDns = getDnsStub(null, 5888);
+        GlobalDiscoveryAddress gDns = getDnsStub(null, 5888);
         Cotton queueInstance = new Cotton(false, gDns);
         Configurator config = new Configurator();
         config.loadConfigFromFile("configurationtemplate.cfg");
@@ -70,8 +70,8 @@ public class RequestQueueExample {
         queueInstance.shutdown();
     }
 
-    private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
-        GlobalDnsStub gDns = new GlobalDnsStub();
+    private static GlobalDiscoveryAddress getDnsStub(String dest, int port) throws UnknownHostException {
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress gdAddr = null;
         if (dest == null) {
             gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);

@@ -49,7 +49,7 @@ import cotton.systemsupport.Console;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatisticsProvider;
-import cotton.test.services.GlobalDnsStub;
+import cotton.test.services.GlobalDiscoveryAddress;
 import cotton.test.services.MathPowV2;
 import java.util.Random;
 
@@ -75,7 +75,7 @@ public class TestScalingCommand {
         } catch (InterruptedException ex) {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        GlobalDnsStub dnsStub = getDnsStub(null,discPort); 
+        GlobalDiscoveryAddress dnsStub = getDnsStub(null,discPort); 
         String queueName = "mathpow21";
         Cotton reqQueue = new Cotton(false,queuePort,dnsStub);
         RequestQueueManager requestQueueManager = new RequestQueueManager();
@@ -126,7 +126,7 @@ public class TestScalingCommand {
         Cotton disc = new Cotton(true,discPort);
         disc.start();
         
-        GlobalDnsStub dnsStub = getDnsStub(null,discPort); 
+        GlobalDiscoveryAddress dnsStub = getDnsStub(null,discPort); 
         String serviceName = "mathpow21";
         Cotton serv = new Cotton(false,servicePort,dnsStub);
         serv.getServiceRegistation().registerService(serviceName, MathPowV2.getFactory(), 10);
@@ -168,8 +168,8 @@ public class TestScalingCommand {
         assertTrue(maxCapacity == newAmount);
     }
     
-    private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
-        GlobalDnsStub gDns = new GlobalDnsStub();
+    private static GlobalDiscoveryAddress getDnsStub(String dest, int port) throws UnknownHostException {
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress gdAddr = null;
         if (dest == null) {
             gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);

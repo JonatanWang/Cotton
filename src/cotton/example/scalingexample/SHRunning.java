@@ -49,7 +49,7 @@ import java.util.Scanner;
  */
 public class SHRunning implements Runnable{
     public static void main(String[] args) throws UnknownHostException, MalformedURLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        int clientAmount = 2;
+        int clientAmount = 8;
         
         for(int i = 0; i < clientAmount; i++) {
             Thread th = new Thread(new SHRunning());

@@ -34,7 +34,7 @@ package cotton.test;
 import cotton.Cotton;
 import cotton.internalrouting.InternalRoutingClient;
 import cotton.network.DestinationMetaData;
-import cotton.network.DummyServiceChain;
+import cotton.network.DefaultServiceChain;
 import cotton.network.NetworkPacket;
 import cotton.network.PathType;
 import org.junit.Test;
@@ -51,7 +51,7 @@ import cotton.systemsupport.Console;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.TimeInterval;
-import cotton.test.services.GlobalDnsStub;
+import cotton.test.services.GlobalDiscoveryAddress;
 import cotton.test.services.MathPowV2;
 import cotton.test.services.MathResult;
 
@@ -89,7 +89,7 @@ public class TestUsageHistory {
 
         discovery.start();
 
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = new InetSocketAddress(Inet4Address.getLocalHost(), port);
         gDns.setGlobalDiscoveryAddress(arr);
@@ -136,7 +136,7 @@ public class TestUsageHistory {
         cCotton.start();
 
         InternalRoutingClient client = cCotton.getClient();
-        ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
+        ServiceChain chain = new DefaultServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
 
 //        InternalRoutingClient client = cCotton.getClient();
         Console console = queue.getConsole();
@@ -150,7 +150,7 @@ public class TestUsageHistory {
         }
         NetworkPacket packet = NetworkPacket.newBuilder().setData(data).build();
         console.processCommand(packet);
-        client.sendToService(data, new DummyServiceChain().into("mathpow21").into("result"));
+        client.sendToService(data, new DefaultServiceChain().into("mathpow21").into("result"));
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -158,7 +158,7 @@ public class TestUsageHistory {
         }
 
         for (int i = 0; i < 500; i++) {
-            client.sendToService(data, new DummyServiceChain().into("mathpow21").into("result"));
+            client.sendToService(data, new DefaultServiceChain().into("mathpow21").into("result"));
 
         }
         try {
@@ -203,7 +203,7 @@ public class TestUsageHistory {
         String pow = "mathpow21";
         
         discovery.start();
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = new InetSocketAddress(Inet4Address.getLocalHost(), port);
         gDns.setGlobalDiscoveryAddress(arr);
@@ -256,7 +256,7 @@ public class TestUsageHistory {
             e.printStackTrace();
         }
         InternalRoutingClient client = c.getClient();
-        ServiceChain chain = new DummyServiceChain().into(pow).into(name).into(pow).into(pow).into(name);
+        ServiceChain chain = new DefaultServiceChain().into(pow).into(name).into(pow).into(pow).into(name);
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
         
@@ -313,7 +313,7 @@ public class TestUsageHistory {
         Cotton disc = new Cotton(true, discPort);
         disc.start();
 
-        GlobalDnsStub dnsStub = getDnsStub(null, discPort);
+        GlobalDiscoveryAddress dnsStub = getDnsStub(null, discPort);
         String serviceName = "mathpow21";
         Cotton serv = new Cotton(false, servicePort, dnsStub);
         serv.getServiceRegistation().registerService(serviceName, MathPowV2.getFactory(), 10);
@@ -357,7 +357,7 @@ public class TestUsageHistory {
         int sendCount = 200;
         InternalRoutingClient c = client.getClient();
         for (int i = 0; i < sendCount; i++) {
-            c.sendToService(data, new DummyServiceChain().into(serviceName));
+            c.sendToService(data, new DefaultServiceChain().into(serviceName));
         }
 
         try {
@@ -395,8 +395,8 @@ public class TestUsageHistory {
         assertTrue(taskDone == sendCount);
     }
 
-    private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
-        GlobalDnsStub gDns = new GlobalDnsStub();
+    private static GlobalDiscoveryAddress getDnsStub(String dest, int port) throws UnknownHostException {
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress gdAddr = null;
         if (dest == null) {
             gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);

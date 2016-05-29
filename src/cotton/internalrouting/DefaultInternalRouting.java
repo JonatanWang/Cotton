@@ -43,7 +43,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import cotton.network.NetworkPacket;
-import cotton.network.DummyServiceChain;
+import cotton.network.DefaultServiceChain;
 import cotton.network.NetworkHandler;
 import cotton.services.BridgeServiceBuffer;
 import cotton.services.ServiceBuffer;
@@ -150,8 +150,9 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         //  throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private boolean fallBackSend(NetworkPacket packet, SocketAddress sockerAddr) {
-        if (sockerAddr == null || packet == null) {
+    private boolean fallBackSend(NetworkPacket packet, DestinationMetaData dest) {
+        SocketAddress sockerAddr = null;
+        if (dest == null || (sockerAddr = dest.getSocketAddress()) == null || packet == null) {
             return false;
         }
         try {
@@ -162,8 +163,9 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         return true;
     }
 
-    private boolean fallbackSendKeepAlive(NetworkPacket packet, SocketAddress sockerAddr) {
-        if (sockerAddr == null || packet == null) {
+    private boolean fallbackSendKeepAlive(NetworkPacket packet, DestinationMetaData dest) {
+        SocketAddress sockerAddr = null;
+        if (dest == null || (sockerAddr = dest.getSocketAddress()) == null || packet == null) {
             return false;
         }
         try {
@@ -348,7 +350,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
             } catch (IOException e) {
                 // TODO: logging
                 destination = discovery.destinationUnreachable(destination, serviceName);
-                fallBackSend(packet, destination.getSocketAddress());
+                fallBackSend(packet, destination);
                 e.printStackTrace();
                 return false;
             }
@@ -517,7 +519,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
      */
     private NetworkPacket prepareForTransmission(Origin origin, ServiceChain path, byte[] data, PathType pathType) {
         if (path == null) {
-            path = new DummyServiceChain();
+            path = new DefaultServiceChain();
         }
         NetworkPacket packet = NetworkPacket.newBuilder()
                 .setData(data)
@@ -559,7 +561,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                         success = true;
                     } catch (IOException e) {
                         dest = discovery.destinationUnreachable(dest, serviceChain.peekNextServiceName());
-                        success = fallbackSendKeepAlive(packet, dest.getSocketAddress());
+                        success = fallbackSendKeepAlive(packet, dest);
                         e.printStackTrace();
                     }
                 } else {
@@ -568,7 +570,7 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
                         success = true;
                     } catch (IOException e) {
                         dest = discovery.destinationUnreachable(dest, serviceChain.peekNextServiceName());
-                        success = fallBackSend(packet, dest.getSocketAddress());
+                        success = fallBackSend(packet, dest);
                         e.printStackTrace();
                     }
                 }

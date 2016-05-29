@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @author Magnus
  * @see ServiceChain
  */
-public class DummyServiceChain implements ServiceChain, Serializable {
+public class DefaultServiceChain implements ServiceChain, Serializable {
 
     private static final long serialVersionUID = 1L;
     private ConcurrentLinkedQueue<String> chain;
@@ -51,7 +51,7 @@ public class DummyServiceChain implements ServiceChain, Serializable {
      * Constructs an empty <code>ServiceChain</code> with a concurrent linked
      * queue.
      */
-    public DummyServiceChain() {
+    public DefaultServiceChain() {
         this.chain = new ConcurrentLinkedQueue<>();
     }
 
@@ -62,12 +62,12 @@ public class DummyServiceChain implements ServiceChain, Serializable {
      * @param serviceName the service name to add to the
      * <code>serviceChain</code>.
      */
-    public DummyServiceChain(String serviceName) {
+    public DefaultServiceChain(String serviceName) {
         this.chain = new ConcurrentLinkedQueue<>();
         chain.add(serviceName);
     }
 
-    private DummyServiceChain(ServiceChainBuilder builder) {
+    private DefaultServiceChain(ServiceChainBuilder builder) {
         this.chain = new ConcurrentLinkedQueue<>(builder.bChain);
     }
 
@@ -134,8 +134,8 @@ public class DummyServiceChain implements ServiceChain, Serializable {
             this.bChain = new ArrayList<String>();
         }
         
-        public DummyServiceChain build() {
-            return new DummyServiceChain(this);
+        public DefaultServiceChain build() {
+            return new DefaultServiceChain(this);
         }
 
         public ServiceChainBuilder into(String name) {
