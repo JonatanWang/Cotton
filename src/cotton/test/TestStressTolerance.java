@@ -167,7 +167,7 @@ public class TestStressTolerance {
 //                    .build();
 //            serviceBuffer.add(pkt);
 //        }
-        while (completedChains < sentChains && timeOut < loop) {
+        while (counter.get() < sentChains && timeOut < loop) {
             try {
                 Thread.sleep(waitTime);
             } catch (InterruptedException ex) {

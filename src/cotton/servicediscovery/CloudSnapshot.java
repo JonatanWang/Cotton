@@ -29,43 +29,48 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-package cotton.test.services;
+package cotton.servicediscovery;
 
-import cotton.servicediscovery.GlobalDiscoveryDNS;
-import java.net.Inet4Address;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.UnknownHostException;
+import java.io.Serializable;
+import java.util.ArrayList;
 
 /**
  *
  * @author magnus
  */
-public class GlobalDiscoveryAddress extends GlobalDiscoveryDNS {
+public class CloudSnapshot implements Serializable {
 
-    private SocketAddress[] addressArray = null;
+    private DiscoveryProbe[] snapshot;
+    /**
+     * Used to send one address per service,
+     * @param snapshot Array of services and request queues, one each
+     */
+    public CloudSnapshot(DiscoveryProbe[] snapshot) {
+        if (snapshot == null) {
+            this.snapshot = new DiscoveryProbe[0];
+        } else {
+            this.snapshot = snapshot;
+        }
+    }
 
-    public GlobalDiscoveryAddress() throws SecurityException {
-        this.addressArray = new SocketAddress[0];
+    /**
+     * Used to send one address per service,
+     * @param snapshot Array of services and request queues, one each
+     */
+    public CloudSnapshot(ArrayList<DiscoveryProbe> snapshot) {
+        if (snapshot == null) {
+            this.snapshot = new DiscoveryProbe[0];
+        } else {
+            this.snapshot = snapshot.toArray(new DiscoveryProbe[snapshot.size()]);
+        }
     }
     
-    public GlobalDiscoveryAddress(String ip,int port){
-        this.addressArray = new SocketAddress[1];
-        this.addressArray[0] = new InetSocketAddress(ip,port);
+    /**
+     * 
+     * @return the current snapshot of the cloud
+     */
+    public DiscoveryProbe[] getSnapshot() {
+        return snapshot;
     }
 
-    public GlobalDiscoveryAddress(int port) throws UnknownHostException {
-        this.addressArray = new SocketAddress[1];
-        this.addressArray[0] = new InetSocketAddress(Inet4Address.getLocalHost(), port);
-    }
-
-    @Override
-    public void setGlobalDiscoveryAddress(SocketAddress[] addresses) {
-        this.addressArray = addresses;
-    }
-
-    @Override
-    public SocketAddress[] getGlobalDiscoveryAddress() {
-        return this.addressArray;
-    }
 }

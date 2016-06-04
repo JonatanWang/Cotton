@@ -602,7 +602,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         System.out.println("try Announce in: " + announceDelay + " seconds again");
 
         final ScheduledFuture<?> schedule = this.taskScheduler.schedule(run, announceDelay, TimeUnit.SECONDS);
-        ;
+        
         this.taskScheduler.schedule(new Runnable() {
             @Override
             public void run() {

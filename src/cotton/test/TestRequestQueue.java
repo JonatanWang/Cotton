@@ -259,7 +259,7 @@ public class TestRequestQueue {
         for (int i = 0; i < 100; i++) {
             try {
                 Thread.sleep(10);
-                if (resFactory.getCounter().intValue() == sentChains) {
+                if (resFactory.getCounter().get()== sentChains) {
                     break;
                 }
             } catch (InterruptedException ex) {

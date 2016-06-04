@@ -136,7 +136,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         this.deadAddresses = new ConcurrentLinkedQueue<>();
         this.deadAddressValidator = new ScheduledThreadPoolExecutor(2);
         this.startDownScaling();
-        this.startPoolcheckSystem();
+        this.startPoolcheckSystem(15000);
         this.startDeadAddressChecker(20000);
     }
     
@@ -152,7 +152,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         this.deadAddresses = new ConcurrentLinkedQueue<>();
         deadAddressValidator = new ScheduledThreadPoolExecutor(1);
         this.startDownScaling();
-        this.startPoolcheckSystem();
+        this.startPoolcheckSystem(15000);
         this.startDeadAddressChecker(20000);
     }
 
@@ -264,7 +264,78 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         // TODO: ask the other GD
         return signal;
     }
+    
+    private void processCloudSnapshot(Origin origin) {
+        String[] availableServices = this.getAvailableServices();        
+        ArrayList<DiscoveryProbe> msg = new ArrayList<>();
+        DestinationMetaData q = null;
+        DestinationMetaData s = null;
+        for (String name : availableServices) {
+            AddressPool qget = this.activeQueue.get(name);
+            if(qget != null && (q = qget.getAddress()) != null) {
+                msg.add(new DiscoveryProbe(name,q));
+            }
+            AddressPool sget = this.activeQueue.get(name);
+            if(sget != null && (s = sget.getAddress()) != null) {
+                msg.add(new DiscoveryProbe(name,s));
+            }            
+        }
+        CloudSnapshot cloudSnapshot = new CloudSnapshot(msg);
+        try {
+            byte[] data = serializeToBytes(cloudSnapshot);
+            internalRouting.sendBackToOrigin(origin, PathType.DISCOVERY, data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * This will try to ask another global discovery if they know about any
+     * new services, if this discovery is missing one it will add it.
+     * This is done so a global discovery at least know about one of each service
+     */
+    private void updateCloudAwareness() {
+        DiscoveryPacket packet = new DiscoveryPacket(DiscoveryPacketType.CLOUD_SNAPSHOT);
+        DestinationMetaData tmp = discoveryCache.getAddress();
+        if(tmp == null) {
+            return;
+        }
+        if(tmp.compareAddress(this.localAddress)) {
+            return;
+        }
+        DestinationMetaData dest = tmp.duplicate();
+        byte[] data;
+        try {
+            data = serializeToBytes(packet);
+        } catch (IOException ex) {
+            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+            return;
+        }
+        ServiceRequest request = internalRouting.sendWithResponse(dest, data, 400);
+        
+        if(request == null || request.getData() == null) {
+            return;
+        }
+        byte[] data1 = request.getData();
+        CloudSnapshot cloudSnapshot = cloudSnapshotUnpack(data1);
+        DiscoveryProbe[] snapshot = cloudSnapshot.getSnapshot();
+        addSnapshot(snapshot);
+        
+    }
 
+    private void addSnapshot(DiscoveryProbe[] snapshot) {
+        if(snapshot == null)
+            return;
+        for (DiscoveryProbe s : snapshot) {
+            DestinationMetaData dmd = s.getAddress();
+            if (dmd.getPathType() == PathType.SERVICE) {
+                this.addService(dmd, s.getName());
+            } else if (dmd.getPathType() == PathType.REQUESTQUEUE) {
+                this.addQueue(dmd, s.getName());
+            }
+        }
+    }
+    
     /**
      * Finds the next hop destination, fills in destination, and return a
      * RouteSignal
@@ -467,7 +538,9 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         } catch (IOException ex) {
             return false;
         }
-
+        if(success){
+            this.updateCloudAwareness();
+        }
         return true;
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
@@ -499,13 +572,13 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         }
     }
     
-    private void startPoolcheckSystem() {
+    private void startPoolcheckSystem(int checkInterval) {
         final Runnable spcs = new Runnable() {
             @Override
             public void run() {
                 while (runCheckAddress.get()) {
                     try {
-                        Thread.sleep(10000);
+                        Thread.sleep(checkInterval);
                     } catch (InterruptedException ex) {}
                     validateServiceActivity();
                     validateQueueActivity();
@@ -656,13 +729,23 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         try {
             ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
             probe = (DiscoveryPacket) input.readObject();
-        } catch (IOException ex) {
-            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ClassNotFoundException ex) {
+        } catch (IOException | ClassNotFoundException ex) {
             Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
         }
         return probe;
     }
+    
+    private CloudSnapshot cloudSnapshotUnpack(byte[] data) {
+        CloudSnapshot snap = null;
+        try {
+            ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(data));
+            snap = (CloudSnapshot) input.readObject();
+        } catch (IOException | ClassNotFoundException ex) {
+            Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return snap;
+    }
+    
 
     private void propagateTopology(TopologyPacket packet) {
         int count = packet.decrementCount();
@@ -701,6 +784,8 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     }
 
     private void addService(DestinationMetaData addr, String name) {
+        if(addr == null || name == null)
+            return;
         AddressPool pool = new AddressPool();
         AddressPool oldPool = this.serviceCache.putIfAbsent(name, pool);
         if (oldPool != null) {
@@ -819,6 +904,8 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
     }
 
     private void addQueue(DestinationMetaData addr, String queue) {
+        if(addr == null || queue == null)
+            return;
         AddressPool pool = new AddressPool();
         AddressPool oldPool = this.activeQueue.putIfAbsent(queue, pool);
         if (oldPool != null) {
@@ -1273,6 +1360,12 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                 break;
             case DISCOVERYRESPONSE:
                 //localDiscovery.updateHandling(from, packet);
+                break;
+            case TOPOLOGY:
+                processTopologyPackets(packet.getTopology());
+                break;
+            case CLOUD_SNAPSHOT:
+                processCloudSnapshot(origin);
                 break;
             case ANNOUNCE:
                 processAnnouncePacket(packet.getAnnounce());

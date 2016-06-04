@@ -31,6 +31,7 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.test;
 
+import cotton.test.stubs.NetworkHandlerStub;
 import cotton.Cotton;
 import cotton.internalrouting.InternalRoutingClient;
 import cotton.internalrouting.ServiceRequest;
