@@ -36,7 +36,7 @@ import java.net.SocketAddress;
 
 /**
  *
- * @author o_0
+ * @author magnus
  */
 public class GlobalDiscoveryAddress extends GlobalDiscoveryDNS {
 

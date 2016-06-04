@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ActivityLogger {
 
     private UsageHistory usageHistory;
-    private long samplingRate = 0;
+    private long samplingRate = 100;
     private Timer timeManger = new Timer();
     private TimeSliceTask sliceTask = null;
     private AtomicBoolean running = new AtomicBoolean(false);

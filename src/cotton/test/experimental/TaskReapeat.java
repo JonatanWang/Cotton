@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  *
- * @author o_0
+ * @author magnus
  */
 public class TaskReapeat {
 

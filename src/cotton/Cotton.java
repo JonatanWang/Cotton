@@ -81,8 +81,8 @@ public class Cotton {
 
         if(config.hasDatabase())
             dataBaseWrapperStart(config);
-        //initNetwork(new SocketSelectionNetworkHandler(config.getNetworkConfigurator()));
-        initNetwork(new DefaultNetworkHandler(config.getNetworkConfigurator()));
+        initNetwork(new SocketSelectionNetworkHandler(config.getNetworkConfigurator()));
+        //initNetwork(new DefaultNetworkHandler(config.getNetworkConfigurator()));
         initDiscovery(config);
         initLookup(config.getServiceConfigurator());
         initRouting();
@@ -127,8 +127,8 @@ public class Cotton {
      * @throws java.net.UnknownHostException
      */
     public Cotton(boolean globalServiceDiscovery,int localPort, GlobalDiscoveryDNS globalDiscoveryDNS) throws java.net.UnknownHostException {
-        initNetwork(new DefaultNetworkHandler(localPort));
-        //initNetwork(new SocketSelectionNetworkHandler(localPort));
+        //initNetwork(new DefaultNetworkHandler(localPort));
+        initNetwork(new SocketSelectionNetworkHandler(localPort));
         initDiscovery(globalServiceDiscovery,globalDiscoveryDNS);
         initLookup();
         initRouting();
@@ -142,8 +142,8 @@ public class Cotton {
      * @throws java.net.UnknownHostException
      */
     public Cotton (boolean globalServiceDiscovery, int portNumber) throws java.net.UnknownHostException {
-        //initNetwork(new SocketSelectionNetworkHandler(portNumber));
-        initNetwork(new DefaultNetworkHandler(portNumber));
+        initNetwork(new SocketSelectionNetworkHandler(portNumber));
+        //initNetwork(new DefaultNetworkHandler(portNumber));
         initDiscovery(globalServiceDiscovery,null);
         initLookup();
         initRouting();
@@ -284,8 +284,8 @@ public class Cotton {
     private void initNetwork(NetworkHandler net) throws UnknownHostException {
         if(net == null) {
             Random rnd = new Random();
-            net = new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
-            //net = new SocketSelectionNetworkHandler(rnd.nextInt(20000)+3000);
+            //net = new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
+            net = new SocketSelectionNetworkHandler(rnd.nextInt(20000)+3000);
         }
         this.network = net;
     }

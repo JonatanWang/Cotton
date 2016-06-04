@@ -352,7 +352,7 @@ public class MainView {
         VBox tableBox2 = tableBox("Request Queue", reqQBtn, this.requestQueueTableObs);
         VBox tableBox3 = tableBox("Services", servBtn, this.serviceTableObs);
         graphRequestQueue = new GraphView("Request Queue","mathPow2",this.controller);
-        graphService = new GraphView("Service Queue","mathPow2",this.controller);
+        graphService = new GraphView("Service","mathPow2",this.controller);
         this.graphRequestQueue.startAutoUpdate();
         this.graphService.startAutoUpdate();
 //        TimeInterval[] gtest = generateRandomData(10);

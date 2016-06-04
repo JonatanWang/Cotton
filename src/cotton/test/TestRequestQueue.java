@@ -391,8 +391,8 @@ public class TestRequestQueue {
             port = new Random().nextInt(20000) + 3000;
         }
         //return new NetworkHandlerFake(port);
-        return new DefaultNetworkHandler(port);
-        //return new SocketSelectionNetworkHandler(port);
+        //return new DefaultNetworkHandler(port);
+        return new SocketSelectionNetworkHandler(port);
 
 //        return new CloudNetwork(port);
     }

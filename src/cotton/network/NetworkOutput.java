@@ -34,9 +34,11 @@ package cotton.network;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -94,12 +96,16 @@ public class NetworkOutput implements Runnable {
                 size.putInt(0, output.capacity());
 
                 if ((sendChannel = openChannels.get((InetSocketAddress) dest)) != null) {
-                    sendChannel.write(size);
-                    size.clear();
-                    size.putInt(0, packet.getType().ordinal());
-                    sendChannel.write(size);
-                    size.clear();
-                    sendChannel.write(output);
+                    try {
+                        sendChannel.write(size);
+                        size.clear();
+                        size.putInt(0, packet.getType().ordinal());
+                        sendChannel.write(size);
+                        size.clear();
+                        sendChannel.write(output);
+                    } catch (ClosedChannelException ex) {
+                        openChannels.remove((InetSocketAddress) dest, sendChannel);
+                    }
                 } else {
                     sendChannel = SocketChannel.open();
                     sendChannel.connect(dest);
@@ -116,8 +122,20 @@ public class NetworkOutput implements Runnable {
                     handler.registerChannel(sendChannel);
                     openChannels.putIfAbsent((InetSocketAddress) dest, sendChannel);
                 }
-            }catch(IOException e){
-                e.printStackTrace();
+            }catch(ConnectException ex) {
+                if(sendChannel != null) {
+                    if(dest != null) {
+                        openChannels.remove((InetSocketAddress)dest, sendChannel);
+                    }
+                    try {
+                        sendChannel.close();
+                    } catch (IOException ex2) {
+                        ex2.printStackTrace();
+                        Logger.getLogger(NetworkOutput.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            } catch(IOException e){
+                //e.printStackTrace();
                 if(sendChannel != null) {
                     if(dest != null) {
                         openChannels.remove((InetSocketAddress)dest, sendChannel);

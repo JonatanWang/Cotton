@@ -1,7 +1,33 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+
+Copyright (c) 2016, Gunnlaugur Juliusson, Jonathan Kåhre, Magnus Lundmark,
+Mats Levin, Tony Tran
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+ * Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+ * Neither the name of Cotton Production Team nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
  */
 package cotton.test;
 
@@ -46,7 +72,7 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author o_0
+ * @author magnus
  */
 public class TestStressTolerance {
 
@@ -97,6 +123,7 @@ public class TestStressTolerance {
 
         ServiceHandler serviceHandler = new ServiceHandler(serviceLookup, internal);
         Thread th = new Thread(serviceHandler);
+        th.setDaemon(true);
         ServiceBuffer serviceBuffer = internal.getServiceBuffer();
         ServiceChainBuilder build = new ServiceChainBuilder();
         String name1 = "mathpow2";
@@ -118,10 +145,10 @@ public class TestStressTolerance {
         }
         System.out.println("Service buffer loaded with: " + serviceBuffer.size() + " packets");
         serviceHandler.fillBufferChannels();
-        boolean recStarted = serviceHandler.setUsageRecording("mathpow2", 100);
-        if(!recStarted) {
-            System.out.println("Failed to start recording");
-        }
+//        boolean recStarted = serviceHandler.setUsageRecording("mathpow2", 100);
+//        if(!recStarted) {
+//            System.out.println("Failed to start recording");
+//        }
         th.start();
         
         int completedChains = counter.get();
@@ -149,13 +176,13 @@ public class TestStressTolerance {
         }
         long stopTime = System.currentTimeMillis();
         completedChains = counter.get();
-        String[] cmdline = new String[]{"mathpow2", "getUsageRecordingInterval"};
-        Command query = new Command(StatType.SERVICEHANDLER, null, cmdline, 200, CommandType.USAGEHISTORY);
-        query.setQuery(true);
-        StatisticsData<TimeInterval>[] anwser = serviceHandler.processCommand(query);
-        TimeInterval[] data1 = anwser[0].getData();
-        System.out.println("Result:" );
-        printTimeInterval(data1);
+//        String[] cmdline = new String[]{"mathpow2", "getUsageRecordingInterval"};
+//        Command query = new Command(StatType.SERVICEHANDLER, null, cmdline, 200, CommandType.USAGEHISTORY);
+//        query.setQuery(true);
+//        StatisticsData<TimeInterval>[] anwser = serviceHandler.processCommand(query);
+//        TimeInterval[] data1 = anwser[0].getData();
+//        System.out.println("Result:" );
+//        printTimeInterval(data1);
         float total = (float) (stopTime - startTime) / 1000.0f;
         System.out.println("Chains completed: " + completedChains + " in: " + total + "[s] , " + (float) completedChains / total + "[chains/sec]");
         serviceHandler.stop();

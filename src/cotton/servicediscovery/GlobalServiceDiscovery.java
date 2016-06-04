@@ -136,7 +136,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         this.deadAddresses = new ConcurrentLinkedQueue<>();
         this.deadAddressValidator = new ScheduledThreadPoolExecutor(2);
         this.startDownScaling();
-        //this.startPoolcheckSystem();
+        this.startPoolcheckSystem();
         this.startDeadAddressChecker(20000);
     }
     
@@ -152,7 +152,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         this.deadAddresses = new ConcurrentLinkedQueue<>();
         deadAddressValidator = new ScheduledThreadPoolExecutor(1);
         this.startDownScaling();
-        //this.startPoolcheckSystem();
+        this.startPoolcheckSystem();
         this.startDeadAddressChecker(20000);
     }
 
@@ -518,7 +518,6 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         if (pool == null || key == null) {
             return;
         }
-        boolean checkDead = false;
         DestinationMetaData[] destinations = pool.copyPoolData();
         for (int i = 0; i < destinations.length; i++) {
             DiscoveryProbe probe = new DiscoveryProbe(key, destinations[i]);
@@ -535,12 +534,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                 boolean flag = pool.remove(destinations[i]);
                 DestinationMetaData d = new DestinationMetaData(destinations[i]);
                 this.deadAddresses.add(new ReapedAddress(key,d));
-                //System.out.println("FLAG VALUE" + flag);
-                checkDead = true;
             }
-        }
-        if(checkDead) {
-            //checkDeadAddresses();
         }
     }
 
@@ -603,7 +597,7 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         //System.out.println("GlobalServiceDiscovery:checkDeadAddresses:runnable");
         ReapedAddress addr = null;
         AddressPool pool = null;
-        ArrayList<ReapedAddress> left = new ArrayList<>();
+        //ArrayList<ReapedAddress> left = new ArrayList<>();
         while ((addr = reapedAddresses.poll()) != null) {
             DiscoveryProbe probe = new DiscoveryProbe(addr.getName(), addr.getReapedAddress());
             DiscoveryPacket response = new DiscoveryPacket(DiscoveryPacketType.DISCOVERYREQUEST);
@@ -621,7 +615,8 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                     pool.addAddress(addr.getReapedAddress());
                 }
             } else {
-                left.add(addr);
+                //left.add(addr);
+                System.out.println("Address droped: " + addr);
             }
         }
 
@@ -945,7 +940,12 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
             System.out.println("GlobalServiceDiscovery:triggeredCircuitBreaker:No service pool");
             return;
         }
-        DestinationMetaData dest = new DestinationMetaData(pool.getAddress());
+        DestinationMetaData dmd = pool.getAddress();
+        if(dmd == null) {
+            System.out.println("GlobalServiceDiscovery:triggeredCircuitBreaker:No service registered");
+            return;
+        }
+        DestinationMetaData dest = new DestinationMetaData(dmd);
         dest.setPathType(PathType.COMMANDCONTROL);
         Command com = new Command(StatType.SERVICEHANDLER, circuit.getCircuitName(), null, 20, CommandType.CHANGE_ACTIVEAMOUNT);
         sendCommandPacket(dest, com);
@@ -1368,5 +1368,12 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         public DestinationMetaData getReapedAddress() {
             return this.reapedAddress;
         }
+
+        @Override
+        public String toString() {
+            return "ReapedAddress{" + "name=" + name + ", reapedAddress=" + reapedAddress + '}';
+        }
+        
     }
+    
 }
