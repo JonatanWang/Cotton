@@ -8,10 +8,10 @@ public final class TransportPacket {
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistry registry) {
   }
-  public interface PacketOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
+  public interface PacketOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:cotton.network.Packet)
+      com.google.protobuf.MessageOrBuilder {
 
-    // optional bool keepalive = 1;
     /**
      * <code>optional bool keepalive = 1;</code>
      */
@@ -21,7 +21,6 @@ public final class TransportPacket {
      */
     boolean getKeepalive();
 
-    // optional .cotton.network.Packet.PathType pathtype = 2;
     /**
      * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
      */
@@ -31,7 +30,6 @@ public final class TransportPacket {
      */
     cotton.network.TransportPacket.Packet.PathType getPathtype();
 
-    // optional bytes data = 3;
     /**
      * <code>optional bytes data = 3;</code>
      */
@@ -41,7 +39,6 @@ public final class TransportPacket {
      */
     com.google.protobuf.ByteString getData();
 
-    // optional .cotton.network.Origin origin = 4;
     /**
      * <code>optional .cotton.network.Origin origin = 4;</code>
      */
@@ -55,12 +52,11 @@ public final class TransportPacket {
      */
     cotton.network.TransportPacket.OriginOrBuilder getOriginOrBuilder();
 
-    // repeated string path = 6;
     /**
      * <code>repeated string path = 6;</code>
      */
-    java.util.List<java.lang.String>
-    getPathList();
+    com.google.protobuf.ProtocolStringList
+        getPathList();
     /**
      * <code>repeated string path = 6;</code>
      */
@@ -75,7 +71,6 @@ public final class TransportPacket {
     com.google.protobuf.ByteString
         getPathBytes(int index);
 
-    // optional int32 lastHopPort = 7;
     /**
      * <code>optional int32 lastHopPort = 7;</code>
      */
@@ -89,8 +84,9 @@ public final class TransportPacket {
    * Protobuf type {@code cotton.network.Packet}
    */
   public static final class Packet extends
-      com.google.protobuf.GeneratedMessage
-      implements PacketOrBuilder {
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:cotton.network.Packet)
+      PacketOrBuilder {
     // Use Packet.newBuilder() to construct.
     private Packet(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -171,11 +167,12 @@ public final class TransportPacket {
               break;
             }
             case 50: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
                 path_ = new com.google.protobuf.LazyStringArrayList();
                 mutable_bitField0_ |= 0x00000010;
               }
-              path_.add(input.readBytes());
+              path_.add(bs);
               break;
             }
             case 56: {
@@ -192,7 +189,7 @@ public final class TransportPacket {
             e.getMessage()).setUnfinishedMessage(this);
       } finally {
         if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
-          path_ = new com.google.protobuf.UnmodifiableLazyStringList(path_);
+          path_ = path_.getUnmodifiableView();
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -362,7 +359,6 @@ public final class TransportPacket {
     }
 
     private int bitField0_;
-    // optional bool keepalive = 1;
     public static final int KEEPALIVE_FIELD_NUMBER = 1;
     private boolean keepalive_;
     /**
@@ -378,7 +374,6 @@ public final class TransportPacket {
       return keepalive_;
     }
 
-    // optional .cotton.network.Packet.PathType pathtype = 2;
     public static final int PATHTYPE_FIELD_NUMBER = 2;
     private cotton.network.TransportPacket.Packet.PathType pathtype_;
     /**
@@ -394,7 +389,6 @@ public final class TransportPacket {
       return pathtype_;
     }
 
-    // optional bytes data = 3;
     public static final int DATA_FIELD_NUMBER = 3;
     private com.google.protobuf.ByteString data_;
     /**
@@ -410,7 +404,6 @@ public final class TransportPacket {
       return data_;
     }
 
-    // optional .cotton.network.Origin origin = 4;
     public static final int ORIGIN_FIELD_NUMBER = 4;
     private cotton.network.TransportPacket.Origin origin_;
     /**
@@ -432,13 +425,12 @@ public final class TransportPacket {
       return origin_;
     }
 
-    // repeated string path = 6;
     public static final int PATH_FIELD_NUMBER = 6;
     private com.google.protobuf.LazyStringList path_;
     /**
      * <code>repeated string path = 6;</code>
      */
-    public java.util.List<java.lang.String>
+    public com.google.protobuf.ProtocolStringList
         getPathList() {
       return path_;
     }
@@ -462,7 +454,6 @@ public final class TransportPacket {
       return path_.getByteString(index);
     }
 
-    // optional int32 lastHopPort = 7;
     public static final int LASTHOPPORT_FIELD_NUMBER = 7;
     private int lastHopPort_;
     /**
@@ -489,7 +480,8 @@ public final class TransportPacket {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
 
       memoizedIsInitialized = 1;
       return true;
@@ -636,8 +628,9 @@ public final class TransportPacket {
      * Protobuf type {@code cotton.network.Packet}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements cotton.network.TransportPacket.PacketOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:cotton.network.Packet)
+        cotton.network.TransportPacket.PacketOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return cotton.network.TransportPacket.internal_static_cotton_network_Packet_descriptor;
@@ -736,8 +729,7 @@ public final class TransportPacket {
           result.origin_ = originBuilder_.build();
         }
         if (((bitField0_ & 0x00000010) == 0x00000010)) {
-          path_ = new com.google.protobuf.UnmodifiableLazyStringList(
-              path_);
+          path_ = path_.getUnmodifiableView();
           bitField0_ = (bitField0_ & ~0x00000010);
         }
         result.path_ = path_;
@@ -813,7 +805,6 @@ public final class TransportPacket {
       }
       private int bitField0_;
 
-      // optional bool keepalive = 1;
       private boolean keepalive_ ;
       /**
        * <code>optional bool keepalive = 1;</code>
@@ -846,7 +837,6 @@ public final class TransportPacket {
         return this;
       }
 
-      // optional .cotton.network.Packet.PathType pathtype = 2;
       private cotton.network.TransportPacket.Packet.PathType pathtype_ = cotton.network.TransportPacket.Packet.PathType.RELAY;
       /**
        * <code>optional .cotton.network.Packet.PathType pathtype = 2;</code>
@@ -882,7 +872,6 @@ public final class TransportPacket {
         return this;
       }
 
-      // optional bytes data = 3;
       private com.google.protobuf.ByteString data_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>optional bytes data = 3;</code>
@@ -918,7 +907,6 @@ public final class TransportPacket {
         return this;
       }
 
-      // optional .cotton.network.Origin origin = 4;
       private cotton.network.TransportPacket.Origin origin_ = cotton.network.TransportPacket.Origin.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           cotton.network.TransportPacket.Origin, cotton.network.TransportPacket.Origin.Builder, cotton.network.TransportPacket.OriginOrBuilder> originBuilder_;
@@ -1027,7 +1015,7 @@ public final class TransportPacket {
         if (originBuilder_ == null) {
           originBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               cotton.network.TransportPacket.Origin, cotton.network.TransportPacket.Origin.Builder, cotton.network.TransportPacket.OriginOrBuilder>(
-                  origin_,
+                  getOrigin(),
                   getParentForChildren(),
                   isClean());
           origin_ = null;
@@ -1035,7 +1023,6 @@ public final class TransportPacket {
         return originBuilder_;
       }
 
-      // repeated string path = 6;
       private com.google.protobuf.LazyStringList path_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       private void ensurePathIsMutable() {
         if (!((bitField0_ & 0x00000010) == 0x00000010)) {
@@ -1046,9 +1033,9 @@ public final class TransportPacket {
       /**
        * <code>repeated string path = 6;</code>
        */
-      public java.util.List<java.lang.String>
+      public com.google.protobuf.ProtocolStringList
           getPathList() {
-        return java.util.Collections.unmodifiableList(path_);
+        return path_.getUnmodifiableView();
       }
       /**
        * <code>repeated string path = 6;</code>
@@ -1101,7 +1088,8 @@ public final class TransportPacket {
       public Builder addAllPath(
           java.lang.Iterable<java.lang.String> values) {
         ensurePathIsMutable();
-        super.addAll(values, path_);
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, path_);
         onChanged();
         return this;
       }
@@ -1128,7 +1116,6 @@ public final class TransportPacket {
         return this;
       }
 
-      // optional int32 lastHopPort = 7;
       private int lastHopPort_ ;
       /**
        * <code>optional int32 lastHopPort = 7;</code>
@@ -1172,10 +1159,10 @@ public final class TransportPacket {
     // @@protoc_insertion_point(class_scope:cotton.network.Packet)
   }
 
-  public interface OriginOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
+  public interface OriginOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:cotton.network.Origin)
+      com.google.protobuf.MessageOrBuilder {
 
-    // optional string latchId = 1;
     /**
      * <code>optional string latchId = 1;</code>
      */
@@ -1190,7 +1177,6 @@ public final class TransportPacket {
     com.google.protobuf.ByteString
         getLatchIdBytes();
 
-    // optional string requestId = 2;
     /**
      * <code>optional string requestId = 2;</code>
      */
@@ -1205,7 +1191,6 @@ public final class TransportPacket {
     com.google.protobuf.ByteString
         getRequestIdBytes();
 
-    // optional string ip = 3;
     /**
      * <code>optional string ip = 3;</code>
      */
@@ -1220,7 +1205,6 @@ public final class TransportPacket {
     com.google.protobuf.ByteString
         getIpBytes();
 
-    // optional int32 port = 4;
     /**
      * <code>optional int32 port = 4;</code>
      */
@@ -1234,8 +1218,9 @@ public final class TransportPacket {
    * Protobuf type {@code cotton.network.Origin}
    */
   public static final class Origin extends
-      com.google.protobuf.GeneratedMessage
-      implements OriginOrBuilder {
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:cotton.network.Origin)
+      OriginOrBuilder {
     // Use Origin.newBuilder() to construct.
     private Origin(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -1282,18 +1267,21 @@ public final class TransportPacket {
               break;
             }
             case 10: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              latchId_ = input.readBytes();
+              latchId_ = bs;
               break;
             }
             case 18: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000002;
-              requestId_ = input.readBytes();
+              requestId_ = bs;
               break;
             }
             case 26: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000004;
-              ip_ = input.readBytes();
+              ip_ = bs;
               break;
             }
             case 32: {
@@ -1341,7 +1329,6 @@ public final class TransportPacket {
     }
 
     private int bitField0_;
-    // optional string latchId = 1;
     public static final int LATCHID_FIELD_NUMBER = 1;
     private java.lang.Object latchId_;
     /**
@@ -1384,7 +1371,6 @@ public final class TransportPacket {
       }
     }
 
-    // optional string requestId = 2;
     public static final int REQUESTID_FIELD_NUMBER = 2;
     private java.lang.Object requestId_;
     /**
@@ -1427,7 +1413,6 @@ public final class TransportPacket {
       }
     }
 
-    // optional string ip = 3;
     public static final int IP_FIELD_NUMBER = 3;
     private java.lang.Object ip_;
     /**
@@ -1470,7 +1455,6 @@ public final class TransportPacket {
       }
     }
 
-    // optional int32 port = 4;
     public static final int PORT_FIELD_NUMBER = 4;
     private int port_;
     /**
@@ -1495,7 +1479,8 @@ public final class TransportPacket {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
 
       memoizedIsInitialized = 1;
       return true;
@@ -1623,8 +1608,9 @@ public final class TransportPacket {
      * Protobuf type {@code cotton.network.Origin}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements cotton.network.TransportPacket.OriginOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:cotton.network.Origin)
+        cotton.network.TransportPacket.OriginOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return cotton.network.TransportPacket.internal_static_cotton_network_Origin_descriptor;
@@ -1770,7 +1756,6 @@ public final class TransportPacket {
       }
       private int bitField0_;
 
-      // optional string latchId = 1;
       private java.lang.Object latchId_ = "";
       /**
        * <code>optional string latchId = 1;</code>
@@ -1784,9 +1769,12 @@ public final class TransportPacket {
       public java.lang.String getLatchId() {
         java.lang.Object ref = latchId_;
         if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          latchId_ = s;
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            latchId_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -1844,7 +1832,6 @@ public final class TransportPacket {
         return this;
       }
 
-      // optional string requestId = 2;
       private java.lang.Object requestId_ = "";
       /**
        * <code>optional string requestId = 2;</code>
@@ -1858,9 +1845,12 @@ public final class TransportPacket {
       public java.lang.String getRequestId() {
         java.lang.Object ref = requestId_;
         if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          requestId_ = s;
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            requestId_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -1918,7 +1908,6 @@ public final class TransportPacket {
         return this;
       }
 
-      // optional string ip = 3;
       private java.lang.Object ip_ = "";
       /**
        * <code>optional string ip = 3;</code>
@@ -1932,9 +1921,12 @@ public final class TransportPacket {
       public java.lang.String getIp() {
         java.lang.Object ref = ip_;
         if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          ip_ = s;
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            ip_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -1992,7 +1984,6 @@ public final class TransportPacket {
         return this;
       }
 
-      // optional int32 port = 4;
       private int port_ ;
       /**
        * <code>optional int32 port = 4;</code>
@@ -2036,12 +2027,12 @@ public final class TransportPacket {
     // @@protoc_insertion_point(class_scope:cotton.network.Origin)
   }
 
-  private static com.google.protobuf.Descriptors.Descriptor
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_cotton_network_Packet_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_cotton_network_Packet_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_cotton_network_Origin_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -2069,29 +2060,29 @@ public final class TransportPacket {
       "t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
-      new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
-        public com.google.protobuf.ExtensionRegistry assignDescriptors(
-            com.google.protobuf.Descriptors.FileDescriptor root) {
-          descriptor = root;
-          internal_static_cotton_network_Packet_descriptor =
-            getDescriptor().getMessageTypes().get(0);
-          internal_static_cotton_network_Packet_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_cotton_network_Packet_descriptor,
-              new java.lang.String[] { "Keepalive", "Pathtype", "Data", "Origin", "Path", "LastHopPort", });
-          internal_static_cotton_network_Origin_descriptor =
-            getDescriptor().getMessageTypes().get(1);
-          internal_static_cotton_network_Origin_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_cotton_network_Origin_descriptor,
-              new java.lang.String[] { "LatchId", "RequestId", "Ip", "Port", });
-          return null;
-        }
-      };
+        new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
+          public com.google.protobuf.ExtensionRegistry assignDescriptors(
+              com.google.protobuf.Descriptors.FileDescriptor root) {
+            descriptor = root;
+            return null;
+          }
+        };
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
         }, assigner);
+    internal_static_cotton_network_Packet_descriptor =
+      getDescriptor().getMessageTypes().get(0);
+    internal_static_cotton_network_Packet_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_cotton_network_Packet_descriptor,
+        new java.lang.String[] { "Keepalive", "Pathtype", "Data", "Origin", "Path", "LastHopPort", });
+    internal_static_cotton_network_Origin_descriptor =
+      getDescriptor().getMessageTypes().get(1);
+    internal_static_cotton_network_Origin_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_cotton_network_Origin_descriptor,
+        new java.lang.String[] { "LatchId", "RequestId", "Ip", "Port", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
