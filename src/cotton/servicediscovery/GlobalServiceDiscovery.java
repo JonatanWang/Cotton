@@ -34,6 +34,7 @@ package cotton.servicediscovery;
 import cotton.configuration.Configurator;
 import cotton.internalrouting.InternalRoutingServiceDiscovery;
 import cotton.internalrouting.ServiceRequest;
+import cotton.network.DefaultServiceChain;
 import cotton.network.DestinationMetaData;
 import cotton.network.Origin;
 import cotton.network.PathType;
@@ -1025,11 +1026,13 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
         pool = serviceCache.get(circuit.getCircuitName());
         if (pool == null) {
             System.out.println("GlobalServiceDiscovery:triggeredCircuitBreaker:No service pool");
+            notifyCircuitBreakerLogger(circuit);
             return;
         }
         DestinationMetaData dmd = pool.getAddress();
         if(dmd == null) {
             System.out.println("GlobalServiceDiscovery:triggeredCircuitBreaker:No service registered");
+            notifyCircuitBreakerLogger(circuit);
             return;
         }
         DestinationMetaData dest = new DestinationMetaData(dmd);
@@ -1052,8 +1055,23 @@ public class GlobalServiceDiscovery implements ServiceDiscovery {
                 this.addService(saddress, circuit.getCircuitName());
             }
         }
+        notifyCircuitBreakerLogger(circuit);
     }
 
+    private void notifyCircuitBreakerLogger(CircuitBreakerPacket circuit) {
+        AddressPool logg = this.serviceCache.get("CircuitBreakerLogger");
+        DestinationMetaData loggdest;
+        if(logg != null && (loggdest = logg.getAddress()) != null) {
+            try {
+                DestinationMetaData duplicate = loggdest.duplicate();
+                byte[] msg = this.serializeToBytes(circuit);
+                this.internalRouting.sendToDestination(duplicate,new DefaultServiceChain("CircuitBreakerLogger"), msg);
+            } catch (IOException ex) {
+                Logger.getLogger(GlobalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
     private String[] getAvailableServices() {
         ArrayList<String> str = new ArrayList<>();
         for (Map.Entry<String, AddressPool> entry : this.serviceCache.entrySet()) {

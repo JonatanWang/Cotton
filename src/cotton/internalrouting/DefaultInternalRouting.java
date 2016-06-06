@@ -296,6 +296,27 @@ public class DefaultInternalRouting implements InternalRoutingNetwork, InternalR
         }
         return false;
     }
+    
+    /**
+     * Sends data to a given destination and use serviceChain. 
+     * @param dest
+     * @param serviceChain
+     * @param data
+     * @return 
+     */
+    @Override
+    public boolean sendToDestination(DestinationMetaData dest,ServiceChain serviceChain,byte[] data) {
+        NetworkPacket packet = prepareForTransmission(new Origin(), serviceChain, data, dest.getPathType());
+        try {
+            //networkHandler.send(packet, dest.getSocketAddress());
+            networkHandler.send(packet, dest.getSocketAddress());
+            return true;
+        } catch (IOException ex) {
+            //TODO Fix
+        }
+        return false;
+    }
+    
 
     /**
      * Sends the data directly to destination without calling ServiceDiscovery
