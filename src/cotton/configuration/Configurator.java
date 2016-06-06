@@ -141,7 +141,7 @@ public class Configurator {
 
     public void setPort(int port){
         String address = prop.getProperty("networkAddress").split(":")[0];
-        if(address == null)
+        if(address != null)
             prop.setProperty("networkAddress", address+":"+port);
         else
             prop.setProperty("networkAddress", "localhost:"+port);
