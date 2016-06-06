@@ -341,11 +341,31 @@ public class Cotton {
     }
 
     public static void main(String[] args) {
+	Configurator config;
+	try{
+	    config = new Configurator("config.cfg");
+	}catch(Exception e){
+	    System.out.println("Could not find or load config: "+e);
+	    config = new Configurator();
+	    config.loadDefaults();
+	}
         Cotton c = null;
         try{
-            c = new Cotton(true,3333);
+            c = new Cotton(config);
             c.start();
-        }catch(java.net.UnknownHostException e){// TODO: Rethink this
+        }catch(ClassNotFoundException e){
+	    System.out.println("Error loading external services, exiting");
+	    return;
+	}catch(InstantiationException e){
+	    System.out.println("Error loading external services, exiting");
+	    return;
+	}catch(IllegalAccessException e){
+	    System.out.println("Error loading external services, exiting");
+	    return;
+	}catch(java.net.MalformedURLException e){
+	    System.out.println("Init network error, exiting");
+	    return;
+	}catch(java.net.UnknownHostException e){
             System.out.println("Init network error, exiting");
             return;
         }finally{

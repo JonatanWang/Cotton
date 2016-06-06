@@ -122,16 +122,18 @@ public class Configurator {
     public void loadConfigFromFile(String filename) throws IOException{
         if(prop == null)
             prop = new Properties();
-        InputStream in = getClass().getClassLoader().getResourceAsStream(filename);
+	java.io.File f = new java.io.File(filename);
+        InputStream in = new java.io.FileInputStream(f);//cotton.Cotton.class.getResourceAsStream(filename);
         if(in == null)
-            System.out.println("File not found in configurator");
-        
-        prop.load(in);
+            throw new IOException("Configuration file not found: "+filename);
+        else
+            prop.load(in);
     }
     
     public void loadDefaults(){
         if(prop == null)
             prop = new Properties();
+	prop.setProperty("networkAddress","localhost:5888");
         prop.setProperty("backend", "mongodb");
         prop.setProperty("dbname", "cotton");
         prop.setProperty("dbAddress", "localhost");
