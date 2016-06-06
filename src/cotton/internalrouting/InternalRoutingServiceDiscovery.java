@@ -35,6 +35,7 @@ package cotton.internalrouting;
 import cotton.network.DestinationMetaData;
 import cotton.network.Origin;
 import cotton.network.PathType;
+import cotton.network.ServiceChain;
 import cotton.servicediscovery.RouteSignal;
 
 
@@ -58,6 +59,14 @@ public interface InternalRoutingServiceDiscovery {
      * @return 
      */
     public boolean sendToDestination(DestinationMetaData dest,byte[] data);
+    /**
+     * Sends data to a given destination and use serviceChain. 
+     * @param dest
+     * @param serviceChain
+     * @param data
+     * @return 
+     */
+    public boolean sendToDestination(DestinationMetaData dest,ServiceChain serviceChain,byte[] data);
     /**
      * sends data to a destination and awaits response and also sets a timestamp to the service request.
      * @param dest
