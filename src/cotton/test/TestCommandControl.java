@@ -296,7 +296,7 @@ public class TestCommandControl {
 
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        Command command = new Command(StatType.DISCOVERY, null, null, 0, CommandType.CHECK_REACHABILLITY);
+        Command command = new Command(StatType.DISCOVERY, "mathpow21", null, 0, CommandType.CHECK_REACHABILLITY);
         byte[] data = null;
         try {
             data = serializeToBytes(command);
@@ -317,8 +317,9 @@ public class TestCommandControl {
         RouteSignal route = serviceDiscovery1.getDestination(new DestinationMetaData(), new Origin(), new DefaultServiceChain().into("mathpow21"));
         RouteSignal route1 = serviceDiscovery1.getDestination(new DestinationMetaData(), new Origin(), new DefaultServiceChain().into("mathpow2"));
 
-        discovery.shutdown();
+        
         ser1.shutdown();
+        discovery.shutdown();
         System.out.println("Routesignal route: " + route);
         System.out.println("Routesignal route1: " + route1);
         assertTrue(route == RouteSignal.NOTFOUND);

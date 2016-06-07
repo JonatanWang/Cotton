@@ -24,6 +24,15 @@ public class NetStub {
         }
         this.tubes.putIfAbsent(addr, net);
     }
+    
+    public void removeNode(NetworkHandlerStub net) {
+        SocketAddress addr = net.getLocalAddress();
+        if(addr == null) {
+            return;
+        }
+        this.tubes.remove(addr, net);
+    }
+    
     public void forwardKeepAlive(NetworkPacket netPacket, SocketAddress addr) throws IOException {
         NetworkHandlerStub get = tubes.get(addr);
         if (get == null) {

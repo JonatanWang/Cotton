@@ -56,6 +56,7 @@ import java.io.Serializable;
 import cotton.internalrouting.ServiceRequest;
 import cotton.requestqueue.RequestQueueManager;
 import cotton.systemsupport.Command;
+import cotton.systemsupport.CommandType;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatisticsProvider;
@@ -87,6 +88,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     private final ScheduledExecutorService taskScheduler;
     private final ScheduledThreadPoolExecutor deadAddressValidator;
     private ConcurrentLinkedQueue<ReapedAddress> deadAddresses;
+    private DestinationMetaData primaryDiscovery = null; // the one we have been announced to
 
     /**
      * Fills in a list of all pre set globalServiceDiscovery addresses
@@ -104,16 +106,17 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
     }
 
     private void initGlobalDiscoveryPool(Configurator conf) {
+        if(conf == null) {
+            return;
+        }
         for (SocketAddress s : conf.getDiscoverySocketAddresses()) {
             System.out.println("local sockets: " + s);
         }
 
-        if (conf != null) {
-            SocketAddress[] addrArr = conf.getDiscoverySocketAddresses();
-            for (int i = 0; i < addrArr.length; i++) {
-                DestinationMetaData gAddr = new DestinationMetaData(addrArr[i], PathType.DISCOVERY);
-                discoveryCache.addAddress(gAddr);
-            }
+        SocketAddress[] addrArr = conf.getDiscoverySocketAddresses();
+        for (int i = 0; i < addrArr.length; i++) {
+            DestinationMetaData gAddr = new DestinationMetaData(addrArr[i], PathType.DISCOVERY);
+            discoveryCache.addAddress(gAddr);
         }
     }
 
@@ -169,7 +172,11 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         }
         if (dest.getPathType() == PathType.DISCOVERY) {
             discoveryCache.remove(dest);
-            return discoveryCache.getAddress();
+            DestinationMetaData next = discoveryCache.getAddress();
+            if(next != null && dest.equals(this.primaryDiscovery)) {
+                this.announce();
+            }
+            return next;
         }
         return null;
     }
@@ -278,7 +285,7 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        System.out.println("LocalServiceDiscovery:searchForService: failed");
+        System.out.println("LocalServiceDiscovery:searchForService:"+serviceName+" failed");
         return signal;
     }
 
@@ -661,7 +668,10 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             success = internalRouting.sendToDestination(dest, bytes);
             if (!success) {
                 dest = destinationUnreachable(dest, null);
-                success = internalRouting.sendToDestination(dest, bytes);
+                if(dest != null) {
+                    success = internalRouting.sendToDestination(dest, bytes);
+                }
+                
             }
             if (!success) {
                 tryAnnounceLater();
@@ -674,11 +684,11 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             //announceDelay++;
             return false;
         }
-
+        this.primaryDiscovery = dest;
         return true;
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-
+    
     private void checkPoolReachabillity(AddressPool pool, String key) {
         if (pool == null || key == null) {
             return;
@@ -753,9 +763,16 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
 
     @Override
     public void stop() {
+        try {
+            DiscoveryPacket pck = new DiscoveryPacket(DiscoveryPacketType.NODE_SHUTDOWN);
+            pck.setAddress(this.localAddress);
+            byte[] data = serializeToBytes(pck);
+            this.internalRouting.sendToDestination(this.primaryDiscovery, data);
+        } catch (IOException ex) {
+            Logger.getLogger(LocalServiceDiscovery.class.getName()).log(Level.SEVERE, null, ex);
+        }
         this.taskScheduler.shutdownNow();
-        deadAddressValidator.shutdownNow();
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        this.deadAddressValidator.shutdownNow();
     }
 
     /**
@@ -842,6 +859,10 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
             addService(sAddr, s);
         }
         printAnnounceList(serviceList);
+        if(packet.isGlobalDiscovery()) {
+            DestinationMetaData gd = new DestinationMetaData(addr,PathType.DISCOVERY);
+            this.discoveryCache.addAddress(gd);
+        }
     }
 
     private void addQueue(DestinationMetaData addr, String queue) {
@@ -956,9 +977,28 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
         destination.setPathType(addr.getPathType());
         return RouteSignal.NETWORKDESTINATION;
     }
+    
+    private String[] getAvailableServices() {
+        ArrayList<String> str = new ArrayList<>();
+        Set<Map.Entry<String, ServiceMetaData>> keys = localServiceTable.getEntrySet();
+        for (Map.Entry<String, ServiceMetaData> entry : keys) {
+            str.add(entry.getKey());
+        }
+        for (Map.Entry<String, AddressPool> entry : this.serviceCache.entrySet()) {
+            str.add(entry.getKey());
+        }
+        return str.toArray(new String[str.size()]);
+    }
 
     @Override
     public StatisticsData[] processCommand(Command command) {
+        if(command.getCommandType() == CommandType.ACTIVE_SERVICES) {
+            StatisticsData<String>[] ret = new StatisticsData[1];
+            ret[0] = new StatisticsData<String>();
+            String[] ser = getAvailableServices();
+            ret[0].setData(ser);
+            return ret;
+        }
         return null;
     }
 
@@ -978,8 +1018,12 @@ public class LocalServiceDiscovery implements ServiceDiscovery {
                 addService(qAddr, configEntry.getName());
             }
         }
-        if (packet.isGlobalServiceDiscovery()) {
-            discoveryCache.addAddress(new DestinationMetaData(addr, PathType.DISCOVERY));
+        if (packet.isGlobalServiceDiscovery() ) {
+            DestinationMetaData nyGd = new DestinationMetaData(addr, PathType.DISCOVERY);
+//            if(this.primaryDiscovery == null || this.primaryDiscovery.equals(nyGd)) {
+//                return;
+//            }
+            discoveryCache.addAddress(nyGd);
         }
     }
 

@@ -212,9 +212,13 @@ public class Cotton {
      */
     public void shutdown() {
         services.stop();
+        //System.out.println("shutdown services");
         discovery.stop();
+        //System.out.println("shutdown discovery");
         network.stop();
+        //System.out.println("shutdown network");
         internalRouting.stop();
+        //System.out.println("shutdown internalRouting");
     }
 
     /**

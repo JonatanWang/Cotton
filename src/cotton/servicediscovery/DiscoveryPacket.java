@@ -32,6 +32,7 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.servicediscovery;
 
 import java.io.Serializable;
+import java.net.SocketAddress;
 
 /**
  * The <code>DiscoveryPacket</code> acts as a wrapper for the
@@ -53,10 +54,11 @@ public class DiscoveryPacket implements Serializable {
     private TopologyPacket topology;
     private ConfigurationPacket configPacket;
     private CircuitBreakerPacket circuitBreakerPacket;
+    private SocketAddress address;
     
     
     public enum DiscoveryPacketType {
-        DISCOVERYREQUEST, DISCOVERYRESPONSE, ANNOUNCE, REQUESTQUEUE, TOPOLOGY, CONFIG, CIRCUITBREAKER,CLOUD_SNAPSHOT
+        DISCOVERYREQUEST, DISCOVERYRESPONSE, ANNOUNCE, REQUESTQUEUE, TOPOLOGY, CONFIG, CIRCUITBREAKER,CLOUD_SNAPSHOT,NODE_SHUTDOWN
     }
 
     /**
@@ -179,6 +181,22 @@ public class DiscoveryPacket implements Serializable {
 
     public void setCircuitBreakerPacket(CircuitBreakerPacket circuitBreakerPacket) {
         this.circuitBreakerPacket = circuitBreakerPacket;
+    }
+
+    /**
+     * Address that maybe used with this PacketType 
+     * @return address or null
+     */
+    public SocketAddress getAddress() {
+        return address;
+    }
+
+    /**
+     * Set a address
+     * @param address that should be set
+     */
+    public void setAddress(SocketAddress address) {
+        this.address = address;
     }
 
     @Override

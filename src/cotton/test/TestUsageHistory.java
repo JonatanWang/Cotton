@@ -83,16 +83,23 @@ public class TestUsageHistory {
         //AtomicInteger counter = new AtomicInteger(0);
         // MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
         //discovery.getServiceRegistation().registerService("result", resFactory, 10);
-        RequestQueueManager qm = new RequestQueueManager();
-        qm.startQueue("result");
-        discovery.setRequestQueueManager(qm);
+//        RequestQueueManager qm = new RequestQueueManager();
+//        qm.startQueue("result");
+//        discovery.setRequestQueueManager(qm);
 
         discovery.start();
-
+        
         GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = new InetSocketAddress(Inet4Address.getLocalHost(), port);
         gDns.setGlobalDiscoveryAddress(arr);
+        Cotton queue1 = new Cotton(true, gDns);
+        RequestQueueManager requestQueueManager = new RequestQueueManager();
+        requestQueueManager.startQueue("result");
+        queue1.setRequestQueueManager(requestQueueManager);
+        //queue.getServiceRegistation().registerService("result", (MathResult.Factory) MathResult.getFactory(new AtomicInteger(0)), 10);
+
+        queue1.start();
         try {
             Thread.sleep(500);
         } catch (InterruptedException ex) {
@@ -100,7 +107,7 @@ public class TestUsageHistory {
         }
 
         Cotton queue = new Cotton(true, gDns);
-        RequestQueueManager requestQueueManager = new RequestQueueManager();
+        requestQueueManager = new RequestQueueManager();
         requestQueueManager.startQueue("mathpow21");
         queue.setRequestQueueManager(requestQueueManager);
         //queue.getServiceRegistation().registerService("result", (MathResult.Factory) MathResult.getFactory(new AtomicInteger(0)), 10);
@@ -177,6 +184,7 @@ public class TestUsageHistory {
         }
 
         queue.shutdown();
+        queue1.shutdown();
         cCotton.shutdown();
         discovery.shutdown();
         assertTrue(true);

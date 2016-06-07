@@ -174,7 +174,13 @@ public class Console {
     }
     
     public String[] getLocalServices() {
-        return new String[0];
+        ServiceDiscovery sd = (ServiceDiscovery) getProvider(StatType.DISCOVERY);
+        Command cmd = new Command(StatType.DISCOVERY,"none",new String[]{"none"},0,CommandType.ACTIVE_SERVICES);
+        StatisticsData<String>[] ret = sd.processCommand(cmd);
+        if(ret == null || ret.length < 1){
+            return new String[0];
+        }
+        return ret[0].getData();
     }
     
     /**

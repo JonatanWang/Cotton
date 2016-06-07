@@ -55,14 +55,19 @@ import cotton.internalrouting.ServiceRequest;
 import java.nio.ByteBuffer;
 import cotton.internalrouting.DefaultInternalRouting;
 import cotton.internalrouting.InternalRoutingClient;
+import cotton.network.DestinationMetaData;
+import cotton.network.PathType;
 import cotton.requestqueue.RequestQueueManager;
+import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.services.ServiceHandler;
 import cotton.services.ServiceMetaData;
+import cotton.systemsupport.StatType;
 import cotton.test.services.GlobalDiscoveryAddress;
 import cotton.test.services.MathResult;
 import cotton.test.stubs.NetStub;
 import java.io.IOException;
 import java.net.Inet4Address;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -392,6 +397,119 @@ public class TestServiceDiscovery {
         System.out.println(sb);
         assertTrue(n1 && n2 && n3 && n4);
     }    
+    
+    /**
+     * DiscoveryReannounceTest checks if services reannounce 
+     * when primary discovery goes down
+     */
+    @Test
+    public void DiscoveryReannounceTest() throws UnknownHostException, IOException{
+        System.out.println("Now running: DiscoverySnapshotTest");
+        NetStub tubes = new NetStub();
+        int port = new Random().nextInt(25000) + 4000;
+        Cotton startDisc = createFakeCotton(tubes, true, port);
+        startDisc.start();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress(port);
+         try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        Cotton d1 = createFakeCotton(tubes,true, gDns);
+        d1.start();
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        String name1 = "mathpow21";
+        String name2 = "mathpow22";
+        String name3 = "mathpow23";
+        String rname = "result";
+        Cotton reqQueue = createFakeCotton(tubes,false, gDns);
+        RequestQueueManager requestQueueManager = new RequestQueueManager();
+        requestQueueManager.startQueue(name1);
+        requestQueueManager.startQueue(name2);
+        requestQueueManager.startQueue(name3);
+        requestQueueManager.startQueue(rname);
+        reqQueue.setRequestQueueManager(requestQueueManager);
+        reqQueue.start();
+        Cotton ser1 = createFakeCotton(tubes, false, gDns);
+
+        AtomicInteger counter = new AtomicInteger(0);
+        MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
+
+        ser1.getServiceRegistation().registerService(name1, MathPowV2.getFactory(), 50);
+        ser1.getServiceRegistation().registerService(name2, MathPowV2.getFactory(), 50);
+        ser1.getServiceRegistation().registerService(name3, MathPowV2.getFactory(), 50);
+        ser1.getServiceRegistation().registerService(rname, resFactory, 50);
+        ser1.start();
+        LocalServiceDiscovery ld = (LocalServiceDiscovery) ser1.getConsole().getProvider(StatType.DISCOVERY);
+         try {
+            Thread.sleep(400);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("AvailableServices:");
+        String[] availableServices = d1.getConsole().getLocalServices();
+        for (String s : availableServices) {
+            sb.append(" ").append(s).append(",");
+        }
+        System.out.println(sb);
+        DestinationMetaData destinationForType = ld.getDestinationForType(PathType.DISCOVERY, null);
+        System.out.println("Tt: " + destinationForType);
+        destinationForType = ld.getDestinationForType(PathType.DISCOVERY, null);
+        System.out.println("Tt: " + destinationForType);
+        tubes.removeNode((NetworkHandlerStub) startDisc.getNetwork());
+        
+        startDisc.shutdown();
+         try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        SocketAddress[] gda = gDns.getGlobalDiscoveryAddress();
+        DestinationMetaData dmd = new DestinationMetaData(gda[0],PathType.DISCOVERY);
+        for(int i = 0; i < 5; i++){
+            ld.destinationUnreachable(dmd, null);
+        }
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        availableServices = d1.getConsole().getLocalServices();
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        d1.shutdown();
+     
+        reqQueue.shutdown();
+        ser1.shutdown();
+        
+        if(availableServices.length < 1) {
+            assertTrue(false);
+        }
+        sb = new StringBuilder();
+        sb.append("AvailableServices:");
+        boolean n1 = false;
+        boolean n2 = false;
+        boolean n3 = false;
+        boolean n4 = false;
+        for (String s : availableServices) {
+            sb.append(" " + s + ",");
+            n1 = n1 || s.equals(name1);
+            n2 = n2 || s.equals(name2);
+            n3 = n3 || s.equals(name3);
+            n4 = n4 || s.equals(rname);
+        }
+        System.out.println(sb);
+        assertTrue(n1 && n2 && n3 && n4);
+    }
     
     private Cotton createFakeCotton(NetStub tubes, boolean isGlobal, int port) throws UnknownHostException {
         InetSocketAddress inetSocketAddress = new InetSocketAddress(Inet4Address.getLocalHost(), port);
