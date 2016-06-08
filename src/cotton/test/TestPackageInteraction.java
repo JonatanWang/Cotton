@@ -31,7 +31,7 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.test;
 
-import cotton.network.DummyServiceChain;
+import cotton.network.DefaultServiceChain;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import cotton.Cotton;
@@ -131,7 +131,7 @@ public class TestPackageInteraction {
         cCotton.start();
 
         InternalRoutingClient client = cCotton.getClient();
-        ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2");
+        ServiceChain chain = new DefaultServiceChain().into("mathpow2").into("mathpow21").into("mathpow2");
 
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();

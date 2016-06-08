@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.animation.AnimationTimer;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -187,8 +188,8 @@ public class MainView {
             @Override
             public void handle(ActionEvent event) {
                 updateAll();
-                graphRequestQueue.displayData();
-                graphService.displayData();
+                //graphRequestQueue.displayData();
+                //graphService.displayData();
             }
         });
 
@@ -201,8 +202,9 @@ public class MainView {
             public void handle(ActionEvent event) {
                 graphRequestQueue.setDataName(graphField.getText());
                 graphService.setDataName(graphField.getText());
-                graphRequestQueue.updateGraph();
-                graphService.updateGraph();
+                
+                //graphRequestQueue.startAutoUpdate();
+                //graphService.startAutoUpdate();
                 
             }
         });
@@ -259,7 +261,7 @@ public class MainView {
     }
 
     public void updateGraph(String name, DataPusherGraph graph, DestinationMetaData dest, StatType type) {
-        this.controller.requestUsageData(name, graph, dest, type);
+        this.controller.requestUsageData(name, graph, dest,null);
     }
 
     public void parseData(ObservableList<NodeInfo> oblist, ArrayList<StatisticsData<DestinationMetaData>> res) {
@@ -350,7 +352,9 @@ public class MainView {
         VBox tableBox2 = tableBox("Request Queue", reqQBtn, this.requestQueueTableObs);
         VBox tableBox3 = tableBox("Services", servBtn, this.serviceTableObs);
         graphRequestQueue = new GraphView("Request Queue","mathPow2",this.controller);
-        graphService = new GraphView("Service Queue","mathPow2",this.controller);
+        graphService = new GraphView("Service","mathPow2",this.controller);
+        this.graphRequestQueue.startAutoUpdate();
+        this.graphService.startAutoUpdate();
 //        TimeInterval[] gtest = generateRandomData(10);
 //        TimeInterval[] gtest1 = generateRandomData(10);
 //        graphRequestQueue.pushData("testD", gtest);
@@ -358,12 +362,20 @@ public class MainView {
 
         final HBox gqArea = new HBox();
         final HBox gsArea = new HBox();
+        final HBox qio = new HBox();
+        final HBox sio = new HBox();
+        qio.setSpacing(5);
+        sio.setSpacing(5);
         gqArea.setSpacing(5);
-        gqArea.setPadding(new Insets(10, 0, 0, 10));
-        gqArea.getChildren().addAll(tableBox2, graphRequestQueue.getGraph());
         gsArea.setSpacing(5);
+        qio.setPadding(new Insets(10, 0, 0, 10));
+        sio.setPadding(new Insets(10, 0, 0, 10));
+        gqArea.setPadding(new Insets(10, 0, 0, 10));
         gsArea.setPadding(new Insets(10, 0, 0, 10));
-        gsArea.getChildren().addAll(tableBox3, graphService.getGraph());
+        qio.getChildren().addAll(graphRequestQueue.getInGraph(),graphRequestQueue.getOutGraph());
+        sio.getChildren().addAll(graphService.getInGraph(),graphService.getOutGraph());
+        gqArea.getChildren().addAll(tableBox2, qio);
+        gsArea.getChildren().addAll(tableBox3, sio);
         final VBox monitorArea = new VBox();
         monitorArea.setSpacing(5);
         monitorArea.setPadding(new Insets(10, 0, 0, 10));
@@ -377,7 +389,21 @@ public class MainView {
         mainPane.getChildren().addAll(mainArea);
 
         this.scene = new Scene(mainPane, 800, 500);
+        this.graphRequestQueue.startAutoUpdate();
+        this.graphService.startAutoUpdate();
+        final AnimationTimer t = new AnimationTimer(){
+            @Override
+            public void handle(long now) {
+                System.out.println("Test: now " + now);
+            }
+        };
+        //t.start();
 
+    }
+    
+    public void shutdown() {
+        this.graphRequestQueue.stopAutoUpdate();
+        this.graphService.stopAutoUpdate();
     }
 
     public void showScene(Stage rootStage) {

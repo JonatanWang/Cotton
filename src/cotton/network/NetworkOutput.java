@@ -34,14 +34,18 @@ package cotton.network;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Handles all of the network output
@@ -72,30 +76,36 @@ public class NetworkOutput implements Runnable {
 
     @Override
     public void run() {
+        SocketChannel sendChannel = null;
+        SocketAddress dest = null;
         while(run.get()){
             try {
                 OutputPacket p = queue.take();
                 NetworkPacket packet = p.getPacket();
-                SocketAddress dest = p.getDestination();
-
+                dest = p.getDestination();
+                size.clear();
                 //TransportPacket.Packet tp = buildTransportPacket(packet, p.isKeepAlive());
                 //ByteBuffer output = writeOutput(tp);
                 ByteBuffer output = packet.getSerializedData();
                 if(output == null)
                     output = writeOutput(buildTransportPacket(packet, p.isKeepAlive()));
 
-                SocketChannel sendChannel = null;
+                sendChannel = null;
 
                 //System.out.println(packet.getType()+" packet of "+output.capacity()+" bytes outgoing from: "+getLocalAddress()+" normal send.");
                 size.putInt(0, output.capacity());
 
                 if ((sendChannel = openChannels.get((InetSocketAddress) dest)) != null) {
-                    sendChannel.write(size);
-                    size.clear();
-                    size.putInt(0, packet.getType().ordinal());
-                    sendChannel.write(size);
-                    size.clear();
-                    sendChannel.write(output);
+                    try {
+                        sendChannel.write(size);
+                        size.clear();
+                        size.putInt(0, packet.getType().ordinal());
+                        sendChannel.write(size);
+                        size.clear();
+                        sendChannel.write(output);
+                    } catch (ClosedChannelException ex) {
+                        openChannels.remove((InetSocketAddress) dest, sendChannel);
+                    }
                 } else {
                     sendChannel = SocketChannel.open();
                     sendChannel.connect(dest);
@@ -112,8 +122,30 @@ public class NetworkOutput implements Runnable {
                     handler.registerChannel(sendChannel);
                     openChannels.putIfAbsent((InetSocketAddress) dest, sendChannel);
                 }
-            }catch(IOException e){
-                e.printStackTrace();
+            }catch(ConnectException ex) {
+                if(sendChannel != null) {
+                    if(dest != null) {
+                        openChannels.remove((InetSocketAddress)dest, sendChannel);
+                    }
+                    try {
+                        sendChannel.close();
+                    } catch (IOException ex2) {
+                        ex2.printStackTrace();
+                        Logger.getLogger(NetworkOutput.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            } catch(IOException e){
+                //e.printStackTrace();
+                if(sendChannel != null) {
+                    if(dest != null) {
+                        openChannels.remove((InetSocketAddress)dest, sendChannel);
+                    }
+                    try {
+                        sendChannel.close();
+                    } catch (IOException ex) {
+                        Logger.getLogger(NetworkOutput.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
             }catch(InterruptedException e){
                 e.printStackTrace();
             }

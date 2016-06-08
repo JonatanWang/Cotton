@@ -31,7 +31,7 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 
 
-package cotton.test;
+package cotton.test.stubs;
 
 import cotton.network.NetworkHandler;
 import cotton.internalrouting.InternalRoutingNetwork;
@@ -47,12 +47,16 @@ import java.io.IOException;
 public class NetworkHandlerStub implements NetworkHandler{
     private InternalRoutingNetwork internal;
     private SocketAddress addr;
+    private NetStub tubes = null;
     
     public NetworkHandlerStub(SocketAddress addr){
         this.addr = addr;
         this.internal = null;
     }
-    
+    public void setTubes(NetStub tubes) {
+        this.tubes = tubes;
+        tubes.addNode(this);
+    }        
     /**
      * Sends data wrapped in a <code>NetworkPacket</code> over the network.
      *
@@ -61,9 +65,13 @@ public class NetworkHandlerStub implements NetworkHandler{
      */
     @Override
     public void send(NetworkPacket netPacket, SocketAddress addr) throws IOException{
-        internal.pushNetworkPacket(netPacket);
+         if (tubes == null) {
+            internal.pushNetworkPacket(netPacket);
+         } else {
+             this.tubes.forwardSend(netPacket, addr);
+         }
     }
-
+    
     /**
      * Sends a <code>NetworkPacket</code> and informs that the connection should stay alive.
      *
@@ -72,10 +80,30 @@ public class NetworkHandlerStub implements NetworkHandler{
      */
     @Override
     public void sendKeepAlive(NetworkPacket netPacket,SocketAddress addr) throws IOException{
-        SocketLatch latch = new SocketLatch();
-        internal.pushKeepAlivePacket(netPacket,latch);
+        if (tubes == null) {
+            SocketLatch latch = new SocketLatch();
+            internal.pushKeepAlivePacket(netPacket, latch);
+        }else {
+            this.tubes.forwardKeepAlive(netPacket, addr);
+        }
+    }
+    
+    /**
+     * Simulate incoming data
+     * @param netPacket 
+     */
+    public void recv(NetworkPacket netPacket) {
+        internal.pushNetworkPacket(netPacket);
     }
 
+    /**
+     * Simulate incoming data
+     * @param netPacket 
+     */
+    public void recvKeepAlive(NetworkPacket netPacket) {
+        SocketLatch latch = new SocketLatch();
+        internal.pushKeepAlivePacket(netPacket, latch);
+    }
     /**
      * Returns the local <code>SocketAddress</code> of the running machine.
      *

@@ -41,6 +41,8 @@ public class ExperimentalLogger extends Application {
             @Override
             public void handle(WindowEvent event) {
                 controll.disconnectCloud();
+                view.shutdown();
+                cloudStat.shutDown();
             }
         });
         controll.showScene(primaryStage);

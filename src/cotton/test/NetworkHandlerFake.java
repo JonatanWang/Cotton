@@ -295,7 +295,7 @@ public class NetworkHandlerFake implements NetworkHandler {
     }
 
     private ServiceChain parsePath(TransportPacket.Packet input) {
-        DummyServiceChain path = new DummyServiceChain();
+        DefaultServiceChain path = new DefaultServiceChain();
 
         if (input == null) {
             return path;

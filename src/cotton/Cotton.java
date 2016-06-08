@@ -52,6 +52,7 @@ import cotton.storagecomponents.MongoDBConnector;
 import cotton.systemsupport.Console;
 import cotton.configuration.Configurator;
 import cotton.configuration.ServiceConfigurator;
+import java.io.IOException;
 import java.net.UnknownHostException;
 
 /**
@@ -80,8 +81,8 @@ public class Cotton {
 
         if(config.hasDatabase())
             dataBaseWrapperStart(config);
-        //initNetwork(new SocketSelectionNetworkHandler(config.getNetworkConfigurator()));
-        initNetwork(new DefaultNetworkHandler(config.getNetworkConfigurator()));
+        initNetwork(new SocketSelectionNetworkHandler(config.getNetworkConfigurator()));
+        //initNetwork(new DefaultNetworkHandler(config.getNetworkConfigurator()));
         initDiscovery(config);
         initLookup(config.getServiceConfigurator());
         initRouting();
@@ -126,8 +127,8 @@ public class Cotton {
      * @throws java.net.UnknownHostException
      */
     public Cotton(boolean globalServiceDiscovery,int localPort, GlobalDiscoveryDNS globalDiscoveryDNS) throws java.net.UnknownHostException {
-        initNetwork(new DefaultNetworkHandler(localPort));
-        //initNetwork(new SocketSelectionNetworkHandler(localPort));
+        //initNetwork(new DefaultNetworkHandler(localPort));
+        initNetwork(new SocketSelectionNetworkHandler(localPort));
         initDiscovery(globalServiceDiscovery,globalDiscoveryDNS);
         initLookup();
         initRouting();
@@ -141,8 +142,8 @@ public class Cotton {
      * @throws java.net.UnknownHostException
      */
     public Cotton (boolean globalServiceDiscovery, int portNumber) throws java.net.UnknownHostException {
-        //initNetwork(new SocketSelectionNetworkHandler(portNumber));
-        initNetwork(new DefaultNetworkHandler(portNumber));
+        initNetwork(new SocketSelectionNetworkHandler(portNumber));
+        //initNetwork(new DefaultNetworkHandler(portNumber));
         initDiscovery(globalServiceDiscovery,null);
         initLookup();
         initRouting();
@@ -182,10 +183,14 @@ public class Cotton {
      *
      */
     public void start(){
-        new Thread(network).start();
+        Thread thnh = new Thread(network);
+        thnh.setDaemon(true);
+        thnh.start();
         internalRouting.setCommandControl(console);
         internalRouting.start();
-        new Thread(services).start();
+        Thread th = new Thread(services);
+        th.setDaemon(true);
+        th.start();
         if(!discovery.announce()){
             System.out.println("Announce failed");
         }
@@ -207,9 +212,13 @@ public class Cotton {
      */
     public void shutdown() {
         services.stop();
+        //System.out.println("shutdown services");
         discovery.stop();
+        //System.out.println("shutdown discovery");
         network.stop();
+        //System.out.println("shutdown network");
         internalRouting.stop();
+        //System.out.println("shutdown internalRouting");
     }
 
     /**
@@ -279,8 +288,8 @@ public class Cotton {
     private void initNetwork(NetworkHandler net) throws UnknownHostException {
         if(net == null) {
             Random rnd = new Random();
-            net = new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
-            //net = new SocketSelectionNetworkHandler(rnd.nextInt(20000)+3000);
+            //net = new DefaultNetworkHandler(rnd.nextInt(20000) + 3000);
+            net = new SocketSelectionNetworkHandler(rnd.nextInt(20000)+3000);
         }
         this.network = net;
     }
@@ -327,13 +336,40 @@ public class Cotton {
     private void initServiceHandler() {
         this.services = new ServiceHandler(lookup, internalRouting);
     }
+    
+    public String[] getAvailableServices() throws IOException {
+        if(this.console == null){
+            return null;
+        }
+        return this.console.getAvailableServices();
+    }
 
     public static void main(String[] args) {
+	Configurator config;
+	try{
+	    config = new Configurator("config.cfg");
+	}catch(Exception e){
+	    System.out.println("Could not find or load config: "+e);
+	    config = new Configurator();
+	    config.loadDefaults();
+	}
         Cotton c = null;
         try{
-            c = new Cotton(true,3333);
+            c = new Cotton(config);
             c.start();
-        }catch(java.net.UnknownHostException e){// TODO: Rethink this
+        }catch(ClassNotFoundException e){
+	    System.out.println("Error loading external services, exiting");
+	    return;
+	}catch(InstantiationException e){
+	    System.out.println("Error loading external services, exiting");
+	    return;
+	}catch(IllegalAccessException e){
+	    System.out.println("Error loading external services, exiting");
+	    return;
+	}catch(java.net.MalformedURLException e){
+	    System.out.println("Init network error, exiting");
+	    return;
+	}catch(java.net.UnknownHostException e){
             System.out.println("Init network error, exiting");
             return;
         }finally{

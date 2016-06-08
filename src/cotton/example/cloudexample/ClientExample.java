@@ -34,9 +34,9 @@ package cotton.example.cloudexample;
 import cotton.Cotton;
 import cotton.internalrouting.InternalRoutingClient;
 import cotton.internalrouting.ServiceRequest;
-import cotton.network.DummyServiceChain;
+import cotton.network.DefaultServiceChain;
 import cotton.network.ServiceChain;
-import cotton.test.services.GlobalDnsStub;
+import cotton.test.services.GlobalDiscoveryAddress;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -49,18 +49,18 @@ import java.nio.ByteBuffer;
 public class ClientExample {
 
     public static void main(String[] args) throws UnknownHostException {
-        GlobalDnsStub gDns = getDnsStub(null, 5888);
+        GlobalDiscoveryAddress gDns = getDnsStub("127.0.0.1", 5888);
         //GlobalDnsStub gDns = getDnsStub(null, 9546);
         Cotton cotton = new Cotton(false, gDns);
         cotton.start();
 
         InternalRoutingClient client = cotton.getClient();
-        ServiceChain chain = new DummyServiceChain().into("database").into("database").into("database").into("database").into("database");
+        ServiceChain chain = new DefaultServiceChain().into("database").into("database").into("database").into("database").into("database");
 
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
         //DummyServiceChain.ServiceChainBuilder builder = new DummyServiceChain.ServiceChainBuilder().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
-        DummyServiceChain.ServiceChainBuilder builder = new DummyServiceChain.ServiceChainBuilder().into("mathpow");
+        DefaultServiceChain.ServiceChainBuilder builder = new DefaultServiceChain.ServiceChainBuilder().into("mathpow");
 //ServiceRequest req = client.sendWithResponse(data, chain);
         while(true) {
             for (int i = 0; i < 1000; i++) {
@@ -78,8 +78,8 @@ public class ClientExample {
 //        cotton.shutdown();
     }
 
-    private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
-        GlobalDnsStub gDns = new GlobalDnsStub();
+    private static GlobalDiscoveryAddress getDnsStub(String dest, int port) throws UnknownHostException {
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress gdAddr = null;
         if (dest == null) {
             gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);

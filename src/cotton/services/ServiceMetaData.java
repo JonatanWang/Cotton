@@ -50,9 +50,9 @@ public class ServiceMetaData {
     private ServiceFactory serviceFactory;
     private int maxCapacity;
     private AtomicInteger currentThreadCount;
-    private AtomicInteger inputCounter;
-    private AtomicInteger outputCounter;
-    private UsageHistory usageHistory;
+//    private AtomicInteger inputCounter;
+//    private AtomicInteger outputCounter;
+//    private UsageHistory usageHistory;
     private boolean sample = false;
     private long samplingRate = 0;
     private UUID serviceId = UUID.randomUUID();
@@ -68,9 +68,9 @@ public class ServiceMetaData {
             this.maxCapacity = maxCapacity;
             this.serviceFactory = serviceFactory;
             this.currentThreadCount = new AtomicInteger(0);
-            this.inputCounter = new AtomicInteger(0);
-            this.outputCounter = new AtomicInteger(0);
-            this.usageHistory = new UsageHistory();
+//            this.inputCounter = new AtomicInteger(0);
+//            this.outputCounter = new AtomicInteger(0);
+//            this.usageHistory = new UsageHistory();
     }
 
     /**
@@ -129,49 +129,49 @@ public class ServiceMetaData {
         this.maxCapacity = maxCapacity;
     }
 
-    public void incrementInputCounter() {
-        inputCounter.incrementAndGet();
-    }
-    
-    public void incrementOutputCounter() {
-        outputCounter.incrementAndGet();
-    }
-    
-    public int getInputCounter() {
-        return inputCounter.get();
-    }
-
-    public int setInputCounter(int inputCounter) {
-        return this.inputCounter.getAndSet(inputCounter);
-    }
-
-    public int getOutputCounter() {
-        return outputCounter.get();
-    }
-
-    public int setOutputCounter(int outputCounter) {
-        return this.outputCounter.getAndSet(outputCounter);
-    }
-
-    public long getSamplingRate() {
-        return samplingRate;
-    }
-
-    public void setSamplingRate(long samplingRate) {
-        this.samplingRate = samplingRate;
-    }
-    
-    public boolean isSampling() {
-        return sample;
-    }
-    
-    public void setSampling(boolean flag) {
-        this.sample = flag;
-    }
-
-    public UsageHistory getUsageHistory() {
-        return usageHistory;
-    }
+//    public void incrementInputCounter() {
+//        inputCounter.incrementAndGet();
+//    }
+//    
+//    public void incrementOutputCounter() {
+//        outputCounter.incrementAndGet();
+//    }
+//    
+//    public int getInputCounter() {
+//        return inputCounter.get();
+//    }
+//
+//    public int setInputCounter(int inputCounter) {
+//        return this.inputCounter.getAndSet(inputCounter);
+//    }
+//
+//    public int getOutputCounter() {
+//        return outputCounter.get();
+//    }
+//
+//    public int setOutputCounter(int outputCounter) {
+//        return this.outputCounter.getAndSet(outputCounter);
+//    }
+//
+//    public long getSamplingRate() {
+//        return samplingRate;
+//    }
+//
+//    public void setSamplingRate(long samplingRate) {
+//        this.samplingRate = samplingRate;
+//    }
+//    
+//    public boolean isSampling() {
+//        return sample;
+//    }
+//    
+//    public void setSampling(boolean flag) {
+//        this.sample = flag;
+//    }
+//
+//    public UsageHistory getUsageHistory() {
+//        return usageHistory;
+//    }
 
     public UUID getServiceId() {
         return serviceId;
@@ -183,9 +183,9 @@ public class ServiceMetaData {
                 "serviceFactory=" + serviceFactory +
                 ", maxCapacity=" + maxCapacity +
                 ", currentThreadCount=" + currentThreadCount +
-                ", inputCounter=" + inputCounter +
-                ", outputCounter=" + outputCounter +
-                ", usageHistory=" + usageHistory +
+//                ", inputCounter=" + inputCounter +
+//                ", outputCounter=" + outputCounter +
+//                ", usageHistory=" + usageHistory +
                 ", sample=" + sample +
                 ", samplingRate=" + samplingRate +
                 ", serviceId=" + serviceId +

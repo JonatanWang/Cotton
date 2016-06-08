@@ -31,10 +31,11 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package cotton.test;
 
+import cotton.test.stubs.NetworkHandlerStub;
 import cotton.Cotton;
 import cotton.internalrouting.InternalRoutingClient;
 import cotton.internalrouting.ServiceRequest;
-import cotton.network.DummyServiceChain;
+import cotton.network.DefaultServiceChain;
 import cotton.network.NetworkPacket;
 import cotton.network.Origin;
 import cotton.network.PathType;
@@ -45,7 +46,7 @@ import cotton.systemsupport.Console;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.StatisticsProvider;
-import cotton.test.services.GlobalDnsStub;
+import cotton.test.services.GlobalDiscoveryAddress;
 import cotton.test.services.MathPowV2;
 import cotton.test.services.MathResult;
 import java.io.ByteArrayOutputStream;
@@ -74,8 +75,10 @@ import cotton.servicediscovery.GlobalServiceDiscovery;
 import cotton.servicediscovery.RouteSignal;
 import cotton.servicediscovery.ServiceDiscovery;
 import cotton.systemsupport.CommandType;
+import static cotton.systemsupport.StatisticsRecorder.getDiscoveryAddress;
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -109,7 +112,7 @@ public class TestCommandControl {
     public void TestCommandServiceHandler() throws UnknownHostException {
         System.out.println("Now running: TestCommandServiceHandler");
         Cotton discovery = new Cotton(true, 11243);
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
 
         InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 11243);
         InetSocketAddress[] arr = new InetSocketAddress[1];
@@ -146,7 +149,7 @@ public class TestCommandControl {
         cCotton.start();
 
         InternalRoutingClient client = cCotton.getClient();
-        ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow2").into("mathpow2").into("mathpow2");
+        ServiceChain chain = new DefaultServiceChain().into("mathpow2").into("mathpow2").into("mathpow2").into("mathpow2");
 
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
@@ -169,7 +172,7 @@ public class TestCommandControl {
         System.out.println(Arrays.toString(serviceHandlerStat.getStatisticsForSubSystem(null)));
 
         for (int i = 0; i < 1000; i++) {
-            chain = new DummyServiceChain().into("mathpow2").into("mathpow2").into("mathpow2").into("mathpow2");
+            chain = new DefaultServiceChain().into("mathpow2").into("mathpow2").into("mathpow2").into("mathpow2");
             client.sendToService(data, chain);
         }
         ser1.start();
@@ -185,7 +188,7 @@ public class TestCommandControl {
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        chain = new DummyServiceChain().into("mathpow2").into("mathpow2").into("mathpow2").into("mathpow2");
+        chain = new DefaultServiceChain().into("mathpow2").into("mathpow2").into("mathpow2").into("mathpow2");
         ServiceRequest req = client.sendWithResponse(data, chain);
         if (req != null && req.getData() != null) {
             byte[] data2 = req.getData();
@@ -226,7 +229,7 @@ public class TestCommandControl {
     @Test
     public void TestServiceRequestTimeout() {
         System.out.println("Now running: TestServiceRequestTimeout");
-        GlobalDnsStub stub = new GlobalDnsStub();
+        GlobalDiscoveryAddress stub = new GlobalDiscoveryAddress();
         stub.setGlobalDiscoveryAddress(new InetSocketAddress[0]);
         DefaultInternalRouting internalRouting = new DefaultInternalRouting(new NetworkHandlerStub(new InetSocketAddress("127.0.0.1", 16392)), new LocalServiceDiscovery(stub));
         DefaultServiceRequest req = (DefaultServiceRequest) internalRouting.newServiceRequest(new Origin(), 200);
@@ -255,7 +258,7 @@ public class TestCommandControl {
     public void TestNodesServiceReachabillity() throws UnknownHostException {
         System.out.println("Now running: TestNodesServiceReachabillity");
         Cotton discovery = new Cotton(true, 14490);
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
 
         InetSocketAddress gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), 14490);
         InetSocketAddress[] arr = new InetSocketAddress[1];
@@ -293,7 +296,7 @@ public class TestCommandControl {
 
             //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        Command command = new Command(StatType.DISCOVERY, null, null, 0, CommandType.CHECK_REACHABILLITY);
+        Command command = new Command(StatType.DISCOVERY, "mathpow21", null, 0, CommandType.CHECK_REACHABILLITY);
         byte[] data = null;
         try {
             data = serializeToBytes(command);
@@ -311,11 +314,12 @@ public class TestCommandControl {
         }
         Console console = ser1.getConsole();
         ServiceDiscovery serviceDiscovery1 = (ServiceDiscovery) console.getProvider(StatType.DISCOVERY);
-        RouteSignal route = serviceDiscovery1.getDestination(new DestinationMetaData(), new Origin(), new DummyServiceChain().into("mathpow21"));
-        RouteSignal route1 = serviceDiscovery1.getDestination(new DestinationMetaData(), new Origin(), new DummyServiceChain().into("mathpow2"));
+        RouteSignal route = serviceDiscovery1.getDestination(new DestinationMetaData(), new Origin(), new DefaultServiceChain().into("mathpow21"));
+        RouteSignal route1 = serviceDiscovery1.getDestination(new DestinationMetaData(), new Origin(), new DefaultServiceChain().into("mathpow2"));
 
-        discovery.shutdown();
+        
         ser1.shutdown();
+        discovery.shutdown();
         System.out.println("Routesignal route: " + route);
         System.out.println("Routesignal route1: " + route1);
         assertTrue(route == RouteSignal.NOTFOUND);
@@ -342,7 +346,7 @@ public class TestCommandControl {
     public void TestQuerySubSystem() throws UnknownHostException {
         System.out.println("Now running: TestQuerySubSystem");
         Cotton discovery = new Cotton(true, 19876);
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress discoveryAddress = new InetSocketAddress(Inet4Address.getLocalHost(), 19876);
         InetSocketAddress gdAddr = discoveryAddress;
         InetSocketAddress[] arr = new InetSocketAddress[1];
@@ -404,6 +408,59 @@ public class TestCommandControl {
         assertTrue(true);
     }
 
+    @Test
+    public void TestActiveServices() throws UnknownHostException, IOException {
+        System.out.println("Now running: TestActiveServices");
+        int port = new Random().nextInt(25000) + 4000;
+        Cotton discovery = new Cotton(true, port);
+        //GlobalDiscoveryAddress gDns = getDiscoveryAddress(Inet4Address.getLocalHost().toString(), 11777);
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
+        InetSocketAddress discoveryAddress = new InetSocketAddress(Inet4Address.getLocalHost(), port);
+        InetSocketAddress gdAddr = discoveryAddress;
+        InetSocketAddress[] arr = new InetSocketAddress[1];
+        arr[0] = gdAddr;
+        gDns.setGlobalDiscoveryAddress(arr);
+        discovery.start();
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {}
+
+        Cotton ser1 = new Cotton(false, gDns);
+        Cotton ser2 = new Cotton(false, gDns);
+        String name1 = "mathpow2";
+        String name2 = "mathpow21";
+        ser1.getServiceRegistation().registerService(name1, MathPowV2.getFactory(), 10);
+        ser2.getServiceRegistation().registerService(name2, MathPowV2.getFactory(), 10);
+        ser1.start();
+        ser2.start();
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {}
+        Cotton client = new Cotton(false,gDns);
+        client.start();
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {}
+        String[] availableServices = client.getConsole().getAvailableServices();
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {}
+        for (String s : availableServices) {
+            System.out.println(s);
+            if(!(s.equals(name1) || s.equals(name2))){
+                assertTrue(false);
+            }
+        }
+        if(availableServices.length < 1) {
+                assertTrue(false);
+        }
+        ser1.shutdown();
+        ser2.shutdown();
+        discovery.shutdown();
+        client.shutdown();
+        assertTrue(true);
+    }
+    
     private StatisticsData[] packetUnpack(byte[] data) {
         StatisticsData[] statistics = null;
         if(data == null || data.length <= 0){

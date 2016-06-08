@@ -36,7 +36,7 @@ import cotton.Cotton;
 import cotton.configuration.Configurator;
 import cotton.internalrouting.InternalRoutingClient;
 import cotton.internalrouting.ServiceRequest;
-import cotton.network.DummyServiceChain;
+import cotton.network.DefaultServiceChain;
 import cotton.network.ServiceChain;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -63,7 +63,7 @@ public class DBClient {
         clientInstance.start();
         
         InternalRoutingClient clientNetwork = clientInstance.getClient();
-        ServiceChain chain = new DummyServiceChain().into("database");
+        ServiceChain chain = new DefaultServiceChain().into("database");
         ServiceRequest serviceRequest = null;
         
         byte[] data = jsonToByteArray("authoriseRequest");

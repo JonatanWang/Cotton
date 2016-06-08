@@ -29,38 +29,48 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
+package cotton.servicediscovery;
 
-
-package cotton.services;
-
-import cotton.network.NetworkPacket;
+import java.io.Serializable;
+import java.util.ArrayList;
 
 /**
- * A <code>ServiceBuffer</code> stores incoming <code>ServicePackets</code> and 
- * distributes packets.
  *
- * @author Tony Tran
- * @see ServicePacket
- **/
-public interface ServiceBuffer{
+ * @author magnus
+ */
+public class CloudSnapshot implements Serializable {
+
+    private DiscoveryProbe[] snapshot;
+    /**
+     * Used to send one address per service,
+     * @param snapshot Array of services and request queues, one each
+     */
+    public CloudSnapshot(DiscoveryProbe[] snapshot) {
+        if (snapshot == null) {
+            this.snapshot = new DiscoveryProbe[0];
+        } else {
+            this.snapshot = snapshot;
+        }
+    }
 
     /**
-     * Distributes the next packet in the <code>ServiceBuffer</code>.
-     * 
-     * @return the next <code>ServicePacket</code> in the buffer.
+     * Used to send one address per service,
+     * @param snapshot Array of services and request queues, one each
      */
-    public NetworkPacket nextPacket();
+    public CloudSnapshot(ArrayList<DiscoveryProbe> snapshot) {
+        if (snapshot == null) {
+            this.snapshot = new DiscoveryProbe[0];
+        } else {
+            this.snapshot = snapshot.toArray(new DiscoveryProbe[snapshot.size()]);
+        }
+    }
     
     /**
-     * Stores a <code>ServicePacket</code> in the buffer.
      * 
-     * @param servicePacket the <code>ServicePacket</code> to store.
-     * @return <code>true</code> if the buffer changed as a result of the <code>add</code>.
+     * @return the current snapshot of the cloud
      */
-    public boolean add(cotton.network.NetworkPacket servicePacket);
-    /**
-     * Returns the current size,
-     * @return number of items currently in buffer
-     */
-    public int size();
+    public DiscoveryProbe[] getSnapshot() {
+        return snapshot;
+    }
+
 }

@@ -34,11 +34,12 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.example.cloudexample;
 
 import cotton.Cotton;
-import cotton.test.services.GlobalDnsStub;
+import cotton.test.services.GlobalDiscoveryAddress;
 import cotton.test.services.MathPowV2;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 
 /**
  *
@@ -46,20 +47,23 @@ import java.net.UnknownHostException;
  */
 public class ServiceExample2 {
     public static void main(String[] args) throws UnknownHostException {
-       GlobalDnsStub gDns = getDnsStub(null, 9546);
+       GlobalDiscoveryAddress gDns = getDnsStub(null, 5888);
         Cotton cotton = new Cotton(false, gDns);
         cotton.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
         cotton.start();
-        try {
-            Thread.sleep(80000);
-        } catch (InterruptedException ex) {
-            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        Scanner scan = new Scanner(System.in);
+        boolean run = true;
+        while(run) {
+            try {
+                if(Integer.parseInt(scan.nextLine()) == 1)
+                    run = false;
+            } catch(Exception e) {}
         }
         cotton.shutdown();
     }
 
-  private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
-        GlobalDnsStub gDns = new GlobalDnsStub();
+  private static GlobalDiscoveryAddress getDnsStub(String dest, int port) throws UnknownHostException {
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress gdAddr = null;
         if (dest == null) {
             gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);

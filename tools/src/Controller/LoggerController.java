@@ -31,9 +31,11 @@ POSSIBILITY OF SUCH DAMAGE.
  */
 package Controller;
 
+
 import cotton.network.DestinationMetaData;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
+import cotton.systemsupport.StatisticsRecorder.SampleRange;
 import java.util.ArrayList;
 import javafx.stage.Stage;
 import model.CloudStat;
@@ -70,8 +72,8 @@ public class LoggerController {
         return this.cloudStat.getNodes(type);
     }
     
-    public void requestUsageData(String name, DataPusherGraph graph, DestinationMetaData dest,StatType type) {
-        this.cloudStat.getStatData(name, graph, dest,type);
+    public void requestUsageData(String name, DataPusherGraph graph, DestinationMetaData dest,SampleRange range) {
+        this.cloudStat.getStatData(name, graph, dest,range);
     }
     
     

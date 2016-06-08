@@ -74,7 +74,15 @@ public class BridgeServiceBuffer implements ServiceBuffer{
      * <code>add</code>.
      */
     public boolean add(cotton.network.NetworkPacket servicePacket){
-        return buffer.add(servicePacket);
+        return buffer.offer(servicePacket);
     }
 
+    /**
+     * Returns the current size,
+     *
+     * @return number of items currently in buffer
+     */
+    public int size(){
+        return this.buffer.size();
+    }
 }

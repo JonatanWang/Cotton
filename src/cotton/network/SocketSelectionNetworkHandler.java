@@ -58,6 +58,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import cotton.configuration.NetworkConfigurator;
 import cotton.internalrouting.InternalRoutingNetwork;
+import java.net.Socket;
 
 import java.nio.channels.ClosedChannelException;
 import java.util.Queue;
@@ -74,7 +75,7 @@ import java.util.logging.Logger;
  */
 public class SocketSelectionNetworkHandler implements NetworkHandler {
     private int localPort;
-    private ByteBuffer packetSize, packet;
+    private ByteBuffer packetSize, packetCache;
     private InetAddress localIP;
     private InternalRoutingNetwork internalRouting;
     private ExecutorService threadPool;
@@ -175,9 +176,10 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         SocketChannel clientChannel = null;
 
         while(running.get()){
-            if(!registrationQueue.isEmpty()){
+            SocketChannel poll = registrationQueue.poll();
+            if(poll != null){
                 try {
-                    registrationQueue.poll().register(selector, SelectionKey.OP_READ);
+                    poll.register(selector, SelectionKey.OP_READ);
                 } catch (ClosedChannelException ex) {
                     Logger.getLogger(SocketSelectionNetworkHandler.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -189,6 +191,9 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
                 Set<SelectionKey> keys = selector.selectedKeys();
 
                 for(SelectionKey key: keys) {
+                    if(key.isValid() == false){
+                        continue;
+                    }
                     if(key.isAcceptable()){
                         clientChannel = serverSocketChannel.accept();
                         if(clientChannel != null){
@@ -196,8 +201,18 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
                             clientChannel.register(selector, SelectionKey.OP_READ);
                         }
                     } else if(key.isReadable()) {
-                        clientChannel = (SocketChannel) key.channel();
-                        handleRequest(clientChannel);
+                        readKey(key);
+//                        clientChannel = (SocketChannel) key.channel();
+//                        boolean success = handleRequest(clientChannel);
+//                        if(!success) {
+//                            key.cancel();
+//                            try {
+//                                Socket tmp = clientChannel.socket();
+//                                tmp.close();
+//                            }catch (IOException ex){
+//                                
+//                            }
+//                        }
                     }
                     clientChannel = null;
                 }
@@ -206,11 +221,9 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
                 // TODO: SocketChannel timeout
                 //channelTimeout();
 
-            }catch(IOException e){
+            }catch(IOException | NullPointerException e){
                 e.printStackTrace();
                 //TODO: Exception handling
-            }catch(NullPointerException e){
-                e.printStackTrace();
             }
         }
 
@@ -225,6 +238,34 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
 
     }
 
+    private void readKey(SelectionKey key) {
+        SocketChannel clientChannel = null;
+        try {
+            clientChannel = (SocketChannel) key.channel();
+            boolean success = handleRequest(clientChannel);
+            if (!success) {
+                key.cancel();
+                try {
+                    Socket tmp = clientChannel.socket();
+                    tmp.close();
+                } catch (IOException ex) {
+                    System.out.println("readKey:Failed to close socket");
+
+                }
+            }
+        } catch (IOException ex) {
+            key.cancel();
+            try {
+                if (clientChannel != null) {
+                    clientChannel.close();
+                }
+            } catch (IOException ex1) {
+                Logger.getLogger(SocketSelectionNetworkHandler.class.getName()).log(Level.SEVERE, null, ex1);
+            }
+            System.out.println("Channel closed: " + clientChannel);
+        }
+    }
+    
     /**
      * Adds a channel for registration by the network thread.
      *
@@ -271,8 +312,8 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
     private InputStream readInput(SocketChannel sc){
         if(packetSize==null)
             packetSize = ByteBuffer.allocate(4);
-        if(packet == null)
-            packet = ByteBuffer.allocate(2000000);
+        if(packetCache == null)
+            packetCache = ByteBuffer.allocate(2000000);
 
         try {
             while(packetSize.hasRemaining())
@@ -283,12 +324,12 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
 
             //ByteBuffer packet = ByteBuffer.allocate(size);
 
-            while(packet.remaining() == 2000000)
-                sc.read(packet);
+            while(packetCache.remaining() == 2000000)
+                sc.read(packetCache);
 
-            packet.flip();
-            InputStream result = new ByteArrayInputStream(packet.array());
-            packet.clear();
+            packetCache.flip();
+            InputStream result = new ByteArrayInputStream(packetCache.array());
+            packetCache.clear();
 
             return result;
         } catch(IOException e) {
@@ -303,18 +344,32 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
             packetSize = ByteBuffer.allocate(4);
 
         try{
-            while(packetSize.hasRemaining())
-                sc.read(packetSize);
+            while (packetSize.hasRemaining()) {
+                int value = sc.read(packetSize);
+                if(value < 0) {
+                    return null;    // connection closed?
+                }             
+            }
 
             int size = packetSize.getInt(0);
             packetSize.clear();
 
-            while(packetSize.hasRemaining())
-                sc.read(packetSize);
+            while(packetSize.hasRemaining()){
+                int value = sc.read(packetSize);
+                if(value < 0) {
+                    return null;    // connection closed?
+                }
+            }
 
-            PathType type = PathType.values()[packetSize.getInt(0)];
+            PathType type = PathType.UNKNOWN;
+            if(PathType.values().length > packetSize.getInt(0)){
+                type = PathType.values()[packetSize.getInt(0)];
+            }
+            
             packetSize.clear();
-
+            if(size < 0) {
+                return null;
+            }
             ByteBuffer packet = ByteBuffer.allocate(size);
 
             while(packet.hasRemaining())
@@ -330,13 +385,13 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
 
     }
 
-    private void handleRequest(SocketChannel channel) throws IOException{
+    private boolean handleRequest(SocketChannel channel) throws IOException{
         //InputStream inStream = readInput(channel);
         NetworkPacket packet = getInput(channel);
 
         //if(inStream == null){
         if(packet == null){
-            return;
+            return false;
         }
 
         //TransportPacket.Packet input = TransportPacket.Packet.parseDelimitedFrom(inStream);
@@ -356,6 +411,7 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
         //System.out.println(np.getType()+" packet of "+input.getSerializedSize()+" bytes received on "+getLocalAddress()+".");
 
         internalRouting.pushNetworkPacket(packet);
+        return true;
     }
 
     private Origin parseOrigin(TransportPacket.Packet input) throws java.net.UnknownHostException{
@@ -381,7 +437,7 @@ public class SocketSelectionNetworkHandler implements NetworkHandler {
     }
 
     private ServiceChain parsePath(TransportPacket.Packet input){
-        DummyServiceChain path = new DummyServiceChain();
+        DefaultServiceChain path = new DefaultServiceChain();
 
         for (int i = 0; i < input.getPathCount(); i++)
             path.addService(input.getPath(i));

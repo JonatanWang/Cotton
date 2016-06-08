@@ -33,6 +33,7 @@ package cotton.systemsupport;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
@@ -42,10 +43,11 @@ import java.util.Vector;
  * @author Magnus
  */
 public class UsageHistory implements Serializable{
-    private Vector<TimeInterval> usageHistoryList;
+    //private Vector<TimeInterval> usageHistoryList;
+    private List<TimeInterval> usageHistoryList;
     
     public UsageHistory(){
-        this.usageHistoryList = new Vector<>();
+        this.usageHistoryList = Collections.synchronizedList(new ArrayList<TimeInterval>());
     }
     /**
      * Adds a time interval to the historyList
@@ -54,13 +56,17 @@ public class UsageHistory implements Serializable{
     public void add(TimeInterval element){
         usageHistoryList.add(element);
     }
+    
+    public void clearHistory() {
+        this.usageHistoryList.clear();
+    }
+    
     /**
      * returns the usage history for the request queue.
      * @return 
      */
     public TimeInterval[] getUsageHistory(){
-        TimeInterval[] tmp = new TimeInterval[usageHistoryList.size()];
-        usageHistoryList.copyInto(tmp);
+        TimeInterval[] tmp = usageHistoryList.toArray(new TimeInterval[usageHistoryList.size()]);
         return tmp;
     }
     /**
@@ -70,10 +76,15 @@ public class UsageHistory implements Serializable{
      * @param last
      * @return 
      */
-    public synchronized ArrayList<TimeInterval> getInterval(int first, int last){  
+    public TimeInterval[] getInterval(int first, int last){  
         int lastIndex = (last >= usageHistoryList.size()) ? usageHistoryList.size() : last;
         int firstIndex = (first <= 0) ? 0 : first;
-        return new ArrayList<>(usageHistoryList.subList(firstIndex, lastIndex));
+        firstIndex = (firstIndex >= usageHistoryList.size()) ? usageHistoryList.size() : firstIndex;
+        lastIndex = (firstIndex >= lastIndex) ? usageHistoryList.size() : lastIndex;
+        ArrayList<TimeInterval> tmp = new ArrayList<>(usageHistoryList.subList(firstIndex, lastIndex));
+        TimeInterval[] ret = new TimeInterval[tmp.size()];
+        tmp.toArray(ret);
+        return ret;
     }
     /**
      * returns the total amount of time intervals in the usage history. 

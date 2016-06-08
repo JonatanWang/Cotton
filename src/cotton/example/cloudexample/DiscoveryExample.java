@@ -34,7 +34,11 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.example.cloudexample;
 
 import cotton.Cotton;
+import cotton.test.services.GlobalDiscoveryAddress;
+import java.net.Inet4Address;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 
 
 /**
@@ -42,20 +46,41 @@ import java.net.UnknownHostException;
  * @author Magnus
  */
 public class DiscoveryExample {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnknownHostException {
         Cotton discovery = null;
+        GlobalDiscoveryAddress gDns = getDnsStub(null, 5888);
         try {
-            discovery = new Cotton(true, 9546);
+            //discovery = new Cotton(true, 5888);
+            discovery = new Cotton(true, gDns);
         } catch (UnknownHostException ex) {
             //Logger.getLogger(DiscoveryExample.class.getName()).log(Level.SEVERE, null, ex);
         }
         
 
         discovery.start();
-        try {
-            Thread.sleep(120000);
-        } catch (InterruptedException ex) {
+        Scanner scan = new Scanner(System.in);
+        boolean run = true;
+        while(run) {
+            try {
+                if(Integer.parseInt(scan.nextLine()) == 1)
+                    run = false;
+            } catch(Exception e) {}
         }
         discovery.shutdown();
+    }
+    
+    private static GlobalDiscoveryAddress getDnsStub(String dest, int port) throws UnknownHostException {
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
+        InetSocketAddress gdAddr = null;
+        if (dest == null) {
+            gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);
+            System.out.println("discAddr:" + Inet4Address.getLocalHost().toString() + " port: " + port);
+        } else {
+            gdAddr = new InetSocketAddress(dest, port);
+        }
+        InetSocketAddress[] arr = new InetSocketAddress[1];
+        arr[0] = gdAddr;
+        gDns.setGlobalDiscoveryAddress(arr);
+        return gDns;
     }
 }

@@ -29,38 +29,43 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
+package cotton.test.services;
 
-
-package cotton.services;
-
-import cotton.network.NetworkPacket;
+import cotton.servicediscovery.GlobalDiscoveryDNS;
+import java.net.Inet4Address;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.UnknownHostException;
 
 /**
- * A <code>ServiceBuffer</code> stores incoming <code>ServicePackets</code> and 
- * distributes packets.
  *
- * @author Tony Tran
- * @see ServicePacket
- **/
-public interface ServiceBuffer{
+ * @author magnus
+ */
+public class GlobalDiscoveryAddress extends GlobalDiscoveryDNS {
 
-    /**
-     * Distributes the next packet in the <code>ServiceBuffer</code>.
-     * 
-     * @return the next <code>ServicePacket</code> in the buffer.
-     */
-    public NetworkPacket nextPacket();
+    private SocketAddress[] addressArray = null;
+
+    public GlobalDiscoveryAddress() throws SecurityException {
+        this.addressArray = new SocketAddress[0];
+    }
     
-    /**
-     * Stores a <code>ServicePacket</code> in the buffer.
-     * 
-     * @param servicePacket the <code>ServicePacket</code> to store.
-     * @return <code>true</code> if the buffer changed as a result of the <code>add</code>.
-     */
-    public boolean add(cotton.network.NetworkPacket servicePacket);
-    /**
-     * Returns the current size,
-     * @return number of items currently in buffer
-     */
-    public int size();
+    public GlobalDiscoveryAddress(String ip,int port){
+        this.addressArray = new SocketAddress[1];
+        this.addressArray[0] = new InetSocketAddress(ip,port);
+    }
+
+    public GlobalDiscoveryAddress(int port) throws UnknownHostException {
+        this.addressArray = new SocketAddress[1];
+        this.addressArray[0] = new InetSocketAddress(Inet4Address.getLocalHost(), port);
+    }
+
+    @Override
+    public void setGlobalDiscoveryAddress(SocketAddress[] addresses) {
+        this.addressArray = addresses;
+    }
+
+    @Override
+    public SocketAddress[] getGlobalDiscoveryAddress() {
+        return this.addressArray;
+    }
 }

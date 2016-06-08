@@ -33,7 +33,7 @@ POSSIBILITY OF SUCH DAMAGE.
 package cotton.example.systemintegrationexample;
 
 import cotton.Cotton;
-import cotton.network.DummyServiceChain;
+import cotton.network.DefaultServiceChain;
 import cotton.network.ServiceChain;
 
 import java.net.UnknownHostException;
@@ -56,7 +56,7 @@ public class ClientPart2 {
         }
         cotton.start();
         InternalRoutingClient clientNetwork = cotton.getClient();
-        ServiceChain chain = new DummyServiceChain()
+        ServiceChain chain = new DefaultServiceChain()
             .into("StringModifier2").into("StringModifier");
         ServiceRequest serviceRequest = null;
         

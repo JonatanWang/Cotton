@@ -29,11 +29,11 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-
 package cotton.test;
 
-import cotton.network.DummyServiceChain;
+import cotton.Cotton;
+import cotton.test.stubs.NetworkHandlerStub;
+import cotton.network.DefaultServiceChain;
 import cotton.network.Origin;
 import cotton.network.ServiceChain;
 import cotton.servicediscovery.GlobalServiceDiscovery;
@@ -55,8 +55,22 @@ import cotton.internalrouting.ServiceRequest;
 import java.nio.ByteBuffer;
 import cotton.internalrouting.DefaultInternalRouting;
 import cotton.internalrouting.InternalRoutingClient;
+import cotton.network.DestinationMetaData;
+import cotton.network.PathType;
+import cotton.requestqueue.RequestQueueManager;
+import cotton.servicediscovery.LocalServiceDiscovery;
 import cotton.services.ServiceHandler;
 import cotton.services.ServiceMetaData;
+import cotton.systemsupport.StatType;
+import cotton.test.services.GlobalDiscoveryAddress;
+import cotton.test.services.MathResult;
+import cotton.test.stubs.NetStub;
+import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.SocketAddress;
+import java.net.UnknownHostException;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
@@ -110,18 +124,18 @@ public class TestServiceDiscovery {
         RouteSignal sig = gd.getLocalInterface(origin, to);
         assertTrue(check == sig);
     }
-    
+
     @Test
-    public void ActiveServiceLookupGetCapacity(){        
+    public void ActiveServiceLookupGetCapacity() {
         System.out.println("Now running: ActiveServiceLookupGetCapacity");
         ActiveServiceLookup lookup = new ServiceLookup();
         lookup.registerService("hej", null, 10);
         ServiceMetaData service = lookup.getService("hej");
-        assertEquals(10,service.getMaxCapacity());
+        assertEquals(10, service.getMaxCapacity());
     }
 
     @Test
-    public void ActiveServiceLookupRemove(){        
+    public void ActiveServiceLookupRemove() {
         System.out.println("Now running: ActiveServiceLookupRemove");
         ActiveServiceLookup lookup = new ServiceLookup();
 
@@ -139,7 +153,7 @@ public class TestServiceDiscovery {
         System.out.println("GetLocalInterface01: Checking: Origin empty");
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         Origin origin = originSetup(null, null, null);
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.LOCALDESTINATION, gd, origin, to);
     }
 
@@ -151,7 +165,7 @@ public class TestServiceDiscovery {
         System.out.println("GetLocalInterface02: Checking: ip1 null, socketLatch null, serviceRequest exist ");
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         Origin origin = originSetup(null, null, UUID.randomUUID());
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.ENDPOINT, gd, origin, to);
     }
 
@@ -164,7 +178,7 @@ public class TestServiceDiscovery {
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", 3333);
         Origin origin = originSetup(null, UUID.randomUUID(), null);
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.BRIDGELATCH, gd, origin, to);
     }
 
@@ -177,7 +191,7 @@ public class TestServiceDiscovery {
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.2", 3333);
         Origin origin = originSetup(addr, UUID.randomUUID(), null);
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.RETURNTOORIGIN, gd, origin, to);
     }
 
@@ -190,7 +204,7 @@ public class TestServiceDiscovery {
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", 3335);
         Origin origin = originSetup(addr, UUID.randomUUID(), null);
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.RETURNTOORIGIN, gd, origin, to);
     }
 
@@ -203,13 +217,13 @@ public class TestServiceDiscovery {
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", 3333);
         Origin origin = originSetup(addr, UUID.randomUUID(), null);
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.BRIDGELATCH, gd, origin, to);
     }
 
     /**
-     * Checking: ip1 == ip2, socketLatch null,ServiceRequest null
-     * RouteSignal == LOCALDESTINATION
+     * Checking: ip1 == ip2, socketLatch null,ServiceRequest null RouteSignal ==
+     * LOCALDESTINATION
      */
     @Test
     public void GetLocalInterface07() {
@@ -217,13 +231,13 @@ public class TestServiceDiscovery {
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", 3333);
         Origin origin = originSetup(addr, null, null);
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.LOCALDESTINATION, gd, origin, to);
     }
 
     /**
-     * Checking: ip1 == ip2, socketLatch null,ServiceRequest exist
-     * RouteSignal == ENDPOINT
+     * Checking: ip1 == ip2, socketLatch null,ServiceRequest exist RouteSignal
+     * == ENDPOINT
      */
     @Test
     public void GetLocalInterface08() {
@@ -231,31 +245,29 @@ public class TestServiceDiscovery {
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         InetSocketAddress addr = new InetSocketAddress("127.0.0.1", 3333);
         Origin origin = originSetup(addr, null, UUID.randomUUID());
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.ENDPOINT, gd, origin, to);
     }
 
     /**
-     * Checking: origin == null
-     * RouteSignal == NOTFOUND
+     * Checking: origin == null RouteSignal == NOTFOUND
      */
     @Test
     public void GetLocalInterface09() {
         System.out.println("GetLocalInterface09: Checking: origin == null");
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.NOTFOUND, gd, null, to);
     }
 
     /**
-     * Checking: to == null and origin == null
-     * RouteSignal == NOTFOUND
+     * Checking: to == null and origin == null RouteSignal == NOTFOUND
      */
     @Test
     public void GetLocalInterface10() {
         System.out.println("GetLocalInterface10: Checking: to == null and origin == null");
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
-        ServiceChain to = new DummyServiceChain();
+        ServiceChain to = new DefaultServiceChain();
         localInterfaceSigTest(RouteSignal.NOTFOUND, gd, null, null);
     }
 
@@ -267,43 +279,257 @@ public class TestServiceDiscovery {
         System.out.println("GetLocalInterface11: Checking: serviceChain have links");
         GlobalServiceDiscovery gd = globalServiceDiscoverySetup();
         Origin origin = originSetup(null, null, null);
-        ServiceChain to = new DummyServiceChain().into("test");
+        ServiceChain to = new DefaultServiceChain().into("test");
         localInterfaceSigTest(RouteSignal.LOCALDESTINATION, gd, origin, to);
     }
 
     /**
-    * Checking: whether services can be chained.
-    */
-   @Test
-   public void ServiceChainTest(){
+     * Checking: whether services can be chained.
+     */
+    @Test
+    public void ServiceChainTest() {
+        System.out.println("ServiceChainTest: Checking: Mathpow test");
+        InetSocketAddress addr = new InetSocketAddress("127.0.0.1", 3333);
+        ActiveServiceLookup lookup = new ServiceLookup();
+        lookup.registerService("mathpow2", MathPowV2.getFactory(), 10);
+        NetworkHandler net = new NetworkHandlerStub(addr);
+        ServiceDiscovery global = new GlobalServiceDiscovery(null);
+        global.setLocalServiceTable(lookup);
+        DefaultInternalRouting internal = new DefaultInternalRouting(net, global);
+        ServiceHandler serviceHandler = new ServiceHandler(lookup, internal);
+        internal.start();
+        new Thread(serviceHandler).start();
+        InternalRoutingClient client = internal;
+        ServiceChain chain = new DefaultServiceChain().into("mathpow2").into("mathpow2").into("mathpow2");
+        int num = 2;
+        byte[] data = ByteBuffer.allocate(4).putInt(num).array();
+        ServiceRequest req = client.sendWithResponse(data, chain);
 
-       System.out.println("ServiceChainTest: Checking: Mathpow test");
-       InetSocketAddress addr = new InetSocketAddress("127.0.0.1",3333);
-       ActiveServiceLookup lookup = new ServiceLookup();
-       lookup.registerService("mathpow2", MathPowV2.getFactory(),10);
-       NetworkHandler net = new NetworkHandlerStub(addr);
-       ServiceDiscovery global = new GlobalServiceDiscovery(null);
-       global.setLocalServiceTable(lookup);
-       DefaultInternalRouting internal = new DefaultInternalRouting(net,global);
-       ServiceHandler serviceHandler = new ServiceHandler(lookup,internal);
-       internal.start();
-       new Thread(serviceHandler).start();
-       InternalRoutingClient client = internal;
-       ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow2").into("mathpow2");
-       int num = 2;
-       byte[] data = ByteBuffer.allocate(4).putInt(num).array();
-       ServiceRequest req = client.sendWithResponse(data,chain);
+        byte[] data2 = req.getData();
+        //System.out.println(data2);
+        int num2 = ByteBuffer.wrap(data2).getInt();
+        System.out.println("result" + num2);
+        internal.stop();
+        net.stop();
+        serviceHandler.stop();
+        global.stop();
+        assertTrue(num2 == 256);
+    }
+    
+    /**
+     * DiscoverySnapshotTest checks if multiple discovery gets updated
+     * subtype to work
+     */
+    @Test
+    public void DiscoverySnapshotTest() throws UnknownHostException, IOException {
+        System.out.println("Now running: DiscoverySnapshotTest");
+        NetStub tubes = new NetStub();
+        int port = new Random().nextInt(25000) + 4000;
+        Cotton startDisc = createFakeCotton(tubes, true, port);
+        startDisc.start();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress(port);
+        String name1 = "mathpow21";
+        String name2 = "mathpow22";
+        String name3 = "mathpow23";
+        String rname = "result";
+        Cotton reqQueue = createFakeCotton(tubes,false, gDns);
+        RequestQueueManager requestQueueManager = new RequestQueueManager();
+        requestQueueManager.startQueue(name1);
+        requestQueueManager.startQueue(name2);
+        requestQueueManager.startQueue(name3);
+        requestQueueManager.startQueue(rname);
+        reqQueue.setRequestQueueManager(requestQueueManager);
+        reqQueue.start();
+        Cotton ser1 = createFakeCotton(tubes, false, gDns);
+        Cotton ser2 = createFakeCotton(tubes, false, gDns);
+        Cotton ser3 = createFakeCotton(tubes, false, gDns);
 
-       byte[] data2 = req.getData();
-       //System.out.println(data2);
-       int num2 = ByteBuffer.wrap(data2).getInt();
-       System.out.println("result" + num2);
-       internal.stop();
-       net.stop();
-       serviceHandler.stop();
-       global.stop();
-       assertTrue(num2 == 256);
+        AtomicInteger counter = new AtomicInteger(0);
+        MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
 
-   }
+        ser1.getServiceRegistation().registerService(name1, MathPowV2.getFactory(), 50);
+        ser2.getServiceRegistation().registerService(name2, MathPowV2.getFactory(), 50);
+        ser2.getServiceRegistation().registerService(name3, MathPowV2.getFactory(), 50);
+        ser3.getServiceRegistation().registerService(rname, resFactory, 50);
+        
+        ser1.start();
+        ser2.start();
+        ser3.start();
+        
+        Cotton d1 = createFakeCotton(tubes,true, gDns);
+        Cotton d2 = createFakeCotton(tubes,true, gDns);
+        Cotton d3 = createFakeCotton(tubes,true, gDns);
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        d1.start();
+        d2.start();
+        d3.start();
+        
+        String[] availableServices = d3.getAvailableServices();
+        d1.shutdown();
+        d2.shutdown();
+        d3.shutdown();
+        
+        reqQueue.shutdown();
+        ser1.shutdown();
+        ser2.shutdown();
+        ser3.shutdown();
+        startDisc.shutdown();
+        if(availableServices.length < 1) {
+            assertTrue(false);
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("AvailableServices:");
+        boolean n1 = false;
+        boolean n2 = false;
+        boolean n3 = false;
+        boolean n4 = false;
+        for (String s : availableServices) {
+            sb.append(" " + s + ",");
+            n1 = n1 || s.equals(name1);
+            n2 = n2 || s.equals(name2);
+            n3 = n3 || s.equals(name3);
+            n4 = n4 || s.equals(rname);
+        }
+        System.out.println(sb);
+        assertTrue(n1 && n2 && n3 && n4);
+    }    
+    
+    /**
+     * DiscoveryReannounceTest checks if services reannounce 
+     * when primary discovery goes down
+     */
+    @Test
+    public void DiscoveryReannounceTest() throws UnknownHostException, IOException{
+        System.out.println("Now running: DiscoverySnapshotTest");
+        NetStub tubes = new NetStub();
+        int port = new Random().nextInt(25000) + 4000;
+        Cotton startDisc = createFakeCotton(tubes, true, port);
+        startDisc.start();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress(port);
+         try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        Cotton d1 = createFakeCotton(tubes,true, gDns);
+        d1.start();
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        String name1 = "mathpow21";
+        String name2 = "mathpow22";
+        String name3 = "mathpow23";
+        String rname = "result";
+        Cotton reqQueue = createFakeCotton(tubes,false, gDns);
+        RequestQueueManager requestQueueManager = new RequestQueueManager();
+        requestQueueManager.startQueue(name1);
+        requestQueueManager.startQueue(name2);
+        requestQueueManager.startQueue(name3);
+        requestQueueManager.startQueue(rname);
+        reqQueue.setRequestQueueManager(requestQueueManager);
+        reqQueue.start();
+        Cotton ser1 = createFakeCotton(tubes, false, gDns);
 
+        AtomicInteger counter = new AtomicInteger(0);
+        MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
+
+        ser1.getServiceRegistation().registerService(name1, MathPowV2.getFactory(), 50);
+        ser1.getServiceRegistation().registerService(name2, MathPowV2.getFactory(), 50);
+        ser1.getServiceRegistation().registerService(name3, MathPowV2.getFactory(), 50);
+        ser1.getServiceRegistation().registerService(rname, resFactory, 50);
+        ser1.start();
+        LocalServiceDiscovery ld = (LocalServiceDiscovery) ser1.getConsole().getProvider(StatType.DISCOVERY);
+         try {
+            Thread.sleep(400);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("AvailableServices:");
+        String[] availableServices = d1.getConsole().getLocalServices();
+        for (String s : availableServices) {
+            sb.append(" ").append(s).append(",");
+        }
+        System.out.println(sb);
+        DestinationMetaData destinationForType = ld.getDestinationForType(PathType.DISCOVERY, null);
+        System.out.println("Tt: " + destinationForType);
+        destinationForType = ld.getDestinationForType(PathType.DISCOVERY, null);
+        System.out.println("Tt: " + destinationForType);
+        tubes.removeNode((NetworkHandlerStub) startDisc.getNetwork());
+        
+        startDisc.shutdown();
+         try {
+            Thread.sleep(100);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        SocketAddress[] gda = gDns.getGlobalDiscoveryAddress();
+        DestinationMetaData dmd = new DestinationMetaData(gda[0],PathType.DISCOVERY);
+        for(int i = 0; i < 5; i++){
+            ld.destinationUnreachable(dmd, null);
+        }
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        availableServices = d1.getConsole().getLocalServices();
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(UnitTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        d1.shutdown();
+     
+        reqQueue.shutdown();
+        ser1.shutdown();
+        
+        if(availableServices.length < 1) {
+            assertTrue(false);
+        }
+        sb = new StringBuilder();
+        sb.append("AvailableServices:");
+        boolean n1 = false;
+        boolean n2 = false;
+        boolean n3 = false;
+        boolean n4 = false;
+        for (String s : availableServices) {
+            sb.append(" " + s + ",");
+            n1 = n1 || s.equals(name1);
+            n2 = n2 || s.equals(name2);
+            n3 = n3 || s.equals(name3);
+            n4 = n4 || s.equals(rname);
+        }
+        System.out.println(sb);
+        assertTrue(n1 && n2 && n3 && n4);
+    }
+    
+    private Cotton createFakeCotton(NetStub tubes, boolean isGlobal, int port) throws UnknownHostException {
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(Inet4Address.getLocalHost(), port);
+        NetworkHandlerStub stub = new NetworkHandlerStub(inetSocketAddress);
+        stub.setTubes(tubes);
+        return new Cotton(isGlobal, stub);
+    }
+
+    private Cotton createFakeCotton(NetStub tubes, boolean isGlobal, int port, GlobalDiscoveryAddress gda) throws UnknownHostException {
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(Inet4Address.getLocalHost(), port);
+        NetworkHandlerStub stub = new NetworkHandlerStub(inetSocketAddress);
+        stub.setTubes(tubes);
+        return new Cotton(isGlobal, gda, stub);
+    }
+    
+    private Cotton createFakeCotton(NetStub tubes, boolean isGlobal, GlobalDiscoveryAddress gda) throws UnknownHostException {
+        int port = new Random().nextInt(25000) + 4000;
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(Inet4Address.getLocalHost(), port);
+        NetworkHandlerStub stub = new NetworkHandlerStub(inetSocketAddress);
+        stub.setTubes(tubes);
+        return new Cotton(isGlobal, gda, stub);
+    }
 }

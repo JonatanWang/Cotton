@@ -34,7 +34,7 @@ package cotton.test;
 import cotton.Cotton;
 import cotton.internalrouting.InternalRoutingClient;
 import cotton.network.DestinationMetaData;
-import cotton.network.DummyServiceChain;
+import cotton.network.DefaultServiceChain;
 import cotton.network.NetworkPacket;
 import cotton.network.PathType;
 import org.junit.Test;
@@ -51,7 +51,7 @@ import cotton.systemsupport.Console;
 import cotton.systemsupport.StatType;
 import cotton.systemsupport.StatisticsData;
 import cotton.systemsupport.TimeInterval;
-import cotton.test.services.GlobalDnsStub;
+import cotton.test.services.GlobalDiscoveryAddress;
 import cotton.test.services.MathPowV2;
 import cotton.test.services.MathResult;
 
@@ -83,16 +83,23 @@ public class TestUsageHistory {
         //AtomicInteger counter = new AtomicInteger(0);
         // MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
         //discovery.getServiceRegistation().registerService("result", resFactory, 10);
-        RequestQueueManager qm = new RequestQueueManager();
-        qm.startQueue("result");
-        discovery.setRequestQueueManager(qm);
+//        RequestQueueManager qm = new RequestQueueManager();
+//        qm.startQueue("result");
+//        discovery.setRequestQueueManager(qm);
 
         discovery.start();
-
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = new InetSocketAddress(Inet4Address.getLocalHost(), port);
         gDns.setGlobalDiscoveryAddress(arr);
+        Cotton queue1 = new Cotton(true, gDns);
+        RequestQueueManager requestQueueManager = new RequestQueueManager();
+        requestQueueManager.startQueue("result");
+        queue1.setRequestQueueManager(requestQueueManager);
+        //queue.getServiceRegistation().registerService("result", (MathResult.Factory) MathResult.getFactory(new AtomicInteger(0)), 10);
+
+        queue1.start();
         try {
             Thread.sleep(500);
         } catch (InterruptedException ex) {
@@ -100,7 +107,7 @@ public class TestUsageHistory {
         }
 
         Cotton queue = new Cotton(true, gDns);
-        RequestQueueManager requestQueueManager = new RequestQueueManager();
+        requestQueueManager = new RequestQueueManager();
         requestQueueManager.startQueue("mathpow21");
         queue.setRequestQueueManager(requestQueueManager);
         //queue.getServiceRegistation().registerService("result", (MathResult.Factory) MathResult.getFactory(new AtomicInteger(0)), 10);
@@ -136,7 +143,7 @@ public class TestUsageHistory {
         cCotton.start();
 
         InternalRoutingClient client = cCotton.getClient();
-        ServiceChain chain = new DummyServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
+        ServiceChain chain = new DefaultServiceChain().into("mathpow2").into("mathpow21").into("mathpow2").into("mathpow21").into("result");
 
 //        InternalRoutingClient client = cCotton.getClient();
         Console console = queue.getConsole();
@@ -150,7 +157,7 @@ public class TestUsageHistory {
         }
         NetworkPacket packet = NetworkPacket.newBuilder().setData(data).build();
         console.processCommand(packet);
-        client.sendToService(data, new DummyServiceChain().into("mathpow21").into("result"));
+        client.sendToService(data, new DefaultServiceChain().into("mathpow21").into("result"));
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -158,11 +165,11 @@ public class TestUsageHistory {
         }
 
         for (int i = 0; i < 500; i++) {
-            client.sendToService(data, new DummyServiceChain().into("mathpow21").into("result"));
+            client.sendToService(data, new DefaultServiceChain().into("mathpow21").into("result"));
 
         }
         try {
-            Thread.sleep(1000);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -177,6 +184,7 @@ public class TestUsageHistory {
         }
 
         queue.shutdown();
+        queue1.shutdown();
         cCotton.shutdown();
         discovery.shutdown();
         assertTrue(true);
@@ -191,7 +199,7 @@ public class TestUsageHistory {
         return b.toString();
     }
 
-    //@Test
+    @Test
     public void TestUsageHistoryQuery() throws UnknownHostException {
         System.out.println("TestQueueUsage");
         InetAddress ip = Inet4Address.getLocalHost();
@@ -199,25 +207,28 @@ public class TestUsageHistory {
         System.out.println("Port is:" + port);
         InetSocketAddress addr = new InetSocketAddress(ip, port);
         Cotton discovery = new Cotton(true, port);
-        //discovery.getServiceRegistation().registerService("mathpow21", MathPowV2.getFactory(), 10);
-
-        //AtomicInteger counter = new AtomicInteger(0);
-        // MathResult.Factory resFactory = (MathResult.Factory) MathResult.getFactory(counter);
-        //discovery.getServiceRegistation().registerService("result", resFactory, 10);
         String name = "result";
         String pow = "mathpow21";
-        RequestQueueManager qm = new RequestQueueManager();
-        qm.startQueue(name);
-        qm.startQueue(pow);
-        discovery.setRequestQueueManager(qm);
-
+        
         discovery.start();
-        GlobalDnsStub gDns = new GlobalDnsStub();
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress[] arr = new InetSocketAddress[1];
         arr[0] = new InetSocketAddress(Inet4Address.getLocalHost(), port);
         gDns.setGlobalDiscoveryAddress(arr);
         try {
-            Thread.sleep(1000);
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Cotton queueManager = new Cotton(false, gDns);
+        RequestQueueManager qm = new RequestQueueManager();
+        qm.startQueue(name);
+        qm.startQueue(pow);
+        queueManager.setRequestQueueManager(qm);
+        queueManager.start();
+        
+        try {
+            Thread.sleep(200);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -234,7 +245,7 @@ public class TestUsageHistory {
         ser2.start();
 
         try {
-            Thread.sleep(1000);
+            Thread.sleep(200);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -242,20 +253,21 @@ public class TestUsageHistory {
         c.start();
         Console cl = c.getConsole();
         Command cmd = new Command(StatType.REQUESTQUEUE, null, new String[]{pow, "setUsageRecordingInterval"}, 200, CommandType.USAGEHISTORY);
-        DestinationMetaData dest = new DestinationMetaData(addr, PathType.COMMANDCONTROL);
+        DestinationMetaData dest = new DestinationMetaData(queueManager.getNetwork().getLocalAddress(), PathType.COMMANDCONTROL);
         try {
             cl.sendCommand(cmd, dest);
         } catch (IOException ex) {
         }
         try {
-            Thread.sleep(2000);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         InternalRoutingClient client = c.getClient();
-        ServiceChain chain = new DummyServiceChain().into(pow).into(name).into(pow).into(pow).into(name);
+        ServiceChain chain = new DefaultServiceChain().into(pow).into(name).into(pow).into(pow).into(name);
         int num = 2;
         byte[] data = ByteBuffer.allocate(4).putInt(num).array();
+        
         client.sendToService(data, chain);
         try {
             Thread.sleep(1000);
@@ -263,8 +275,8 @@ public class TestUsageHistory {
             e.printStackTrace();
         }
 
-        String[] cmdline = new String[]{pow, "getUsageRecordingInterval"};
-        Command query = new Command(StatType.REQUESTQUEUE, null, cmdline, 200, CommandType.STATISTICS_FORSYSTEM);
+        String[] cmdline = new String[]{pow, "getUsageRecordingInterval","" + 0,"" + 1000};
+        Command query = new Command(StatType.REQUESTQUEUE, null, cmdline, 200, CommandType.USAGEHISTORY);
         StatisticsData<TimeInterval>[] res = null;
         try {
             res = cl.sendQueryCommand(query, dest);
@@ -287,13 +299,12 @@ public class TestUsageHistory {
         }
         System.out.println("res: size" + res.length);
         try {
-            Thread.sleep(2000);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        if (res != null) {
-            System.out.println("Result: \n" + res[0].toString());
-        }
+        assertTrue("query returned empty",res.length > 0);
+        System.out.println("Result: \n" + res[0].toString());
 
         ser1.shutdown();
         ser2.shutdown();
@@ -310,7 +321,7 @@ public class TestUsageHistory {
         Cotton disc = new Cotton(true, discPort);
         disc.start();
 
-        GlobalDnsStub dnsStub = getDnsStub(null, discPort);
+        GlobalDiscoveryAddress dnsStub = getDnsStub(null, discPort);
         String serviceName = "mathpow21";
         Cotton serv = new Cotton(false, servicePort, dnsStub);
         serv.getServiceRegistation().registerService(serviceName, MathPowV2.getFactory(), 10);
@@ -338,11 +349,10 @@ public class TestUsageHistory {
             Integer endPoint = startPoint + 500;
             endNumb = endPoint.toString();
         } else {
-            System.out.println("TestServiceStat: isSampling failed");
-            assertTrue(false);
+            assertTrue("TestServiceStat: isSampling failed",false);
         }
 
-        Command startRecording = new Command(StatType.SERVICEHANDLER, null, new String[]{serviceName, "setUsageRecordingInterval"}, 100, CommandType.USAGEHISTORY);
+        Command startRecording = new Command(StatType.SERVICEHANDLER, null, new String[]{serviceName, "setUsageRecordingInterval",startNumb,endNumb}, 100, CommandType.USAGEHISTORY);
         console.sendCommand(startRecording, destination);
         try {
             Thread.sleep(500);
@@ -355,7 +365,7 @@ public class TestUsageHistory {
         int sendCount = 200;
         InternalRoutingClient c = client.getClient();
         for (int i = 0; i < sendCount; i++) {
-            c.sendToService(data, new DummyServiceChain().into(serviceName));
+            c.sendToService(data, new DefaultServiceChain().into(serviceName));
         }
 
         try {
@@ -384,15 +394,17 @@ public class TestUsageHistory {
         for (int i = 0; i < interval.length; i++) {
             taskDone += interval[i].getOutputCount();
         }
-        System.out.println("TestServiceStat:task done:" + taskDone + "?=" + sendCount);
+        //System.out.println("Statistics name: " + serviceName + " TIMEINTERVAL:" + intervalToString("\t", interval, "\n"));
+        
+        System.out.println("TestServiceStat:task done:" + taskDone + "==" + sendCount);
         client.shutdown();
         serv.shutdown();
         disc.shutdown();
         assertTrue(taskDone == sendCount);
     }
 
-    private static GlobalDnsStub getDnsStub(String dest, int port) throws UnknownHostException {
-        GlobalDnsStub gDns = new GlobalDnsStub();
+    private static GlobalDiscoveryAddress getDnsStub(String dest, int port) throws UnknownHostException {
+        GlobalDiscoveryAddress gDns = new GlobalDiscoveryAddress();
         InetSocketAddress gdAddr = null;
         if (dest == null) {
             gdAddr = new InetSocketAddress(Inet4Address.getLocalHost(), port);

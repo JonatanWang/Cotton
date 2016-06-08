@@ -149,30 +149,40 @@ public class Console {
                 data = serializeToBytes(result);
             }
             internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
-
-            /**
-            switch (command.getCommandType()) {
-                case STATISTICS_FORSUBSYSTEM:
-                    StatisticsData[] statisticsForSubSystem = provider.getStatisticsForSubSystem(command.getName());
-                    data = serializeToBytes(statisticsForSubSystem);
-                    internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
-                    break;
-                case STATISTICS_FORSYSTEM:
-                    StatisticsData statistics = provider.getStatistics(command.getTokens());
-                    data = serializeToBytes(statistics);
-                    internalRouting.sendBackToOrigin(origin, PathType.RELAY, data);
-                    break;
-                case USAGEHISTORY:
-                    break;
-                default:
-                    break;
-            }
-             */
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    public String[] getAvailableServices() throws IOException {
+        String[] empty = new String[0];
+        InternalRoutingServiceDiscovery internalRouting = (InternalRoutingServiceDiscovery) getProvider(StatType.INTERNALROUTING);
+        ServiceDiscovery sd = (ServiceDiscovery) getProvider(StatType.DISCOVERY);
+        if (internalRouting == null|| sd == null) {
+            System.out.println("getAvailableServices: internalRouting or serviceDiscovery is null");
+            return empty;
+        }
+        DestinationMetaData dest = sd.getDestinationForType(PathType.DISCOVERY, null);
+        //ACTIVE_SERVICES
+        //Command(StatType type, String name,String[] tokens, int amount, CommandType command)
+        Command cmd = new Command(StatType.DISCOVERY,"none",new String[]{"none"},0,CommandType.ACTIVE_SERVICES);
+        StatisticsData<String>[] ret = this.sendQueryCommand(cmd, dest);
+        if(ret == null || ret.length < 1){
+            return empty;
+        }
+        return ret[0].getData();
+    }
+    
+    public String[] getLocalServices() {
+        ServiceDiscovery sd = (ServiceDiscovery) getProvider(StatType.DISCOVERY);
+        Command cmd = new Command(StatType.DISCOVERY,"none",new String[]{"none"},0,CommandType.ACTIVE_SERVICES);
+        StatisticsData<String>[] ret = sd.processCommand(cmd);
+        if(ret == null || ret.length < 1){
+            return new String[0];
+        }
+        return ret[0].getData();
+    }
+    
     /**
      * Sends a query command to a remote node and gets StatisticsData for that query 
      * @param command the query command that should be sent
@@ -228,6 +238,12 @@ public class Console {
             case CHANGE_ACTIVEAMOUNT:
                 res = statArrayUnpack(reqData);
                 if(res == null){
+                    return empty;
+                }
+                break;
+            case ACTIVE_SERVICES:
+                res = statArrayUnpack(reqData);
+                if (res == null) {
                     return empty;
                 }
                 break;

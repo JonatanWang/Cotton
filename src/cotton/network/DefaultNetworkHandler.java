@@ -51,6 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 import cotton.configuration.NetworkConfigurator;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -111,7 +112,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             throw e;
         }
 
-        threadPool = Executors.newFixedThreadPool(10);
+        threadPool = Executors.newFixedThreadPool(20);
         running = new AtomicBoolean(true);
         localSocketAddress = getLocalAddress();
         openSockets = new ConcurrentHashMap<>();
@@ -128,7 +129,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             throw e;
         }
 
-        threadPool = Executors.newFixedThreadPool(10);
+        threadPool = Executors.newFixedThreadPool(20);
         running = new AtomicBoolean(true);
         localSocketAddress = getLocalAddress();
         openSockets = new ConcurrentHashMap<>();
@@ -146,7 +147,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
 
         localSocketAddress = socketAddress;
 
-        threadPool = Executors.newFixedThreadPool(10);
+        threadPool = Executors.newFixedThreadPool(20);
         running = new AtomicBoolean(true);
         openSockets = new ConcurrentHashMap<>();
     }
@@ -162,7 +163,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
             throw e;
         }
 
-        threadPool = Executors.newFixedThreadPool(10);
+        threadPool = Executors.newFixedThreadPool(20);
         running = new AtomicBoolean(true);
         localSocketAddress = getLocalAddress();
         openSockets = new ConcurrentHashMap<>();
@@ -248,13 +249,14 @@ public class DefaultNetworkHandler implements NetworkHandler {
     }
 
     private void timeoutSockets(){
-        for(SocketAddress a: openSockets.keySet()){
-            Connection c = openSockets.get(a);
-            if(c.lastConnectionTime() > c.limit()){
-                openSockets.remove(a, c);
+        for (Iterator<Map.Entry<SocketAddress, Connection>> it = openSockets.entrySet().iterator(); it.hasNext();) {
+            Map.Entry<SocketAddress, Connection> entry = it.next();
+            Connection c = entry.getValue();
+            if (c.lastConnectionTime() > c.limit()) {
+                it.remove();
                 try {
                     c.close();
-                }catch (IOException e) {
+                } catch (IOException e) {
                     System.out.println("Error " + e.getMessage());
                     e.printStackTrace();
                 }
@@ -462,7 +464,7 @@ public class DefaultNetworkHandler implements NetworkHandler {
     }
 
     private ServiceChain parsePath(TransportPacket.Packet input){
-        DummyServiceChain path = new DummyServiceChain();
+        DefaultServiceChain path = new DefaultServiceChain();
 
         for (int i = 0; i < input.getPathCount(); i++)
             path.addService(input.getPath(i));

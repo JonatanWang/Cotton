@@ -94,7 +94,7 @@ public class CloudAnalyzer implements Serializable {
         int j = 0;
         for(TimeInterval[] interval :statistics){
             for (int i = 0; i < interval.length; i++) {
-                avgQueueSize[j] += interval[i].getCurrentQueueCount();
+                avgQueueSize[j] += interval[i].getCurrentActiveCount();
             }
             j++;
         }
@@ -132,7 +132,7 @@ public class CloudAnalyzer implements Serializable {
                 outputCount += timeIntervals[j].getOutputCount();
             }
             buckets[i] = new Bucket(inputIntensity[i]/sampleLength,outputIntensity[i]/sampleLength,
-                    totalTime,inputCount,outputCount,timeIntervals[i].getCurrentQueueCount());
+                    totalTime,inputCount,outputCount,timeIntervals[i].getCurrentActiveCount());
             i++;
             
         }

@@ -35,7 +35,7 @@ package cotton.test;
 
 import cotton.internalrouting.InternalRoutingNetwork;
 import cotton.network.DefaultNetworkHandler;
-import cotton.network.DummyServiceChain;
+import cotton.network.DefaultServiceChain;
 import cotton.network.NetworkPacket;
 import cotton.network.NetworkPacket.NetworkPacketBuilder;
 import cotton.network.Origin;
@@ -105,7 +105,7 @@ public class TestNH {
         NetworkPacketBuilder npb = new NetworkPacketBuilder();
 
         npb.setData(data);
-        npb.setPath(new DummyServiceChain("sendNumber"));
+        npb.setPath(new DefaultServiceChain("sendNumber"));
         Origin origin = new Origin(new InetSocketAddress(Inet4Address.getLocalHost(), port), UUID.randomUUID());
         if(latch != null)
             origin.setSocketLatchID(latch);
